@@ -1,1 +1,2 @@
-# Chevron Course
+# deep_ml_ciriculum
+
