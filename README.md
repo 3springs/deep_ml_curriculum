@@ -1,2 +1,2 @@
-# deep_ml_ciriculum
+# deep_ml_curriculum
 
