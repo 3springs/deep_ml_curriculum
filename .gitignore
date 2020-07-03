@@ -1,5 +1,17 @@
 00 Data prep/data
 
+# exclude data from source control by default
+/data/
+docs/site/
+
+# OSX Junk
+.DS_Store
+
+# test cache
+.cache/*
+tests/__pycache__/*
+*.pytest_cache/
+
 # Created by https://www.toptal.com/developers/gitignore/api/python,pycharm,code,windows,linux,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,pycharm,code,windows,linux,jupyternotebooks
 
