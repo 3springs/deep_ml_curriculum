@@ -1,0 +1,33 @@
+name: deep_ml_curriculum
+channels:
+  - defaults
+dependencies:
+  - python=3.6
+  - ipykernel
+  - pip
+  - ipywidgets
+  - cookiecutter
+  - awscli
+  - boto3
+  - s3fs
+  - shapely
+  - pyproj
+  - pandas
+  - rasterio
+  - fastparquet
+  - black
+  - scipy
+  - seaborn
+  - geopandas
+  - yapf
+  - tqdm
+  - isort
+  - matplotlib
+  - pytest
+  - holoviews
+  - bokeh
+  - pytorch[version='>=1.5.0']
+  - cudatoolkit=10.2
+  - future
+  - ipdb
+prefix: deep_ml_curriculum
