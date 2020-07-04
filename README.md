@@ -55,3 +55,13 @@ Project Organization
 --------
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
+# Setup the data
+
+```
+cd <project root>
+# install the module, as an editable pip module
+pip install -e .
+# pull the data from public s3 bucket
+aws s3 sync s3://deep-ml-curriculum-data/data/ data/
+```
