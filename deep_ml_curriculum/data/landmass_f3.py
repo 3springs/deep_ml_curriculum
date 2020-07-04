@@ -31,12 +31,14 @@ class LandmassF3PatchesMini(MNIST):
     """
     LANDMASS is a set of classified 2d subimages extracted from the F3 seismic volume by researchers at Georgia Tech.
 
-    LANDMASS-1, contains 17667 small “patches” of size 16x16 pixels. It includes 5500 patches. The images in this database have values 0-255
+    LANDMASS-1, contains 39750+ small “patches” of size 26x26 pixels. The images in this database have values 0-255
 
     Credits to Agile Geoscience for some of the processing code.
 
     Source https://dataunderground.org/dataset/landmass-f3
     License: Creative Commons Attribution Share-Alike
+
+    # WARNING This may be too small to see patterns, which may lower accuracy a lot on an already hard task
 
     Args:
         root (string): Root directory of dataset where ``LandmassF3/processed/training.pt``
