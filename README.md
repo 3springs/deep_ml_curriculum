@@ -60,8 +60,10 @@ Project Organization
 cd <project root>
 # install the module, as an editable pip module
 pip install -e .
-# pull the data from public s3 bucket
-aws s3 sync s3://deep-ml-curriculum-data/data/ data/
+# pull raw the data from public s3 bucket
+# aws s3 sync s3://deep-ml-curriculum-data/data/ data/
+# pull processed (smaller) data from s3
+aws s3 sync s3://deep-ml-curriculum-data/data/processed/ data/processed/
 ```
 
 # Credits
