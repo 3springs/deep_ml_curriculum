@@ -1,4 +1,7 @@
 00 Data prep/data
+*.db
+final_table.csv
+*.db-journal
 
 # exclude data from source control by default
 /data/
