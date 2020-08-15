@@ -1,33 +1,35 @@
-name: deep_ml_curriculum
+name: py37_pytorch
 channels:
   - defaults
 dependencies:
-  - python=3.6
-  - ipykernel
-  - pip
-  - ipywidgets
-  - cookiecutter
-  - awscli
-  - boto3
-  - s3fs
-  - shapely
-  - pyproj
+  - python=3.7
+  - wget
+  - opencv
   - pandas
-  - rasterio
-  - fastparquet
-  - black
-  - scipy
-  - seaborn
-  - geopandas
-  - yapf
+  - scikit-image
+  - numpy
+  - scikit-learn
+  - joblib
+  - cython
   - tqdm
-  - isort
+  - scipy
+  - pillow
   - matplotlib
-  - pytest
-  - holoviews
+  - jupyter
+  - nodejs
+  - jupyterlab
+  - fbprophet=0.5
+  - cudatoolkit=10.1
+  - torchtext
+  - torchvision
+  - torchaudio
+  - pytorch
+  - pandas-profiling
+  - seaborn
+  - beautifulsoup4
   - bokeh
-  - pytorch[version='>=1.5.0']
-  - cudatoolkit=10.2
-  - future
-  - ipdb
-prefix: deep_ml_curriculum
+  - holoviews
+  - statsmodels
+  - py-xgboost
+prefix: /anaconda/envs/py37_pytorch
+
