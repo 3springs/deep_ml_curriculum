@@ -1,0 +1,24 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "pooyad359",
+      "name": "Pooya",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/5551405?v=4",
+      "profile": "https://github.com/pooyad359",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "deep_ml_curriculum_private",
+  "projectOwner": "3springs",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
