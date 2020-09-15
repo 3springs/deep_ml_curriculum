@@ -2,7 +2,7 @@
 *.db
 final_table.csv
 *.db-journal
-.pth
+*.pth
 
 # exclude data from source control by default
 /data/
