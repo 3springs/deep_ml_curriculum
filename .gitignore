@@ -3,6 +3,8 @@
 final_table.csv
 *.db-journal
 *.pth
+*.pt
+*.pkl
 
 # exclude data from source control by default
 /data/
