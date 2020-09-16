@@ -31,5 +31,10 @@ dependencies:
   - holoviews
   - statsmodels
   - py-xgboost
+  - geopandas
+  - descartes
+  - umap-learn=0.4.6
+  - mapclassify
+  - dask
 prefix: /anaconda/envs/py37_pytorch
 

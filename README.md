@@ -1,8 +1,4 @@
-deep_ml_curriculum
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-==============================
+# deep_ml_curriculum
 
 Data science and ML training for O&G
 
@@ -18,18 +14,11 @@ Project Organization
     │   ├── processed      <- The final, canonical data sets for modeling.
     │   └── raw            <- The original, immutable data dump.
     │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
     ├── models             <- Trained and serialized models, model predictions, or model summaries
     │
     ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
     │                         the creator's initials, and a short `-` delimited description, e.g.
     │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
     │
     ├── requirements       <- The requirements files for reproducing the analysis environment, e.g.
     │                         generated with `make doc_reqs`
@@ -51,15 +40,16 @@ Project Organization
     │   │
     │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
     │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
 
 
 
 
 # Setup the data
 
+The data is stored on a public (read only) s3 bucket
+
 ```
+git clone git@github.com:3springs/deep_ml_curriculum.git
 cd <project root>
 # install the module, as an editable pip module
 pip install -e .
@@ -69,26 +59,29 @@ pip install -e .
 aws s3 sync s3://deep-ml-curriculum-data/data/processed/ data/processed/
 ```
 
-# Credits
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
-
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
+<!-- prettier-ignore-start -->deep_ml_curriculum
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="https://github.com/elcronos"><img src="https://avatars1.githubusercontent.com/u/9023043?v=4" width="100px;" alt=""/><br /><sub><b>Camilo</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=elcronos" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/pooyad359"><img src="https://avatars1.githubusercontent.com/u/5551405?v=4" width="100px;" alt=""/><br /><sub><b>Pooya</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=pooyad359" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/wassname"><img src="https://avatars1.githubusercontent.com/u/1103714?v=4" width="100px;" alt=""/><br /><sub><b>Mike C</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=wassname" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/Assistedevolution"><img src="https://avatars1.githubusercontent.com/u/18102704?v=4" width="100px;" alt=""/><br /><sub><b>Sean Driver</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=Assistedevolution" title="projectManagement">📆</a></td>
-    <td align="center"><a href="https://github.com/the-winter"><img src="https://avatars1.githubusercontent.com/u/19483860?v=4" width="100px;" alt=""/><br /><sub><b>the-winter</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=the-winter" title="review">📆</a></td>
+    <td align="center"><a href="https://github.com/elcronos"><img src="https://avatars1.githubusercontent.com/u/9023043?v=4" width="100px;" alt=""/><br /><sub><b>Camilo</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum/commits?author=elcronos" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/pooyad359"><img src="https://avatars1.githubusercontent.com/u/5551405?v=4" width="100px;" alt=""/><br /><sub><b>Pooya</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum/commits?author=pooyad359" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/wassname"><img src="https://avatars1.githubusercontent.com/u/1103714?v=4" width="100px;" alt=""/><br /><sub><b>Mike C</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum/commits?author=wassname" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/Assistedevolution"><img src="https://avatars1.githubusercontent.com/u/18102704?v=4" width="100px;" alt=""/><br /><sub><b>Sean Driver</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum/commits?author=Assistedevolution" title="projectManagement">📆</a></td>
+    <td align="center"><a href="https://github.com/the-winter"><img src="https://avatars1.githubusercontent.com/u/19483860?v=4" width="100px;" alt=""/><br /><sub><b>the-winter</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum/commits?author=the-winter" title="review">📆</a></td>
 
   </tr>
 </table>
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+
+# Credits
+
+Many of the datasets or notebooks are based on resources that were generously made open source by the authors. These are aknowledged either in a readme file associated with the data, in the notebook, or at the end of the notebook.
+
+<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
