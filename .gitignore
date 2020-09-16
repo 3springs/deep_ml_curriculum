@@ -5,8 +5,8 @@ final_table.csv
 *.pth
 *.pt
 *.pkl
-MNIST/raw/
-MNIST/processed
+notebooks/*/MNIST/raw/
+notebooks/*/MNIST/processed/
 
 # exclude data from source control by default
 /data/
