@@ -5,7 +5,8 @@ final_table.csv
 *.pth
 *.pt
 *.pkl
-notebooks/23 GANs/MNIST/
+MNIST/raw/
+MNIST/processed
 
 # exclude data from source control by default
 /data/
