@@ -2,9 +2,6 @@ deep_ml_curriculum
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
 ==============================
 
 Data science and ML training for O&G
@@ -85,9 +82,13 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="https://github.com/elcronos"><img src="https://avatars1.githubusercontent.com/u/9023043?v=4" width="100px;" alt=""/><br /><sub><b>Camilo</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=elcronos" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/pooyad359"><img src="https://avatars1.githubusercontent.com/u/5551405?v=4" width="100px;" alt=""/><br /><sub><b>Pooya</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=pooyad359" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/wassname"><img src="https://avatars1.githubusercontent.com/u/1103714?v=4" width="100px;" alt=""/><br /><sub><b>Mike C</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=wassname" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/Assistedevolution"><img src="https://avatars1.githubusercontent.com/u/18102704?v=4" width="100px;" alt=""/><br /><sub><b>Sean Driver</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=Assistedevolution" title="projectManagement">📆</a></td>
+    <td align="center"><a href="https://github.com/the-winter"><img src="https://avatars1.githubusercontent.com/u/19483860?v=4" width="100px;" alt=""/><br /><sub><b>the-winter</b></sub></a><br /><a href="https://github.com/3springs/deep_ml_curriculum_private/commits?author=the-winter" title="review">📆</a></td>
+
   </tr>
 </table>
-
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
