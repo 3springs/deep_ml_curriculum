@@ -1,6 +1,8 @@
 # deep_ml_curriculum
 
-Data science and ML training for O&G
+Data science and Machine Learning training for Oil and Gas.
+
+Teaches using some oil and gas specific datasets and examples such as well logs, seismic interpretations, geospatial plotting, productions plotting, and more.
 
 Project Organization
 ------------
@@ -14,9 +16,31 @@ Project Organization
     │
     ├── models             <- Trained and serialized models, model predictions, or model summaries
     │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
+    ├── notebooks          <- Course notebooks. a is reserved for a python course. b is data science, c is machine learning
+    │   ├── 00_Data_prep
+    │   ├── b01_SQL
+    │   ├── b02_Advanced_Pandas
+    │   ├── b03_Data_Visualisation
+    │   ├── b04_Geopandas
+    │   ├── b05_Interactive_Plotting
+    │   ├── b06_Time_Series_Analysis
+    │   ├── b07_Time_Series_Forcasting
+    │   ├── b08_DS_Basics
+    │   ├── b09_Supervised_Learning_Part_1
+    │   ├── b10_Evaluation_Metrics
+    │   ├── b11_Unsupervised
+    │   ├── b12_Final_Project
+    │   ├── c00_Introduction_to_Machine_Learning.pptx
+    │   ├── c01_Intro_to_NN_Part_1
+    │   ├── c02_Intro_to_NN_Part_2
+    │   ├── c03_Finetuning
+    │   ├── c04_Tabular_Data
+    │   ├── c05_Big_Data
+    │   ├── c06_Recurrent_Neural_Networks
+    │   ├── c07_Hyperparameter_Optimization
+    │   ├── c08_Autoencoders
+    │   ├── c09_Object_Detection
+    │   └── c10_GANs
     │
     ├── requirements       <- The requirements files for reproducing the analysis environment, e.g.
     │                         generated with `make doc_reqs`
