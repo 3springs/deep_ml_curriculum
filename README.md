@@ -17,8 +17,7 @@ Project Organization
     ├── models             <- Trained and serialized models, model predictions, or model summaries
     │
     ├── notebooks          <- Course notebooks. a is reserved for a python course. b is data science, c is machine learning
-    │   ├── 00_Data_prep
-    │   ├── b01_SQL
+    │   ├── b01_SQL        <- Start of DS
     │   ├── b02_Advanced_Pandas
     │   ├── b03_Data_Visualisation
     │   ├── b04_Geopandas
@@ -40,7 +39,8 @@ Project Organization
     │   ├── c07_Hyperparameter_Optimization
     │   ├── c08_Autoencoders
     │   ├── c09_Object_Detection
-    │   └── c10_GANs
+    │   ├── c10_GANs
+    │   └── z00_Data_prep  <- Preperation of datasets
     │
     ├── requirements       <- The requirements files for reproducing the analysis environment, e.g.
     │                         generated with `make doc_reqs`
