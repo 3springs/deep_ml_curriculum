@@ -6,7 +6,7 @@ Teaches using some oil and gas specific datasets and examples such as well logs,
 
 
 <div>
-<img src="reports/figures/LSTM_facies_pred.png" alt="Facies prediction with LSTM" width="300"/><img src="reports/figures/unsupervised.png" alt="drawing" width="300"/><img src="reports/figures/TSF.png" alt="Time series forecasting" width="300"/>
+<img src="reports/figures/LSTM_facies_pred.png" alt="Facies prediction with LSTM" width="200"/><img src="reports/figures/unsupervised.png" alt="drawing" width="200"/><img src="reports/figures/TSF.png" alt="Time series forecasting" width="200"/>
 </div>
 
 ## Project Organization
