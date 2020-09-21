@@ -109,3 +109,41 @@ def plot_well(well_name:str, logs:pd.DataFrame, facies:pd.Categorical):
     ax[-1].set_xticklabels([])
     f.suptitle('Well: %s'%well_name, fontsize=14,y=0.94)
     
+
+def plot_well_pred(well_name:str, logs:pd.DataFrame, facies_true:pd.Categorical, facies_pred=pd.Categorical):   
+
+    ztop=logs.DEPT.min(); zbot=logs.DEPT.max()
+    f, ax = plt.subplots(nrows=1, ncols=6, figsize=(10, 12))
+
+    ax[0].plot(logs.GR, logs.DEPT, '-g')
+    ax[0].set_xlabel("GR")
+
+    ax[1].plot(logs.CALI, logs.DEPT, '-')
+    ax[1].set_xlabel("CALI")
+
+    ax[2].plot(logs.RDEP, logs.DEPT, '-r', alpha=0.7)
+    ax[2].plot(logs.RMED, logs.DEPT, '-g', alpha=0.7)
+    ax[2].set_xlim(logs.RDEP.min(),100)
+    ax[2].set_xlabel("RDEP (r) & RMED (g)")
+
+    ax[3].plot(logs.RHOB, logs.DEPT, '-')
+    ax[3].set_xlabel("RHOB")
+
+    assert (facies_pred.categories == facies_true.categories).all()
+    plot_facies(facies_pred, ax=ax[4], colorbar=False, xlabel='Facies (pred)')
+    plot_facies(facies_true, ax=ax[5], xlabel='Facies (true)')
+    
+    for i in range(len(ax)-2):
+        ax[i].set_ylim(ztop,zbot)
+        ax[i].invert_yaxis()
+        ax[i].grid()
+        ax[i].locator_params(axis='x', nbins=3)
+
+
+    for i in range(1, len(ax)):
+        ax[i].set_yticklabels([])
+
+    ax[-2].set_xticklabels([])
+    ax[-1].set_xticklabels([])
+    f.suptitle('Well: %s'%well_name, fontsize=14,y=0.94)
+    
