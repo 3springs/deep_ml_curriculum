@@ -5,9 +5,9 @@ Data science and Machine Learning training for Oil and Gas.
 Teaches using some oil and gas specific datasets and examples such as well logs, seismic interpretations, geospatial plotting, productions plotting, and more.
 
 
-![](reports/figures/LSTM_facies_pred.png)
-![](reports/figures/unsupervised.png)
-![](reports/figures/TSF.png)
+![](reports/figures/LSTM_facies_pred.png| width=100)
+![](reports/figures/unsupervised.png| width=100)
+![](reports/figures/TSF.png| width=100)
 
 ## Project Organization
 ------------
