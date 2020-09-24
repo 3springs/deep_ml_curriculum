@@ -2,7 +2,7 @@
 
 First run of Data science and Machine Learning training for Oil and Gas.
 
-Teaches using some oil and gas specific datasets and examples such as well logs, seismic interpretations, geospatial plotting, productions plotting, and more.
+Teaches DS&ML using some Oil and Gas specific datasets and examples. Some of these are well log facies prediction, seismic interpretation, geospatial plotting, production plotting, and more.
 
 [See the product page](https://threespringstechnology.com/products/ai-training-courses/) for more information or to schedule this course email [info@threespringscapital.com](mailto:info@threespringscapital.com?subject=deep_ml_curriculum).
 
