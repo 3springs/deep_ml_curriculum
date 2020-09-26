@@ -314,3 +314,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/python,pycharm,code,windows,linux,jupyternotebooks
+notebooks/b05_Interactive_Plotting/*.html
+*-Copy*.ipynb
+*TODO*.ipynb
+
