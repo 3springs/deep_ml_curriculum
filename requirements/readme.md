@@ -1,5 +1,7 @@
 # Started on DSVM 18.04 v2 https://azuremarketplace.microsoft.com/en-us/marketplace/apps/microsoft-dsvm.ubuntu-1804?tab=Overview
 
+
+```sh
 # start in home dir
 cd ~
 
@@ -19,6 +21,12 @@ conda activate py37_pytorch
 # install extra packages from conda main (or as approved)
 conda env update --file requirements/environment.min.yml
 
-# extra packages
+# extra packages if needed
 conda install -c conda-forge umap-learn=0.4.6
 pip install xgboost==0.80
+
+# install the kernel into jupyter
+python -m ipykernel install --user --name deep_ml_curriculum
+
+# to start jupyter, or follow the DSVM instructions https://docs.microsoft.com/en-us/azure/notebooks/use-data-science-virtual-machine
+```

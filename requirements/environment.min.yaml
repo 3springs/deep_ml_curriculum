@@ -8,7 +8,7 @@ dependencies:
   - python=3.7
   - wget
   - opencv
-  - pandas
+  - pandas>1.0.0
   - scikit-image
   - numpy
   - scikit-learn
@@ -17,7 +17,7 @@ dependencies:
   - tqdm
   - scipy
   - pillow
-  - matplotlib
+  - matplotlib>3.0.0
   - jupyter
   - nodejs
   - jupyterlab
@@ -32,14 +32,20 @@ dependencies:
   - bokeh
   - holoviews
   - statsmodels
+  - numba>=0.50.0
   - py-xgboost
-  - geopandas
+  - geopandas>0.5.0
   - descartes
-  - umap-learn=0.4.6
+  - umap-learn>0.4.0
   - mapclassify
-  - dask
+  - dask>0.2.0.0
   - h5py
   - xarray
   - fastparquet
+  - pip
+  - pip:
+    - fbprophet>=0.7.0
+    - xgboost>=0.80
+
 prefix: /anaconda/envs/py37_pytorch
 
