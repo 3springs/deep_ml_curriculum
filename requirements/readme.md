@@ -29,4 +29,6 @@ pip install xgboost==0.80
 python -m ipykernel install --user --name deep_ml_curriculum
 
 # to start jupyter, or follow the DSVM instructions https://docs.microsoft.com/en-us/azure/notebooks/use-data-science-virtual-machine
+
+# open notebooks/deep_ml_curriculum/notebooks
 ```
