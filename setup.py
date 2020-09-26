@@ -6,5 +6,5 @@ setup(
     version='0.1.1',
     description='Data science and ML training for O&G',
     author='Three Springs Technology',
-    license='Apache',
+    license='Apache-2.0',
 )
