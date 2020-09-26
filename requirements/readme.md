@@ -25,6 +25,9 @@ conda env update --file requirements/environment.min.yml
 conda install -c conda-forge umap-learn=0.4.6
 pip install xgboost==0.80
 
+# install self
+pip install -e .
+
 # install the kernel into jupyter
 python -m ipykernel install --user --name deep_ml_curriculum
 

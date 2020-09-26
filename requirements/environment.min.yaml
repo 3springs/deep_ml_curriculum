@@ -40,6 +40,7 @@ dependencies:
   - mapclassify
   - dask>0.2.0.0
   - h5py
+  - zarr
   - xarray
   - fastparquet
   - pip
