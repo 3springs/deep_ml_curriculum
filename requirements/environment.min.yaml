@@ -18,13 +18,11 @@ dependencies:
   - jupyter
   - nodejs
   - jupyterlab
-  - fbprophet=0.5
   - cudatoolkit=10.1
   - torchtext
   - torchvision
   - torchaudio
   - pytorch
-  - pandas-profiling
   - seaborn
   - beautifulsoup4
   - bokeh
@@ -36,5 +34,6 @@ dependencies:
   - umap-learn=0.4.6
   - mapclassify
   - dask
+  - jupyter_nbextensions_configurator
 prefix: /anaconda/envs/py37_pytorch
 
