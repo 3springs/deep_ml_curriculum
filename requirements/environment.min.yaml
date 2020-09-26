@@ -21,7 +21,6 @@ dependencies:
   - jupyter
   - nodejs
   - jupyterlab
-  - fbprophet=0.5
   - cudatoolkit=10.1
   - torchtext
   - torchvision
