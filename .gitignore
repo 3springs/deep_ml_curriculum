@@ -317,4 +317,4 @@ $RECYCLE.BIN/
 notebooks/b05_Interactive_Plotting/*.html
 *-Copy*.ipynb
 *TODO*.ipynb
-
+*.svg

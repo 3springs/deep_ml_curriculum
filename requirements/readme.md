@@ -33,6 +33,6 @@ python -m ipykernel install --user --name py37_pytorch
 
 # to start jupyter, or follow the DSVM instructions https://docs.microsoft.com/en-us/azure/notebooks/use-data-science-virtual-machine
 
-# open notebooks/deep_ml_curriculum/notebooks
+# in jupyter open notebooks/deep_ml_curriculum/notebooks
 # choose kernel py37_pytorch
 ```
