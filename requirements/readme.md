@@ -9,9 +9,13 @@ cd ~
 sudo apt install awscli git
 
 # enable nbextensions
-conda install -y -c conda-forge ipywidgets jupyter_contrib_nbextensions jupyter_nbextensions_configurator ipykernel
+conda install -y -c conda-forge ipywidgets jupyter_contrib_nbextensions jupyter_nbextensions_configurator
 jupyter nbextension enable toc2/main
+jupyter nbextension enable toc2/toc2
 jupyter nbextension enable execute_time/ExecuteTime 
+jupyter nbextension enable exercise/main
+jupyter nbextension enable exercise2/main
+jupyter nbextension enable skip-traceback/main
 
 # get code
 git clone https://github.com/3springs/deep_ml_curriculum.git notebooks/
