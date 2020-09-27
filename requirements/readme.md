@@ -8,6 +8,11 @@ cd ~
 # essentials on ubuntu, centos used yum
 sudo apt install awscli git
 
+# enable nbextensions
+conda install -y -c conda-forge ipywidgets jupyter_contrib_nbextensions jupyter_nbextensions_configurator ipykernel
+jupyter nbextension enable toc2/main
+jupyter nbextension enable execute_time/ExecuteTime 
+
 # get code
 git clone https://github.com/3springs/deep_ml_curriculum.git notebooks/
 cd ~/notebooks/deep_ml_curriculum
@@ -35,4 +40,6 @@ python -m ipykernel install --user --name py37_pytorch
 
 # in jupyter open notebooks/deep_ml_curriculum/notebooks
 # choose kernel py37_pytorch
+
+
 ```
