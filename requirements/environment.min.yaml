@@ -1,4 +1,4 @@
-name: py37_pytorch
+name: deep_ml_curriculum
 channels:
   - pytorch
   - main
@@ -8,6 +8,7 @@ dependencies:
   - python=3.7
   - wget
   - opencv
+  - pillow
   - pandas>1.0.0
   - scikit-image
   - numpy
@@ -22,10 +23,8 @@ dependencies:
   - nodejs
   - jupyterlab
   - cudatoolkit=10.1
-  - torchtext
   - torchvision
-  - torchaudio
-  - pytorch>=1.0.0
+  - pytorch>1.0.0
   - pandas-profiling
   - seaborn
   - beautifulsoup4
@@ -34,18 +33,19 @@ dependencies:
   - statsmodels
   - numba>=0.50.0
   - py-xgboost
-  - geopandas>0.5.0
+  - geopandas
   - descartes
   - umap-learn>0.4.0
   - mapclassify
   - dask>0.2.0.0
   - h5py
-  - xarray
+  - zarr
+  - xarray>0.11.0
+  - netCDF4
   - fastparquet
   - pip
+  - jupyter_contrib_nbextensions
   - pip:
     - fbprophet>=0.7.0
     - xgboost>=0.80
-
-prefix: /anaconda/envs/py37_pytorch
 

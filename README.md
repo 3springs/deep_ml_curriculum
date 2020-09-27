@@ -7,7 +7,11 @@ Teaches DS&ML using some Oil and Gas specific datasets and examples. Some of the
 [See the product page](https://threespringstechnology.com/products/ai-training-courses/) for more information or to schedule this course email [info@threespringscapital.com](mailto:info@threespringscapital.com?subject=deep_ml_curriculum).
 
 <div>
-<img src="reports/figures/LSTM_facies_pred.png" alt="Facies prediction with LSTM" width="200"/><img src="reports/figures/unsupervised.png" alt="drawing" width="200"/><img src="reports/figures/TSF.png" alt="Time series forecasting" width="200"/>
+<img src="reports/figures/LSTM_facies_pred.png" alt="Facies prediction with LSTM" width="200"/>
+
+<img src="reports/figures/unsupervised.png" alt="drawing" width="200"/>
+
+<img src="reports/figures/TSF.png" alt="Time series forecasting" width="200"/>
 </div>
 
 ## Project Organization

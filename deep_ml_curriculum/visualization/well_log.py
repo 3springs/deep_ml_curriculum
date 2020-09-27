@@ -50,7 +50,7 @@ def plot_facies(facies:pd.Categorical, ax=None, colorbar=True, xlabel='Facies'):
     """
     if ax is None:
         ax = plt.gca()
-    facies_colors = [color_dict.get(f, 'orange') for f in facies.categories]
+    facies_colors = [color_dict.get(f, 'white') for f in facies.categories]
     
     # Plot facies as image
     cluster=np.repeat(np.expand_dims(facies.codes,1), 100, 1)
@@ -77,7 +77,7 @@ def plot_facies(facies:pd.Categorical, ax=None, colorbar=True, xlabel='Facies'):
         ax.set_xticklabels([])
 
 
-def plot_well(well_name:str, logs:pd.DataFrame, facies:pd.Categorical):   
+def plot_well(well_name:str, logs:pd.DataFrame, facies:pd.Categorical, figsize=(8, 12)):   
 
     ztop=logs.DEPT.min(); zbot=logs.DEPT.max()
     f, ax = plt.subplots(nrows=1, ncols=5, figsize=(8, 12))
@@ -108,12 +108,13 @@ def plot_well(well_name:str, logs:pd.DataFrame, facies:pd.Categorical):
     ax[4].set_yticklabels([]); 
     ax[-1].set_xticklabels([])
     f.suptitle('Well: %s'%well_name, fontsize=14,y=0.94)
+    return f, ax
     
 
-def plot_well_pred(well_name:str, logs:pd.DataFrame, facies_true:pd.Categorical, facies_pred=pd.Categorical):   
+def plot_well_pred(well_name:str, logs:pd.DataFrame, facies_true:pd.Categorical, facies_pred=pd.Categorical, figsize=(8, 12)):   
 
     ztop=logs.DEPT.min(); zbot=logs.DEPT.max()
-    f, ax = plt.subplots(nrows=1, ncols=6, figsize=(10, 12))
+    f, ax = plt.subplots(nrows=1, ncols=6, figsize=figsize)
 
     ax[0].plot(logs.GR, logs.DEPT, '-g')
     ax[0].set_xlabel("GR")
@@ -146,4 +147,5 @@ def plot_well_pred(well_name:str, logs:pd.DataFrame, facies_true:pd.Categorical,
     ax[-2].set_xticklabels([])
     ax[-1].set_xticklabels([])
     f.suptitle('Well: %s'%well_name, fontsize=14,y=0.94)
+    return f, ax
     

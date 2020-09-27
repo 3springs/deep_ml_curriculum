@@ -25,10 +25,14 @@ conda env update --file requirements/environment.min.yml
 conda install -c conda-forge umap-learn=0.4.6
 pip install xgboost==0.80
 
+# install self
+pip install -e .
+
 # install the kernel into jupyter
-python -m ipykernel install --user --name deep_ml_curriculum
+python -m ipykernel install --user --name py37_pytorch
 
 # to start jupyter, or follow the DSVM instructions https://docs.microsoft.com/en-us/azure/notebooks/use-data-science-virtual-machine
 
-# open notebooks/deep_ml_curriculum/notebooks
+# in jupyter open notebooks/deep_ml_curriculum/notebooks
+# choose kernel py37_pytorch
 ```
