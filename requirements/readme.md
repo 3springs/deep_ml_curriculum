@@ -16,6 +16,7 @@ jupyter nbextension enable execute_time/ExecuteTime
 # get code
 git clone https://github.com/3springs/deep_ml_curriculum.git notebooks/
 cd ~/notebooks/deep_ml_curriculum
+git checkout run01
 
 # get data (~10Gb)
 aws s3 sync s3://deep-ml-curriculum-data/data/processed/ ~/notebooks/deep_ml_curriculum/data/processed/ --region ap-southeast-2 --no-sign-request 

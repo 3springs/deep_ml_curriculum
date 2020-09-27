@@ -44,6 +44,7 @@ dependencies:
   - netCDF4
   - fastparquet
   - pip
+  - xlrd
   - ipywidgets
   - jupyter_contrib_nbextensions
   - pip:
