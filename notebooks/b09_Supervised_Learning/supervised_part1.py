@@ -9,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: py37_pytorch
 #     language: python
-#     name: python3
+#     name: conda-env-py37_pytorch-py
 # ---
 
 # # Introduction
@@ -27,13 +27,6 @@
 # 3. [Decision Trees](#decision-trees)
 # 4. [Random Forest](#random-forest)
 # 5. [Boosted Trees](#boosted-trees)
-
-# + solution2="hidden"
-2
-
-# + solution2="hidden"
-3
-# -
 
 # # 0. Supervised Learning <a name="supervised"></a>
 #
@@ -75,24 +68,53 @@ import warnings
 warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 # -
 
-# ## 2. Dataset <a name="dataset"></a>
+# ## 2. About the Geolink Dataset <a name="dataset"></a>
 #
-# **Note:** download data from https://drive.google.com/drive/folders/1EgDN57LDuvlZAwr5-eHWB5CTJ7K9HpDP
+# This is a well dataset of Well's Petroleum wells drilled on the Norwegian continental shelf. It was released by the Norweigen Government, cleaned by Geolink, and loaded by LukasMosser. The full dataset has 221 wells, over 150 lithologies, with around 500 MB of data.
 #
-# Credit to this repo: https://github.com/LukasMosser/geolink_dataset
 #
-# ## Data Disclaimer
+# You don't need to understand the data fully for this course, but here's a brief overview
+#
+# - Well - The well name
+# - DEPT - Depth below the ground in meters
+# - LITHOLOGY_GEOLINK - This is the facies or lithology, which means rock type. This is a label, made by multiple human experts by looking at the context, the well, maps of the area, and often picture of rock samples extracted from the well.
+# - [Well logs](https://en.wikipedia.org/wiki/Well_logging): These are specialised measurements by instruments lowered down the well hole
+#     - CALI - [Caliper log](https://en.wikipedia.org/wiki/Caliper_log), this measures the size of the well bore
+#     - GR - [Gamma Ray](https://en.wikipedia.org/wiki/Gamma_ray_logging): Measure passive amount of high energy electromagnetic radiation naturally emitted from the rock
+#     - RHOB - [Bulk Density](https://en.wikipedia.org/wiki/Density_logging): Measured active amount high energy electromagnetic radiation. This has a transmitting source of gamma rays
+#     - DTC - [Compressional wave](https://en.wikipedia.org/wiki/Longitudinal_wave) travel time: This measure the how long a compressional wave takes to travel through the formationation
+#     - RDEP - [Resistivity](https://en.wikipedia.org/wiki/Resistivity_logging) Deep: Electrical resistivity through the rock with a deep penetration
+#     - RMED - Resistivity Medium: Electrical resistivity through the rock with a nedium penetration
+#     - *Many other well logs were removed as they were not present in all wells*
+#     
+# Interpreting lithology from well logs is a very hard problem for machine learning because:
+#
+# - It's usually done by expert humans (Petrophysicists) with years to decades of experience, not an random human
+# - it takes into account context in the form of prior knowledge, geology, nearby wells, rock samples, and many more. Many of these are forms of information the machine doesn't have access to
+# - The data is unbalanced with important rocks like sandstone sometimes appearing as very this layers
+#
+# <img width="400" src="../../data/processed/geolink_norge_dataset/location of geolink wells.png"/>
+# <img width="400" src="../../reports/figures/30-4_1.png"/>
+#
+#
+# ### Data Disclaimer
 #
 # All the data serving as an input to these notebooks was generously donated by GEOLINK  
 # and is CC-by-SA 4.0 
 #
 # If you use this data please reference the dataset properly to give them credit for their contribution.
 #
+# **Note:** download data from https://drive.google.com/drive/folders/1EgDN57LDuvlZAwr5-eHWB5CTJ7K9HpDP
 #
-# ## Data Preparation
+# Credit to this repo: https://github.com/LukasMosser/geolink_dataset
+#
+# ### Data Preparation
+#
 # The geolink dataset we will use in this notebook has been preprocessed. You can find the process of preparation of this dataset in <code>notebook/00 Data Prep/00-mc-prep_geolink_norge_dataset.ipynb</code>
 #
 # ## Load Dataset
+
+
 
 # +
 interim_locations = Path("../../data/processed/geolink_norge_dataset/")
@@ -112,6 +134,7 @@ geolink['LITHOLOGY_GEOLINK'].astype('category')
 
 from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
 plot_well("30_4-1", geolink, facies=geolink['LITHOLOGY_GEOLINK'].astype('category').values)
+1
 
 # we only take the data from CALI  onward for X.
 X = geolink.iloc[:, 1:]
@@ -637,11 +660,15 @@ print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
 #
 # More information about Boosted Trees and XGBoost [here](https://xgboost.readthedocs.io/en/latest/tutorials/model.html)
 #
-# ## What is XGBoost?
+# ## (optional) What is XGBoost?
 #
 # XGBoost is a popular library to work with tabular data. It has shown its potential in ML competitions, in particular, Kaggle where many competitors have won using this library and fine-tune the models for optimal performance.
 #
 # Depending on the problem you are trying to solve you can either use <code>XGBClassifier</code> or <code>XGBRegressor</code> from the XGBoost library.
+#
+# <div class="alert alert-warning">
+# You need xgboost to run this, but not all teaching setup's will have it approved
+# </div>
 
 from xgboost import XGBClassifier
 
