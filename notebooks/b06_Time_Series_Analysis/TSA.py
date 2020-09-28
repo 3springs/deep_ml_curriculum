@@ -503,9 +503,11 @@ df = df.rename(columns={'energy_sum':'target'})
 df.plot()
 df
 
-# +
 # Exercise 1
-# -
+from statsmodels.tsa.seasonal import seasonal_decompose
+result = seasonal_decompose(df['target'],model = 'add')
+result.plot();
+print(f'sum of residuals {result.resid.sum():2.2f}')
 
 #
 # <div class="alert alert-success">
@@ -525,6 +527,8 @@ df
 #
 # </details>
 # </div>
+
+# In the next notebook we will look at how to do predictions, including seasonality
 
 # ## Further Reading:
 # - [Pandas time-series documentation](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html)
