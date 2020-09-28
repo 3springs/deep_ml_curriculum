@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.6.0
+#       format_version: '1.4'
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: deep_ml_curriculum
 #     language: python
@@ -17,10 +17,9 @@
 # # Time Series Forcasting
 
 #
-#
-# - TODO improve results for exponential smoothing
 # - TODO Mike this is too long, can't get through it all. Cut ARMA etc
 # - TODO too many blocks of text
+# - TODO go through prophet
 #
 # In time series forcasting (TSF) the goal is to predict the future values using the behaviour of data in the past. We can use some of the tehniques we learned about in the last notebook. For instance, Holt-Winters methods can be used for forcasting as well as analysis.
 
@@ -124,7 +123,7 @@ res.plot()
 # If we remove the seasonal and trend component what is left is the residuals.<br>
 # The residuals might have `NaN` in it. If so, we need to remove them before performing the test.
 
-adf(res.resid.dropna())
+adf_p_value(res.resid.dropna())
 
 # The residual is stationary.
 
@@ -138,12 +137,12 @@ df.diff()
 
 # We need to get rid of `NaN` so we can run the test.
 
-adf(df.diff().dropna()["target"])
+adf_p_value(df.diff().dropna()["target"])
 
 # As we can see p-value is below the 0.05 threshold, which means differencing helped to convert data into stationary time series. <br>
 # In some cases you might need to perform differencing multiple times to reach stationary results.
 
-adf(df.diff(2).dropna()["target"])
+adf_p_value(df.diff(2).dropna()["target"])
 
 # ## Autocorrelation
 
@@ -177,10 +176,14 @@ from statsmodels.tsa.ar_model import AR, ARResults
 # Let's try an AR model on our data. 
 
 # +
+
 model = AR(df_train)
 
 # Then we train the model specifying the order of AR. Let's start by trying `1`.
-trained_model = model.fit(maxlag=1,  trend='nc')
+trained_model = model.fit(
+    maxlag=2,  
+    trend='nc',
+)
 
 # Now the model is trained. We can view model's values:
 print('params\n', trained_model.params)
@@ -242,10 +245,54 @@ df_valid['target'].plot(ax=ax, legend=True, label="Actual")
 forecast.plot(ax=ax, legend=True, label="Forecast")
 mape(df_valid, forecast)
 
-# Try a few other values yourself and see if you get a better result.
+# <div class="alert alert-success">
+#   <h2>Exercise</h2>
+#
+#   Try a few other values yourself and see if you get a better/lower result  than mape=0.4
+#   
+#   - try trend='nc', which makes it return to the mean.
+#   - try a great lag, which gives it more parameters
+#     
+#     
+#   Does it *look* better as well? Is MAPE capturing your intuition about a good fit?
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * try `model.fit(maxlag=30,  trend='nc')`
+#       
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
+#     model = AR(df_train)
+#     model = model.fit(maxlag=30,  trend='nc')
+#     start = len(df_train)
+#     end = len(df_train) + len(df_valid) - 1
+#     forecast = model.predict(start, end)
+#     fig = plt.figure()
+#     ax = fig.gca()
+#     df_train['target'].plot(ax=ax, legend=True, label="Train")
+#     df_valid['target'].plot(ax=ax, legend=True, label="Actual")
+#     forecast.plot(ax=ax, legend=True, label="Forecast")
+#     mape(df_valid, forecast)
+#   ```
+#
+#   </details>
+#
+#   </div>
+#
+#
 
 model = AR(df_train)
-model = model.fit(maxlag=30,  trend='nc')
+model = model.fit(maxlag=7,  trend='nc')
 start = len(df_train)
 end = len(df_train) + len(df_valid) - 1
 forecast = model.predict(start, end)
@@ -265,7 +312,7 @@ from fbprophet import Prophet
 
 # Prophet needs the input data to be in a very specific format. The data needs to have a column containing daily dates called `"ds"`, and a column containing values named `"y"`. So we create a new data frame and use the required column names.
 
-df = pd.DataFrame({"ds": df.index, "y": df["energy_sum"]}).reset_index(drop=True)
+df = pd.DataFrame({"ds": df.index, "y": df["target"]}).reset_index(drop=True)
 df
 
 # Now the data is ready. We need to create a Prophet model and train it on the data.
@@ -301,6 +348,7 @@ plt.ylim([15, 30])
 # The model has found annual and weekly seasonalities. We can have closer look at these components using `.plot_components()`
 
 model.plot_components(forecast)
+1
 
 # Now we can see which days of the week are associated with more energy consumption (it's not suprising to see Saturday and Sunday) and also how time of the year affects the energy consumption.
 
