@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.6.0
+#       format_version: '1.4'
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: deep_ml_curriculum
 #     language: python
@@ -28,12 +28,6 @@
 #
 # Most plotting workflows start by finding an example and modifying it. For that we browse the galleries.
 
-# %opts Curve  [height=400 width=900 show_grid=True]
-# %opts Scatter  [height=400 width=900 show_grid=True]
-# %opts Points  [height=400 width=900 show_grid=True]
-# %opts Area  [height=400 width=900 show_grid=True]
-# %opts Spikes  [height=400 width=900 show_grid=True]
-
 # # HoloViews
 #
 # Holoviews is a very high-level tool. It can use bokeh for plotting, making it interactive. Focused on interactive data exploration in ipython. Uses a functional, composition-based approach to plotting that is very different from everything else on the list. Extremely powerful for this task, but not as well-suited to making figures for publication.
@@ -49,6 +43,40 @@ from bokeh import palettes
 hv.extension("bokeh")
 # -
 
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
+#
+#   A lot of the work of programming is knowing what to look for and how to look. This is a bit like riding a bike - it's a habit you need to build. We sometimes have blindspots where we don't know the right jargon, or stop because we get tired or overwhelmed with unfamiliar information.
+#     
+#   For this excercise you need to look through the [HoloView api documentation](https://holoviews.org/Reference_Manual/index.html) and find:
+#
+#   1. A object let you make a line (it's not named line, but it does mention it)
+#     
+#   If you're unsure, please expand the hints for keywords and tips of where and how to look.
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * Keywords are important, they call it `curve` not line
+#   * You want to go to `API` > `elements` > then find a mention of `line` or `curve`
+#   * With information overload, try Cntrl-F searching first, then scanning the page
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   https://holoviews.org/Reference_Manual/holoviews.element.html#holoviews.element.Curve
+#
+#   </details>
+#
+#   </div>
+
 # ## Creating elements
 #
 # All basic elements accept their data as a single, mandatory positional argument which may be supplied in a number of different formats, some of which we will now examine. A handful of *annotation* elements are exceptions to this rule, namely ``Arrow``, ``Text``, ``Bounds``, ``Box`` and ``Ellipse``, as they require additional positional arguments.
@@ -57,10 +85,11 @@ hv.extension("bokeh")
 #
 # To start with a simple example, we will sample a quadratic function $y=100-x^2$ at 21 different values of $x$ and wrap that data in a HoloViews element:
 
-
-
 xs = [i for i in range(-10, 11)]
 ys = [100 - (x ** 2) for x in xs]
+print('x', xs)
+print('y', ys)
+
 simple_curve = hv.Curve((xs, ys))
 # Jupyter displays the object using its default visual representation. - a holoviews bokeh plot
 simple_curve
@@ -71,6 +100,14 @@ simple_curve
 # a continuous mapping from `x` to `y`
 print(simple_curve)
 
+# Curve(data=None, kdims=None, vdims=None, **kwargs)
+help(hv.Curve)
+
+# What do we pass in
+#
+# - Element(dataframe, xdim, ydims)
+# - Element(xdata, ydata)
+
 # ### Annotating the curve
 #
 # There are other aspects of the data that we want to capture. For instance what are the x and y axis? Perhaps this parabola is the trajectory of a ball thrown into the air, in which case we could declare the object as:
@@ -78,6 +115,8 @@ print(simple_curve)
 # +
 # Tell holoviews that the x axis (key dimension) is distance, the xy axis (value dimension) is height
 trajectory = hv.Curve((xs, ys), kdims=["distance"], vdims=["height"])
+
+print(trajectory)
 
 # Holoview updates the plot
 trajectory
@@ -100,6 +139,7 @@ hv.Scatter(simple_curve)
 # Lets load Natural Gas production data from an [excel worksheet produced by the US Energy Information Administration](www.eia.gov/dnav/ng/ng_prod_sum_a_epg0_fgw_mmcf_m.htm)
 
 # Here we load some synthetic natural gas production data
+# ngdf_raw = pd.read_csv("../../data/processed/NaturalGas/NG_PROD_SUM.csv")
 ngdf_raw = pd.read_excel(
     "../../data/processed/NaturalGas/NG_PROD_SUM.xls",
     sheet_name=2,
@@ -115,7 +155,7 @@ ngdf.head()
 
 
 # It's a 1d series of data, so we will load it as a curve
-production = hv.Curve(ngdf, kdims=["Date"], vdims=["Florida"])
+production = hv.Curve(ngdf, kdims=["Date"], vdims=["Florida"]).opts(width=800)
 production
 
 # HoloViews recognises the name of the column as dimentions. Now, we can easily add units to the dimensions.
@@ -125,6 +165,8 @@ production
 
 # ### Layout
 # Create a layout in holoviews is very easy. First, let's try a few other types of plots to visualise the same data.
+
+print(production)
 
 spikes = hv.Spikes(production)
 spikes
@@ -162,44 +204,31 @@ layout.Curve.I * layout.Spikes.I + layout.Area.I
 # ### Slicing and Selecting
 # You can slice the elements using array-style syntax or using `.select` method. Note that in both case you need to use x-axis values to slice.
 
-production[:1999]
+production[:2000]
 
 production.select(Date=(2000, 2020))
 
-production[:1999].relabel("19XX") * production.select(Date=(2000, 2020)).relabel("20XX")
+production[:2000].relabel("19XX") * production.select(Date=(2000, 2020)).relabel("20XX")
+
+# Lets try with the smart meter data
+df = block0 = pd.read_csv("../../data/processed/smartmeter/block_0.csv", parse_dates=['day'], index_col=['day'])[['LCLid', 'energy_sum']]
+house1 = df[df.LCLid=='MAC000002']
+house2 = df[df.LCLid=='MAC005492']
+df
+
+
 
 #  <div class="alert alert-success">
 #   <h2>Exercise</h2>
 #
-#   Lets pull everything together and plot the smart meter data. Specifically we want to plot day against energy_sum. And ideally we want to plot each household as a seperate curve and overlay them.
-#
-#   ```python
-#     # Lets try with the smart meter data
-#     df = block0 = pd.read_csv("../../data/processed/smartmeter/block_0.csv", parse_dates=['day'], index_col=['day'])
-#     print(df.head())
-#
-#     curve = None
-#     # We group by household, each group is a dataframe
-#     for lclid, df_ousehold in df.groupby('LCLid'):
-#
-#         if len(household):
-#             # It's a 1d series of data, so we will load it as a curve
-#             curve_hh # YOUR CODE HERE
-#
-#             # overlay each holdhold curve (except the first time)
-#             if curve is None:
-#                 curve = curve_hh
-#             else:
-#                 curve *= curve_hh
-#     curve
-#   ```
+#   For house1, plot it as a curve of day vs energy_sum
 #       
 #
 #   <details>
 #   <summary><b>→ Hints</b></summary>
 #
 #   * Look at our pandas/production example above
-#   * Intead of Florida our column is called energy sum
+#   * Intead of kvims='date', vdims='Florida' we want to use day and energy_sum
 #
 #   </details>
 #
@@ -212,16 +241,50 @@ production[:1999].relabel("19XX") * production.select(Date=(2000, 2020)).relabel
 #   </summary>
 #
 #   ```python
-#     # Lets try with the smart meter data
-#     df = block0 = pd.read_csv("../../data/processed/smartmeter/block_0.csv", parse_dates=['day'], index_col=['day'])
-#     print(df.head())
+#    hv.Curve(house1, 'day', 'energy_sum')
+#   ```
 #
+#   </details>
+#
+#   </div>
+
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
+#
+#   Lets pull everything together and plot the smart meter data, with one curve per household. 
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * `curve1 * curve2`
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   
+#   <summary>
+#     <i>→ Solution</i>
+#   </summary>
+#       
+#       
+#   ```python
+#   curve1 = hv.Curve(house1, kdims=["day"], vdims=["energy_sum"])
+#   curve2 = hv.Curve(house2, kdims=["day"], vdims=["energy_sum"])
+#   curve1 * curve2
+#       
+#   ```
+#
+#   ```python
+#     # A more complicated version, grouping by household, and using a for loop
 #     curve = None
-#     for i, household in df.groupby('LCLid'):
+#     for i, df_household in df.groupby('LCLid'):
 #
 #         # It's a 1d series of data, so we will load it as a curve
-#         if len(household):
-#             curve_hh = hv.Curve(household, kdims=["day"], vdims=["energy_sum"])
+#         if len(df_household):
+#             curve_hh = hv.Curve(df_household, kdims=["day"], vdims=["energy_sum"])
 #             curve_hh = curve_hh.redim.unit(energy_sum="kWh")
 #             if curve is None:
 #                 curve = curve_hh
@@ -242,83 +305,7 @@ production[:1999].relabel("19XX") * production.select(Date=(2000, 2020)).relabel
 #
 
 from holoviews.operation.datashader import datashade, dynspread
-dynspread(datashade(production))
-
-# Here we load some synthetic natural gas production data
-ngdf_raw = pd.read_excel(
-    "../../data/processed/NaturalGas/NG_PROD_SUM.xls",
-    sheet_name=2,
-    header=2,
-    index_col="Date",
-    parse_dates=True,
-)
-ngdf_raw.columns = [c[: c.find(" ", 5)] for c in ngdf_raw.columns]
-ngdf = ngdf_raw.resample("A").sum()
-ngdf.index = ngdf.index.year
-ngdf.head()
-
-
-
-ngdf_all = ngdf_raw.stack().reset_index().set_index('Date').rename(columns={'level_1': 'State', 0:'Production'})
-# ngdf_all
-ngdf_all = ngdf_all.groupby('State').resample('1D').sum().reset_index().replace(0, np.nan).dropna()
-ngdf_all
-
-import datashader as ds
-pts = hv.Points(ngdf_all, ["Date", "Production"], vdims=['State']).opts(color='State')
-pts
-
-
-
-# +
-ngdf_all = ngdf_raw.stack().reset_index().set_index('Date').rename(columns={'level_1': 'State', 0:'Production'})
-# ngdf_all
-ngdf_all = ngdf_all.groupby('State').resample('1W').sum()#.reset_index().replace(0, np.nan).dropna()
-
-ngdf_all
-# -
-
-pts = hv.Points(ngdf_all, ["Date", "Production"], vdims='State')
-datashade(pts, x_range=(1990, 2020),)
-
-# +
-
-pts = hv.Points(ngdf_all, ["Date", "Production"])
-plot = dynspread(datashade(pts, 
-#                  x_range=(pd.Timestamp('1990'), pd.Timestamp('2020')), 
-#                  y_range=(ngdf_all['Production'].min(), ngdf_all['Production'].max())
-                 # TODO Mike aggregator=ds.count_cat("State")
-                ))
-plot
-
-# +
-ngdf_all = ngdf_raw.stack().reset_index().set_index('Date').rename(columns={'level_1': 'State', 0:'Production'})
-# ngdf_all
-# ngdf_all = ngdf_all.groupby('State').resample('1W').sum().reset_index().replace(0, np.nan).dropna()
-
-print(ngdf_all)
-
-pts = hv.Points(ngdf_raw, ["Date", "Production"])#, vdims=['State'])#.opts(color='State')
-plot = datashade(pts, 
-                 x_range=(pd.Timestamp('1990'), pd.Timestamp('2020')), 
-                 y_range=(ngdf_all['Production'].min(), ngdf_all['Production'].max())
-                 # TODO Mike aggregator=ds.count_cat("State")
-                )
-plot
-# -
-
-opts = hv.opts.RGB(width=600, height=300)
-# ndoverlay = hv.NdOverlay({c:hv.Curve((df['Time'], df[c]), kdims=['Time'], vdims=['Value']) for c in cols})
-datashade(pts, #normalization='linear', aggregator=ds.count(),
-          x_range=(pd.Timestamp('1990'), pd.Timestamp('2020'))
-         )#.opts(opts)
-
-# +
-pts = hv.Points(ngdf_all)
-plot = datashade(pts)
-plot
-# # hv.Points?
-# -
+dynspread(datashade(production)).opts(width=800)
 
 # For more information on using datashader with holoviews see:
 # - http://holoviews.org/user_guide/Large_Data.html
@@ -333,7 +320,9 @@ plot
 # ### Plot Options
 # Let's start by changing the size of the plot. We do this in Jupyter Notebook using magic command `%%opts`. Then we specify the type of object and the option. For instance, for changing the width of `production` plot, we use `Curves` (since it is a Curve object) and `[width=800]` to change the width to 800.
 
-# %%opts Curves [width=800]
+production.opts(width=800)
+
+# %%opts Curve [width=800]
 production
 
 # To get a list of options you can use holoviews help function.
@@ -343,8 +332,7 @@ hv.help(hv.Curve)
 # ### Style Options
 # As mentioned before style options are to tell Bokeh (or matplotlib if we use it as the extension) how to style a plot.
 
-# %%opts Curve(color='maroon')
-production
+production.opts(color='maroon')
 
 # __Note:__ When we use the options, the new properties are linked to the object, which means if we wanted to plot it again we won't need to specify the color. It will keep using the same color unless we change the options.
 
@@ -369,53 +357,31 @@ production
 # A Container is just a python function that creates a plot element:
 
 def NGProduction(state="Other", year_start=1991, year_end=2020):
-    """When we look at Natural Gas production, we want to choose the dates and location."""
-    y = ngdf.loc[year_start:year_end, state].values
-    x = range(year_start, year_end + 1)
-    return hv.Curve((x, y), kdims=["Date"], vdims=["Production"]).opts(
-        xlim=(1990, 2020), ylim=(-100000, 1200000)
-    )
+    """A function to make a curve (but choosing year and state."""
+    df = ngdf.loc[year_start:year_end, [state]]
+    df = df.rename(columns={state:'Production'})
+    return hv.Curve(df, kdims=["Date"], vdims=["Production"])#.opts()
 
 
-# # %opts Curve [width=500]
-NGProduction("Other", 2000)
-
-# ### HoloMaps
-# Unsing HoloMaps allows us to explore parameter space similar to widgets. We can manipulate the inputs of the function we just created using sliders and select boxes.
-#
-
-# +
-# We define the key dimensions for the HoloMap
-# and we use nested for loops to create a dictionary of plots
-hmap = hv.HoloMap(
-    {
-        (state, year_start): NGProduction(state, year_start)
-        for state in ngdf.columns.values
-        for year_start in range(1991, 2020, 5)
-    },
-    kdims=["state", "year_start"],
-)
-
-# Based on these python primitives, HoloViews creates a widget for us
-hmap
-# -
+NGProduction("Other", 2000).opts(width=800)
 
 
-
-# Apart from their simplicity and generality, one of the key features of HoloMaps is that they can be exported to a static HTML file, GIF, or video, because every combination of the sliders (parameter values) has been pre-computed already.  This very convenient feature of pre-computation becomes a liability for very large or densely sampled parameter spaces, however, leading to the DynamicMap type discussed next.
-#
-# * HoloMaps allow declaring a parameter space
-# * The default widgets provide a slider for numeric types and a dropdown menu for non-numeric types.
-# * HoloMap works well for small or sparsely sampled parameter spaces, exporting to static files
 
 # ### DynamicMap
 #
-# A [``DynamicMap``](holoviews.org/reference/containers/bokeh/DynamicMap.html) is very similar to a ``HoloMap`` except that it evaluates the function lazily. This property makes DynamicMap require a live, running Python server, not just an HTML-serving web site or email, and it may be slow if each frame is slower to compute than it is to display.  However, because of these properties, DynamicMap allows exploring arbitrarily large parameter spaces, dynamically generating each element as needed to satisfy a request from the user. The key dimensions ``kdims`` must match the arguments of the function:
+# Using DynamicMap allows us to explore parameter space similar to widgets. We can manipulate the inputs of the function we just created using sliders and select boxes.
+#
+# You can export these if you make them a HoloMaps instead, which precomputes everything.
+#
+#
+# - make a function
+# - declare parameters space
+# - display
 
 dmap = hv.DynamicMap(NGProduction, kdims=["state", "year_start", "year_end"])
 dmap = dmap.redim.range(year_start=(1991, 2015), year_end=(1995, 2020))
 dmap = dmap.redim.values(state=ngdf.columns)
-dmap.redim.default(state="Other", year_start=1991, year_end=2020)
+dmap.redim.default(state="Other", year_start=1991, year_end=2020).opts(width=500)
 
 # __Note:__ We used `.range` for sliders and `.values` for dropdown menus or define sliders with discrecte values.
 
@@ -425,7 +391,6 @@ dmap.redim.default(state="Other", year_start=1991, year_end=2020)
 # Make a dynamic map for the smart meter data
 #     
 # ```python
-# # TODO exercise for smart meters
 # df_smartmeter = pd.read_csv("../../data/processed/smartmeter/block_0.csv", parse_dates=['day'], index_col=['day'])
 # print(df.head())
 #
@@ -556,7 +521,9 @@ hmz = rock.to(hv.Image, ['x', 'y'], dynamic=True).opts(cmap=cmap)
 
 # We can also aggregate on of the dimensions and turn the data into 2D. In the example below `x` dimension is removed by the average `x` and replaced by an average value in that direction.
 
-hv.Image(rock.reduce(x=np.mean)).opts(cmap=cmap)
+# +
+# hv.Image(rock.reduce(x=np.mean)).opts(cmap=cmap)
+# -
 
 # ## [Advanced] Dashboards
 # We learned about using `DynamicMap` to create tools which helps us explore the data. But the tools we had access to were limited to a dropdown menu and a slider. What if we need more advanced tools. There is a package called __Panel__ developed by the same team as holoviews which specialised in creating dashboards. Here we will see a few examples of panel to see how we can use holoviews and panel to create dashboards.
@@ -742,39 +709,7 @@ pn.Column(widget_box,dmap)
 
 # `Panel` has a long list of different widgets you can use in your dashboard. You can find the full list [here](https://panel.holoviz.org/user_guide/Widgets.html).
 
-#  <div class="alert alert-success">
-#   <h2>Exercise</h2>
 #
-#   A lot of the work of programming is knowing what to look for and how to look. This is a bit like riding a bike - it's a habit you need to build. We sometimes have blindspots where we don't know the right jargon, or stop because we get tired or overwhelmed with unfamiliar information.
-#     
-#   For this excercise you need to look through the [HoloView documentation](https://panel.holoviz.org/api/index.html) and find:
-#
-#   1. A button that will let you choose multiple values at once
-#     
-#   If you're unsure, please expand the hints for keywords and tips of where and how to look.
-#       
-#
-#   <details>
-#   <summary><b>→ Hints</b></summary>
-#
-#   * Keywords are important, you are looking for a `widget` that can do multiple `select`
-#   * You want to go to `API` > `widgets` > then find a mention of `select`
-#   * With information overload, try Cntrl-F searching first, then scanning the page
-#
-#   </details>
-#
-#   <br/>
-#   <br/>
-#   <details>
-#   <summary>
-#     <b>→ Solution</b>
-#   </summary>
-#
-#   [panel.widgets.select.MultiSelect](https://panel.holoviz.org/api/panel.widgets.html#panel.widgets.select.MultiSelect) although a panel.widgets.select.MultiChoice is OK too.
-#
-#   </details>
-#
-#   </div>
 
 # # Further Reading
 #
