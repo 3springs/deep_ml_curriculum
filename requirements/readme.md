@@ -8,13 +8,11 @@ cd ~
 # essentials on ubuntu, centos used yum
 sudo apt install awscli git
 
-# enable nbextensions
+# enable nbextensions on base
 conda install -y -c conda-forge ipywidgets jupyter_contrib_nbextensions jupyter_nbextensions_configurator
 jupyter nbextension enable toc2/main
 jupyter nbextension enable toc2/toc2
-jupyter nbextension enable execute_time/ExecuteTime 
-jupyter nbextension enable exercise/main
-jupyter nbextension enable exercise2/main
+jupyter nbextension enable execute_time/ExecuteTime
 jupyter nbextension enable skip-traceback/main
 
 # get code
@@ -26,7 +24,14 @@ git checkout run01
 aws s3 sync s3://deep-ml-curriculum-data/data/processed/ ~/notebooks/deep_ml_curriculum/data/processed/ --region ap-southeast-2 --no-sign-request 
 
 # activate conda env that comes with DSVM 18.04
-conda activate py37_pytorch
+conda activate py37_pytorch 
+
+# enable nbextensions on py37_pytorch, in case you run jupyter manually from here
+conda install -y -c conda-forge ipywidgets jupyter_contrib_nbextensions jupyter_nbextensions_configurator
+jupyter nbextension enable toc2/main
+jupyter nbextension enable toc2/toc2
+jupyter nbextension enable execute_time/ExecuteTime
+jupyter nbextension enable skip-traceback/main
 
 # install extra packages from conda main (or as approved)
 conda env update --file requirements/environment.min.yml
