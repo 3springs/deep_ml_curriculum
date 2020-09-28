@@ -93,8 +93,17 @@ warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 # - it takes into account context in the form of prior knowledge, geology, nearby wells, rock samples, and many more. Many of these are forms of information the machine doesn't have access to
 # - The data is unbalanced with important rocks like sandstone sometimes appearing as very this layers
 #
-# <img width="400" src="../../data/processed/geolink_norge_dataset/location of geolink wells.png"/>
-# <img width="400" src="../../reports/figures/30-4_1.png"/>
+#
+# <table>
+#     <tr>
+#         <td>
+# <img width="480" src="../../reports/figures/30-4_1.png"/>
+#         </td>
+#         <td>
+# <img width="320" src="../../data/processed/geolink_norge_dataset/location of geolink wells.png"/>
+#         </td>
+#     </tr>
+# </table>
 #
 #
 # ### Data Disclaimer
@@ -114,7 +123,7 @@ warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 #
 # ## Load Dataset
 
-
+# !ls ../../reports/figures
 
 # +
 interim_locations = Path("../../data/processed/geolink_norge_dataset/")
@@ -307,6 +316,8 @@ y_true = le.transform(y_test)
 print(f"Accuracy: {accuracy_score(y_true, y_pred)}")
 
 # #### Exercise
+#
+# TODO Camilo update exercise
 #
 # <div class="alert alert-success">
 # Let\'s practice some of the key concepts we have learned so far. We will be using the iris dataset for this exercise. As a supervised task, we will try to determine the specie of an iris flower given the features: <code>sepal_length</code>,<code>sepal_width</code>,<code>petal_length</code>,<code>petal_width</code>
@@ -515,6 +526,9 @@ ax[1].set_yticklabels([])
 # #### Exercise
 #
 #
+# TODO Camilo update exercise
+#
+#
 # <div class="alert alert-success">
 # Let's practice some of the key concepts related to SVMs. Use either the iris dataset or geolink one for this exercise.
 #
@@ -607,6 +621,8 @@ print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
 # We got now an accuracy of 53% just with the hyperparameter max_depth=10. Let's train the DT again with a different hyperparameter. In appearance, the first model would be better, however, there are other metrics besides accuracy that should be taken into account. There are also other methods to avoid overfitting. We will go deeper into this topic in the next sessions.
 
 # #### Exercise
+#
+# TODO Camilo update exercise
 #
 # <div class="alert alert-success">
 # The concept of decision trees is very simple and intuitive and unlike other methods, it does not need normalised data to work properly.
