@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.6.0
+#       format_version: '1.4'
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: deep_ml_curriculum
 #     language: python
@@ -46,7 +46,6 @@ import matplotlib.pyplot as plt
 #
 # Pandas has functionalities for reading time and date. 
 
-# TODO Mike us customers everywhere
 data_normal = pd.read_csv("../../data/processed/Generated/SampleSales.csv")
 data_normal["Date"]
 
@@ -334,9 +333,12 @@ df.shift(-2)
 
 # ## Rolling
 # Rolling is applying a function to a number of consecutive data points. For instance, at each point in time we take the average of the past 4 weeks. Taking average of past few periods is also know as __Moving Average Smoothing__.<br>
-# We first need to select the window (how many values we should consider), and then apply an aggregaion function. (e.g. mean, sum, etc.)
+# We first need to select the window (how many values we should consider), and then apply an aggregation function. (e.g. mean, sum, etc.)
 #
-# TODO, ivana, draw diagram
+#
+# <img width="300" src="img/timeseries-resample-windows.png"/>
+# </br>
+# <img width="400" src="img/timeseries-rolling-windows.png"/>
 
 df.rolling(window=4).mean()
 
@@ -373,9 +375,9 @@ df["Total"].cumsum().plot()
 #
 # You need to change the timezone on a dataframe but your not sure how. 
 #     
-#     - Look through [the dataframe docs](https://pandas.pydata.org/docs/reference/frame.html) and find how to set a timezone on a series that doesn't have one (but you know it's 'Australia/Perth')
-#     - Set it to 'Australia/Perth'
-#     - plot it
+# - Look through [the dataframe docs](https://pandas.pydata.org/docs/reference/frame.html) and find how to set a timezone on a series that doesn't have one (but you know it's 'Australia/Perth')
+# - Set it to 'Australia/Perth'
+# - plot it
 #
 #
 #   <details>
@@ -403,7 +405,11 @@ df["Total"].cumsum().plot()
 #
 #   </div>
 
-
+# Other operations:
+#     
+# - https://pandas.pydata.org/pandas-docs/stable/reference/general_functions.html#top-level-dealing-with-datetimelike
+# - https://pandas.pydata.org/pandas-docs/stable/reference/frame.html#time-series-related
+# - https://pandas.pydata.org/pandas-docs/stable/reference/series.html#time-series-related
 
 # ## Lowess Smoothing
 # Now that we learned about moving average smoothing, let's discuss another technique. Locally weighted scatterplot smoothing (LOWESS) is another technique for smoothing. 
@@ -424,9 +430,7 @@ df["Lowess"] = result[
 ]  # Lowess returns x and y. The second column (column index 1) are the values we need.
 df.plot(y=["Total", "Lowess"])
 
-# +
-# TODO Mike doc and list of time operations
-# -
+
 
 # ## Time Series Decomposition
 
@@ -457,11 +461,8 @@ cust.plot(y="Customers")
 
 # We can clearly see a repeating pattern. That's called seasonality and we expect STL to be able to capture this behaviour.
 
-# +
 from statsmodels.tsa.seasonal import seasonal_decompose
-
-result = seasonal_decompose(cust["Customers"])
-# -
+result = seasonal_decompose(cust["Customers"], model='additive')
 
 # Now the time serie is decomposed and we can plot the result.
 
@@ -472,6 +473,7 @@ ax.set_figheight(8)
 # By default the model used additive approach for the data. If we want to use multiplicative approach we need to specify it in the function. But what is the difference between additive and multiplicative? Additive approach is used when the height of the repeating patterns are constant. This means the amplitude of seasonal component is not changing. But in this data we can clearly see the seasonal component is getting larger and larger. This is also visible in the residual component. The residual component is meant to look like random noise but we can clearly see some regular oscillation in there. So let's try multiplicative approach.
 
 result = seasonal_decompose(cust["Customers"], model="multiplicative")
+print(f'sum of residuals {result.resid.sum():2.2f}')
 ax = result.plot()
 ax.set_figwidth(16)
 ax.set_figheight(8)
@@ -480,113 +482,49 @@ ax.set_figheight(8)
 
 # As we can see, multiplicative approach looks much better. There is still a bit of pattern in residuals but it has improved significantly compared to additive approach.
 
-# +
-# TODO Mike stop it
-# Cut EWMA since it doesn't work in any examples
-# -
-
 # ## Exercise
 # <div class="alert alert-success">
 #
 # let's try these on real data, which will be much harder. Use the data below and perform the following analyses:
 #     
-# 1. Hodrick-Prescott filter using $\lambda = 10^7$.
-# 2. STL decomposition using additive method.
-# 3. Triple exponential smoothing using $\alpha=0.3$, $\beta=0.3$, and $\gamma=0$. Use additive models and seasonal period of 24.
+# - STL decomposition using additive method.
 #    
 # <details>
 # <summary>Hints</summary>
 #     
-# * Find the relevent code, copy it, and change the parameter. It's not a trick question.
+# * Find the relevent code, copy it, and change it to use `df['target']` 
 # </details>
 # </div>
 #
 
 df = block0 = pd.read_csv("../../data/processed/smartmeter/block_0.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
-df = df.groupby('day').mean()
+df = df.groupby('day').mean().iloc[:100]
 df = df.rename(columns={'energy_sum':'target'})
 df.plot()
 df
 
 # +
 # Exercise 1
-
-# +
-# Exercise 2
-
-# +
-# Exercise 3
 # -
 
 #
 # <div class="alert alert-success">
 #     
-# ### Solutions  
-# <details><summary>See solutions</summary>
+# ### Solution
+# <details><summary>See solution</summary>
 #
-# <details><summary>Exercise 1</summary>
 #
-# ```Python
-# from statsmodels.tsa.filters.hp_filter import hpfilter
-# _,trend = hpfilter(df['T1'],lamb=1e7)
-# hpf = df[['T1']].copy()
-# hpf['Trend'] = trend
-# hpf.plot()
-# ```
-#
-# </details>
-# <details><summary>Exercise 2</summary>
 #
 # ```Python
+# # Exercise 1
 # from statsmodels.tsa.seasonal import seasonal_decompose
-# result = seasonal_decompose(df['T1'],model = 'add')
+# result = seasonal_decompose(df['target'],model = 'add')
 # result.plot();
+# print(f'sum of residuals {result.resid.sum():2.2f}')
 # ```
 #
-# </details>
-# <details><summary>Exercise 3</summary>
-#
-# ```Python
-# from statsmodels.tsa.holtwinters import ExponentialSmoothing
-# model = ExponentialSmoothing(df['T1'],
-#                              trend = 'additive',
-#                              seasonal='additive',
-#                              seasonal_periods=24)
-# model_tr = model.fit(smoothing_level=.3,
-#                      smoothing_slope=.3,
-#                      smoothing_seasonal=0,
-#                      optimized=False)
-# df['DES'] = model_tr.fittedvalues.shift(-1)
-# df.iloc[-120:].plot()
-# ```
-#
-# </details>
 # </details>
 # </div>
-
-from statsmodels.tsa.filters.hp_filter import hpfilter
-_,trend = hpfilter(df['target'],lamb=1e7)
-hpf = df[['target']].copy()
-hpf['Trend'] = trend
-hpf.plot()
-
-from statsmodels.tsa.seasonal import seasonal_decompose
-result = seasonal_decompose(df['target'],model = 'add')
-result.plot();
-
-# TODO Mike get working decently with new data
-# TODO Mike update and remove answers
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
-model = ExponentialSmoothing(df['target'],
-                             trend = 'additive',
-                             seasonal='additive',
-                             seasonal_periods=24)
-model_tr = model.fit(smoothing_level=.3,
-                     smoothing_slope=.3,
-                     smoothing_seasonal=0,
-                     optimized=False)
-df['DES'] = model_tr.fittedvalues.shift(-1)
-df.iloc[-120:].plot()
 
 # ## Further Reading:
 # - [Pandas time-series documentation](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html)
@@ -596,3 +534,5 @@ df.iloc[-120:].plot()
 # - [Gentle Introduction to Exponential smoothing](https://machinelearningmastery.com/exponential-smoothing-for-time-series-forecasting-in-python/)
 #
 #
+
+
