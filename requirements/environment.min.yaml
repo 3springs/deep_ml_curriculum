@@ -30,6 +30,7 @@ dependencies:
   - beautifulsoup4
   - bokeh
   - holoviews
+  - datashader
   - statsmodels
   - numba>=0.50.0
   - py-xgboost
