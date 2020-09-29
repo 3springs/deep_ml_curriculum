@@ -352,6 +352,8 @@ model.plot_components(forecast)
 
 # Now we can see which days of the week are associated with more energy consumption (it's not suprising to see Saturday and Sunday) and also how time of the year affects the energy consumption.
 
+# ## Cross_validation
+
 # We created a model and forecasted the future. But we still don't know how good the model is. So like before we need a training and a validation set. We train a model on a training set, and then measure the accuracy of its prediction on validation set using metrics.<br>
 # One issue with this approach is that even when we get a value for predictions accuracy of a model, how do we know this value is reliable. Let's say we are comparing two models and mean absolute error for model A is 0.5 and for model B is 0.45. How do we know that B is better than A and it didn't just get lucky over this data set? One way to ensure which one is better is by comparing them over multiple sections of data sets. This approach is called cross validation. In Prophet, we start by training the model over the data from the eginning up to a certain point (cut-off point) and then predict for a few time steps (Horizon). Then we move cut-off point by a certain period and repeat the process. We can then calculate the metrics for each model over multiple sections of the data and have a better comparison at the end.
 
@@ -376,8 +378,11 @@ cv.head()
 from fbprophet.diagnostics import performance_metrics
 
 perf = performance_metrics(cv)
+perf.index = pd.Index(perf.horizon.dt.days, name='days')
 perf
 # -
+
+
 
 # The dataframe above has multiple metrics for model's predictions.
 #
@@ -393,14 +398,17 @@ perf
 
 # Before running the next cell look at the performance data frame and find the first and last horizon days and enter it in the next cell as `start` and `end`.
 
-start = 3
-end = 30
-plt.plot(range(start, end + 1), perf[["mape"]])
-plt.legend(["mape"])
-plt.ylim((0, 1))
+
+
+perf[['mape']][:-1].plot(ylim=[0,1])
+plt.xticks(rotation=45)
 plt.title("Mean Absolute Percent Error of forecasts")
 
 # This plot shows the further we are from the cut-off point the larger the error is, which is what we expect. Now, let's compare this model with another one.<br>
+#
+
+# ## Holidays
+#
 # Prophet has the ability to include the effect of holidays on the time series as well. Let's see whether adding public holidays to the model will make it any better.
 
 holiday_df = pd.read_csv(
@@ -417,6 +425,7 @@ model2.fit(df)
 # Cross validation
 cv2 = cross_validation(model2, initial="365 days", period="90 days", horizon="30 days")
 perf2 = performance_metrics(cv2)
+perf2.index = pd.Index(perf2.horizon.dt.days, name='days')
 perf2
 
 # +
@@ -428,13 +437,13 @@ perf2
 
 # Now let's compare the models.
 
-perf2
-
-plt.figure(figsize=(16, 8))
-plt.plot(range(start, end + 1), perf2["mape"], label="+ holidays")
-plt.plot(range(start, end + 1), perf["mape"], label="- holidays")
-plt.xlim(0, end)
-plt.ylim(0, 0.3)
+fig, ax = plt.subplots(figsize=(10, 4))
+perf['mape'][:-1].plot(ax=ax, label="+ holidays")
+perf2['mape'][:-1].plot(ax=ax, label="- holidays")
+# ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=1))
+plt.xticks(rotation=45)
+plt.title("Mean Absolute Percent Error of forecasts")
+plt.ylabel("mape")
 plt.legend()
 
 # It seems adding holidays slightly lowered the error for the first couple of weeks.
@@ -447,6 +456,8 @@ from fbprophet.plot import plot_cross_validation_metric
 fig = plot_cross_validation_metric(cv, metric="mape")
 plt.ylim(0, 1)
 # -
+
+# ## Trends
 
 # One interesting feature of Prophet is that it can identify when the trend of the data is changing. We can add these change points to the plot as well.
 
@@ -492,5 +503,248 @@ df.plot()
 # - [Generate Quick and Accurate Time Series Forecasts using Facebook’s Prophet](https://www.analyticsvidhya.com/blog/2018/05/generate-accurate-forecasts-facebook-prophet-python-r/#:~:text=Prophet%20is%20an%20open%20source,of%20custom%20seasonality%20and%20holidays!)
 # - [Facebook Prophet Documentation](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
 #
+
+df = block0 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
+df = df.groupby('day').mean()
+df = df.rename(columns={'energy_sum':'target'})
+df.plot()
+
+
+
+import xarray as xr
+ds_perth = xr.open_dataset(
+    "../../data/processed/weatherbench/perth_5.625deg_z_t.nc"
+).drop(["lon", "lat"]).sel(time=slice('2015', '2016'))
+df = ds_perth['t'].to_dataframe()[['t']]
+df = df.rename(columns={'t':'target'})['2015':'2016']
+df.plot(figsize=(14,6))
+df = pd.DataFrame({"ds": df.index, "y": df["target"]})#.reset_index(drop=True)
+df
+
+# +
+n_split = -int(len(df)*0.7)
+df_train = df[:-n_split]
+df_valid = df[-n_split:]
+
+ax = df_train['y'].plot(legend=True, label="Train")
+df_valid['y'].plot(ax=ax, legend=True, label="Validation")
+# -
+
+
+
+# +
+# %%time
+model = Prophet()
+# add same periods as bcm see https://en.wikipedia.org/wiki/Theory_of_tides (additive)
+model.add_seasonality(name='Moon2', period=12.4206012/24, fourier_order=1, prior_scale=40)
+model.add_seasonality(name='Sun2', period=12/24, fourier_order=1, prior_scale=30)
+model.add_seasonality(name='N2', period=12.65834751/24, fourier_order=1, prior_scale=10)
+
+model.add_seasonality(name='K1', period=23.93447213/24, fourier_order=1, prior_scale=20)
+model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=1, prior_scale=10)
+
+model.add_seasonality(name='Mm', period=27.554631896, fourier_order=1, prior_scale=4)
+model.add_seasonality(name='Ssa', period=182.628180208, fourier_order=1, prior_scale=4)
+model.add_seasonality(name='Sa', period=365.256360417, fourier_order=1, prior_scale=4)
+
+
+model.add_seasonality(name='M4', period=6.210300601/24, fourier_order=1, prior_scale=2)
+model.add_seasonality(name='M6', period=4.140200401/24, fourier_order=1, prior_scale=2)
+model.add_seasonality(name='MK3', period=8.177140247/24, fourier_order=1, prior_scale=2)
+model.fit(df_train)
+
+# +
+# future = model.make_future_dataframe(periods=365)
+
+forecast = model.predict(df_valid)
+forecast.head()
+# -
+
+
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+''
+
+model.plot_components(forecast)
+1
+
+# ## Custom Seasonality
+#
+# This library is made by facebook for tracking user trends. That means it is set up for growing tends to do with humans, with holidays and weekly seasonality. What if we have data that has a differen't seasonality?
+#
+# Lets try on significant wave height from Buoy 44025
+#
+# Data from NOAA’s National Data Buoy Center - Buoy 44025
+
+# +
+# xd = xr.open_dataset("https://dods.ndbc.noaa.gov/thredds/dodsC/data/mmbcur/41022/41022m1996.nc?time[0:1:5471],water_spd[0:1:0][0:1:0][0:1:0]")
+# df = xd.isel(latitude=0, longitude=0, time_1=0).to_dataframe()
+# df
+
+# +
+# from https://catalogue-imos.aodn.org.au/geonetwork/srv/api/records/ae86e2f5-eaaf-459e-a405-e654d85adb9c
+xd = xr.open_dataset("/home/wassname/Downloads/IMOS_ANMN-WA_AETVZ_20111221T060300Z_WATR20_FV01_WATR20-1112-Continental-194_END-20120704T050500Z_C-20200916T043212Z.nc")
+print(xd)
+name='UCUR'
+df = xd.isel(HEIGHT_ABOVE_SENSOR=0)[name].isel(TIME=slice(0, -1000)).to_dataframe()[[name]]
+df.iloc[:300].plot()
+
+df = pd.DataFrame({"ds": df.index, "y": df[name]})#.reset_index(drop=True)
+# df.y.plot()
+# df
+# df
+
+
+# -
+
+xd#.info()
+
+# +
+# xd = xr.open_dataset('https://dods.ndbc.noaa.gov/thredds/dodsC/data/stdmet/41012/41012.ncml')
+# xd = xd.sel(time=slice('2017', '2018')).isel(latitude=0, longitude=0)
+# xd
+# -
+
+
+
+
+
+# +
+# # see https://datalab.marine.rutgers.edu/2020/03/seasonal-cycle-and-anomaly-at-ndbc-44025/
+# xd = xr.open_dataset('https://dods.ndbc.noaa.gov/thredds/dodsC/data/stdmet/44025/44025.ncml')
+# df = xd.sea_surface_temperature.sel(time=slice('2017', '2018')).isel(latitude=0, longitude=0).to_dataframe()[['sea_surface_temperature']]
+# # df = pd.read_csv('../../data/processed/dodsC/wave_height.csv', parse_dates=['time']).set_index('time')
+
+# df = pd.DataFrame({"ds": df.index, "y": df["sea_surface_temperature"]})#.reset_index(drop=True)
+# df.y.plot()
+# df
+
+
+
+# +
+# # see https://datalab.marine.rutgers.edu/2020/03/seasonal-cycle-and-anomaly-at-ndbc-44025/
+# xd = xr.open_dataset('https://dods.ndbc.noaa.gov/thredds/dodsC/data/stdmet/44025/44025.ncml')
+# df = xd.wave_height.sel(time=slice('2017', '2018')).isel(latitude=0, longitude=0).to_dataframe()[['wave_height']]
+# # df = pd.read_csv('../../data/processed/dodsC/wave_height.csv', parse_dates=['time']).set_index('time')
+
+# df = pd.DataFrame({"ds": df.index, "y": df["wave_height"]})#.reset_index(drop=True)
+# df.y.plot()
+# df
+
+# +
+
+n_split = -int(len(df)*0.7)
+df_train = df[:-n_split]
+df_valid = df[-n_split:]
+
+ax = df_train['y'].plot(legend=True, label="Train")
+df_valid['y'].plot(ax=ax, legend=True, label="Validation")
+# plt.ylabel('significant wave height')
+
+# +
+# %%time
+model = Prophet(
+    changepoint_range=0.8,
+)
+model.fit(df_train)
+
+forecast = model.predict(df_valid)
+forecast.index = forecast.ds
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+plt.show()
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+plt.xlim(pd.Timestamp('2018-05'), pd.Timestamp('2018-08'))
+''
+# -
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+plt.xlim(pd.Timestamp('2012-05'), pd.Timestamp('2012-05-15'))
+plt.ylim(-0.1, 0.2)
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+plt.xlim(pd.Timestamp('2018-05-30'), pd.Timestamp('2018-06-10'))
+
+# +
+# # Cross validation
+# cv = cross_validation(model, initial="365 days", period="30 days", horizon="10 days")
+# perf = performance_metrics(cv)
+# perf.index = pd.Index(perf.horizon.dt.days, name='days')
+# perf
+
+# +
+# %%time
+model = Prophet(
+#     changepoint_range=0.8,
+    yearly_seasonality=False,
+    holidays=None,
+    daily_seasonality=False,
+    weekly_seasonality=False,
+    holidays_prior_scale=0.001,
+)
+# add same periods as bcm see https://en.wikipedia.org/wiki/Theory_of_tides (additive)
+model.add_seasonality(name='Moon2', period=12.4206012/24, fourier_order=4, prior_scale=40)
+model.add_seasonality(name='Sun2', period=12/24, fourier_order=4, prior_scale=30)
+model.add_seasonality(name='N2', period=12.65834751/24, fourier_order=1, prior_scale=10)
+
+model.add_seasonality(name='K1', period=23.93447213/24, fourier_order=4, prior_scale=20)
+model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=1, prior_scale=10)
+
+model.add_seasonality(name='Mm', period=27.554631896, fourier_order=4, prior_scale=4)
+model.add_seasonality(name='Ssa', period=182.628180208, fourier_order=1, prior_scale=4)
+model.add_seasonality(name='Sa', period=365.256360417, fourier_order=1, prior_scale=4)
+
+
+model.add_seasonality(name='M4', period=6.210300601/24, fourier_order=1, prior_scale=2)
+model.add_seasonality(name='M6', period=4.140200401/24, fourier_order=1, prior_scale=2)
+model.add_seasonality(name='MK3', period=8.177140247/24, fourier_order=1, prior_scale=2)
+model.fit(df_train)
+
+forecast = model.predict(df_valid)
+forecast.index = forecast.ds
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+plt.show()
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+plt.xlim(pd.Timestamp('2018-05'), pd.Timestamp('2018-08'))
+''
+# -
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+plt.xlim(pd.Timestamp('2012-05'), pd.Timestamp('2012-05-15'))
+plt.ylim(-0.1, 0.2)
+
+fig = model.plot(forecast)
+fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+plt.xlim(pd.Timestamp('2012-05'), pd.Timestamp('2012-05-15'))
+plt.ylim(-0.1, 0.2)
+
+
+
+# +
+# # Cross validation
+# cv = cross_validation(model, initial="365 days", period="30 days", horizon="10 days")
+# perf = performance_metrics(cv)
+# perf.index = pd.Index(perf.horizon.dt.days, name='days')
+# perf
+# -
+
+
+
+
+
+
+
+
 
 

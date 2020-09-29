@@ -91,15 +91,15 @@ pip install -e .
 aws s3 sync s3://deep-ml-curriculum-data/data/processed/ data/processed/
 ```
 
-# Setup the env
+# Setup the environment
 
-See ./requirements/readme.md
+See [./requirements/readme.md](./requirements/readme.md)
 
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->deep_ml_curriculum
+<!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 <table>
   <tr>
