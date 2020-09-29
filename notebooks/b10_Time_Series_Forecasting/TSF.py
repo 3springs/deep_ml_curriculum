@@ -573,80 +573,38 @@ model.plot_components(forecast)
 #
 # This library is made by facebook for tracking user trends. That means it is set up for growing tends to do with humans, with holidays and weekly seasonality. What if we have data that has a differen't seasonality?
 #
-# Lets try on significant wave height from Buoy 44025
-#
-# Data from NOAA’s National Data Buoy Center - Buoy 44025
-
-# +
-# xd = xr.open_dataset("https://dods.ndbc.noaa.gov/thredds/dodsC/data/mmbcur/41022/41022m1996.nc?time[0:1:5471],water_spd[0:1:0][0:1:0][0:1:0]")
-# df = xd.isel(latitude=0, longitude=0, time_1=0).to_dataframe()
-# df
+# Here we use current speed from the [IMOS - Australian National Mooring Network (ANMN) Facility - Current velocity time-series](https://catalogue-imos.aodn.org.au/geonetwork/srv/api/records/ae86e2f5-eaaf-459e-a405-e654d85adb9c). We will use tidal periods related to the Sun and Moon instead of human calender periods related to Weeks and Holidays.
 
 # +
 # from https://catalogue-imos.aodn.org.au/geonetwork/srv/api/records/ae86e2f5-eaaf-459e-a405-e654d85adb9c
-xd = xr.open_dataset("/home/wassname/Downloads/IMOS_ANMN-WA_AETVZ_20111221T060300Z_WATR20_FV01_WATR20-1112-Continental-194_END-20120704T050500Z_C-20200916T043212Z.nc")
-print(xd)
-name='UCUR'
-df = xd.isel(HEIGHT_ABOVE_SENSOR=0)[name].isel(TIME=slice(0, -1000)).to_dataframe()[[name]]
-df.iloc[:300].plot()
+xd = xr.open_dataset("../../data/processed/IMOS_ANMN/IMOS_ANMN-WA_AETVZ_20111221T060300Z_WATR20_FV01_WATR20-1112-Continental-194_END-20120704T050500Z_C-20200916T043212Z.nc")
+name='CSPD'
+df = xd.isel(HEIGHT_ABOVE_SENSOR=0)['CSPD'].isel(TIME=slice(0, -1000)).to_dataframe()[['CSPD']]
 
-df = pd.DataFrame({"ds": df.index, "y": df[name]})#.reset_index(drop=True)
-# df.y.plot()
-# df
-# df
+# Take the log, and smooth it by resampling to 4 hours
+df['CSPD'] = np.log(df['CSPD'])
+df = df.resample('4H').mean()
 
+# Format for prophet
+df = pd.DataFrame({"ds": df.index, "y": df['CSPD']})
 
-# -
-
-xd#.info()
-
-# +
-# xd = xr.open_dataset('https://dods.ndbc.noaa.gov/thredds/dodsC/data/stdmet/41012/41012.ncml')
-# xd = xd.sel(time=slice('2017', '2018')).isel(latitude=0, longitude=0)
-# xd
-# -
-
-
-
-
-
-# +
-# # see https://datalab.marine.rutgers.edu/2020/03/seasonal-cycle-and-anomaly-at-ndbc-44025/
-# xd = xr.open_dataset('https://dods.ndbc.noaa.gov/thredds/dodsC/data/stdmet/44025/44025.ncml')
-# df = xd.sea_surface_temperature.sel(time=slice('2017', '2018')).isel(latitude=0, longitude=0).to_dataframe()[['sea_surface_temperature']]
-# # df = pd.read_csv('../../data/processed/dodsC/wave_height.csv', parse_dates=['time']).set_index('time')
-
-# df = pd.DataFrame({"ds": df.index, "y": df["sea_surface_temperature"]})#.reset_index(drop=True)
-# df.y.plot()
-# df
-
-
-
-# +
-# # see https://datalab.marine.rutgers.edu/2020/03/seasonal-cycle-and-anomaly-at-ndbc-44025/
-# xd = xr.open_dataset('https://dods.ndbc.noaa.gov/thredds/dodsC/data/stdmet/44025/44025.ncml')
-# df = xd.wave_height.sel(time=slice('2017', '2018')).isel(latitude=0, longitude=0).to_dataframe()[['wave_height']]
-# # df = pd.read_csv('../../data/processed/dodsC/wave_height.csv', parse_dates=['time']).set_index('time')
-
-# df = pd.DataFrame({"ds": df.index, "y": df["wave_height"]})#.reset_index(drop=True)
-# df.y.plot()
-# df
-
-# +
-
+# Split
 n_split = -int(len(df)*0.7)
 df_train = df[:-n_split]
 df_valid = df[-n_split:]
 
 ax = df_train['y'].plot(legend=True, label="Train")
 df_valid['y'].plot(ax=ax, legend=True, label="Validation")
-# plt.ylabel('significant wave height')
+plt.ylabel('Current Speed')
 
 # +
 # %%time
+# First let's try it with the default calender/holiday seasonalities
 model = Prophet(
     changepoint_range=0.8,
+    n_changepoints=125,
 )
+
 model.fit(df_train)
 
 forecast = model.predict(df_valid)
@@ -655,55 +613,33 @@ forecast.index = forecast.ds
 fig = model.plot(forecast)
 fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
 plt.show()
-
-fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
-plt.xlim(pd.Timestamp('2018-05'), pd.Timestamp('2018-08'))
 ''
-# -
 
-fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
-plt.xlim(pd.Timestamp('2012-05'), pd.Timestamp('2012-05-15'))
-plt.ylim(-0.1, 0.2)
-
-fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
-plt.xlim(pd.Timestamp('2018-05-30'), pd.Timestamp('2018-06-10'))
-
-# +
-# # Cross validation
-# cv = cross_validation(model, initial="365 days", period="30 days", horizon="10 days")
-# perf = performance_metrics(cv)
-# perf.index = pd.Index(perf.horizon.dt.days, name='days')
-# perf
 
 # +
 # %%time
+
 model = Prophet(
-#     changepoint_range=0.8,
+    changepoint_range=0.8,
+    n_changepoints=125,
+    
+    # Disable default seasons
     yearly_seasonality=False,
     holidays=None,
     daily_seasonality=False,
     weekly_seasonality=False,
     holidays_prior_scale=0.001,
 )
-# add same periods as bcm see https://en.wikipedia.org/wiki/Theory_of_tides (additive)
-model.add_seasonality(name='Moon2', period=12.4206012/24, fourier_order=4, prior_scale=40)
-model.add_seasonality(name='Sun2', period=12/24, fourier_order=4, prior_scale=30)
-model.add_seasonality(name='N2', period=12.65834751/24, fourier_order=1, prior_scale=10)
 
-model.add_seasonality(name='K1', period=23.93447213/24, fourier_order=4, prior_scale=20)
-model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=1, prior_scale=10)
+# Add periods from the theory of tides https://en.wikipedia.org/wiki/Theory_of_tides (additive)
+model.add_seasonality(name='K1', period=23.93447213/24, fourier_order=1)
+model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=1)
 
-model.add_seasonality(name='Mm', period=27.554631896, fourier_order=4, prior_scale=4)
+model.add_seasonality(name='Mm', period=27.554631896, fourier_order=12)
+model.add_seasonality('quarterly', period=91.25, fourier_order=5)
 model.add_seasonality(name='Ssa', period=182.628180208, fourier_order=1, prior_scale=4)
 model.add_seasonality(name='Sa', period=365.256360417, fourier_order=1, prior_scale=4)
 
-
-model.add_seasonality(name='M4', period=6.210300601/24, fourier_order=1, prior_scale=2)
-model.add_seasonality(name='M6', period=4.140200401/24, fourier_order=1, prior_scale=2)
-model.add_seasonality(name='MK3', period=8.177140247/24, fourier_order=1, prior_scale=2)
 model.fit(df_train)
 
 forecast = model.predict(df_valid)
@@ -712,38 +648,45 @@ forecast.index = forecast.ds
 fig = model.plot(forecast)
 fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
 plt.show()
+''
+
+# +
+# %%time
+
+model = Prophet(
+    changepoint_range=0.8,
+    n_changepoints=125,
+    
+    # Disable default seasons
+    yearly_seasonality=False,
+    holidays=None,
+    daily_seasonality=False,
+    weekly_seasonality=False,
+    holidays_prior_scale=0.001,
+)
+
+# Add periods from the theory of tides https://en.wikipedia.org/wiki/Theory_of_tides (additive)
+model.add_seasonality(name='K1', period=23.93447213/24, fourier_order=2)
+model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=2)
+
+model.add_seasonality(name='Mm', period=27.554631896, fourier_order=12)
+model.add_seasonality('quarterly', period=91.25, fourier_order=5)
+model.add_seasonality(name='Ssa', period=182.628180208, fourier_order=1, prior_scale=4)
+model.add_seasonality(name='Sa', period=365.256360417, fourier_order=1, prior_scale=4)
+
+model.fit(df_train)
+
+forecast = model.predict(df_valid)
+forecast.index = forecast.ds
 
 fig = model.plot(forecast)
 fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
-plt.xlim(pd.Timestamp('2018-05'), pd.Timestamp('2018-08'))
+plt.show()
 ''
 # -
 
-fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
-plt.xlim(pd.Timestamp('2012-05'), pd.Timestamp('2012-05-15'))
-plt.ylim(-0.1, 0.2)
-
-fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
-plt.xlim(pd.Timestamp('2012-05'), pd.Timestamp('2012-05-15'))
-plt.ylim(-0.1, 0.2)
-
-
-
-# +
-# # Cross validation
-# cv = cross_validation(model, initial="365 days", period="30 days", horizon="10 days")
-# perf = performance_metrics(cv)
-# perf.index = pd.Index(perf.horizon.dt.days, name='days')
-# perf
-# -
-
-
-
-
-
-
+model.plot_components(forecast)
+1
 
 
 
