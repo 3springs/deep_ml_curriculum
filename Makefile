@@ -41,17 +41,17 @@ lint:
 ## Upload Data to S3
 sync_data_to_s3:
 ifeq (default,$(PROFILE))
-	aws s3 sync data/ s3://$(BUCKET)/data/
+	aws s3 sync data/processed/ s3://$(BUCKET)/data/processed/ --region ap-southeast-2
 else
-	aws s3 sync data/ s3://$(BUCKET)/data/ --profile $(PROFILE)
+	aws s3 sync data/processed/ s3://$(BUCKET)/data/processed/ --profile $(PROFILE) --region ap-southeast-2 
 endif
 
 ## Download Data from S3
 sync_data_from_s3:
 ifeq (default,$(PROFILE))
-	aws s3 sync s3://$(BUCKET)/data/ data/
+	aws s3 sync s3://$(BUCKET)/data/processed/ data/processed/  --region ap-southeast-2 --no-sign-request 
 else
-	aws s3 sync s3://$(BUCKET)/data/ data/ --profile $(PROFILE)
+	aws s3 sync s3://$(BUCKET)/data/processed/ data/processed/ --profile $(PROFILE)  --region ap-southeast-2 --no-sign-request 
 endif
 
 ## Set up python interpreter environment
