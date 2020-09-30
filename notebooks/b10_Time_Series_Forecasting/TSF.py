@@ -17,8 +17,6 @@
 # # Time Series Forcasting
 
 #
-# - TODO Mike this is too long, can't get through it all. Cut ARMA etc
-# - TODO too many blocks of text
 # - TODO go through prophet
 #
 # In time series forcasting (TSF) the goal is to predict the future values using the behaviour of data in the past. We can use some of the tehniques we learned about in the last notebook. For instance, Holt-Winters methods can be used for forcasting as well as analysis.
@@ -90,7 +88,7 @@ plt.plot(random_noise)
 #
 # TODO mike understand or delete unit root
 #
-# [Augmented Dickey-Fuller test](https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test) (ADF) is a statistical test for stationarity. We are not going to discuss the statistical details of this test, but what matters to us is the result. The null hpothesis of ADF is that there is a [unit root](https://en.wikipedia.org/wiki/Unit_root) in the time series. The alternative hypothesis is that the series is stationary. To use the test we are looking for the p-value. If p-value is lower than a hreshold (commonly 0.05), it means the null hypothesis is rejected and therefore the time series is stationary.<br>
+# [Augmented Dickey-Fuller test](https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test) (ADF) is a statistical test for stationarity. We are not going to discuss the statistical details of this test, but what matters to us is the result. The null hpothesis of ADF is that there is a [unit root](https://en.wikipedia.org/wiki/Unit_root) in the time series. The alternative hypothesis is that the series is stationary. To use the test we are looking for the p-value. If p-value is lower than a threshold (commonly 0.05), it means the null hypothesis is rejected and therefore the time series is stationary.<br>
 # Let's test it on our data.
 
 # +
@@ -98,7 +96,7 @@ from statsmodels.tsa.stattools import adfuller
 
 def adf_p_value(data):
     res = adfuller(data)
-    return res[1]
+    return res[1], 'not stationary' if res[1]>0.05 else 'stationary'
 
 
 # -
@@ -125,7 +123,7 @@ res.plot()
 
 adf_p_value(res.resid.dropna())
 
-# The residual is stationary.
+# The residual is stationary since hte p value is lower than 0.05.
 
 # __Why is it important if a time series is stationary or not?__<br>
 # We know that in a stationary time series the characteristics will remain constant. This makes it easier to predict their future behaviour as we expect them to behave similarly. But when the series is not stationary we don't know how it is going to behave in the future. In reality, most of the time series we are going to work with are not stationary. But using various techniques we might be able to transform them into a stationary time series. This is exactly what we just did. We use STL to remove the trend and seasonality to get a stationary time series.
@@ -189,7 +187,7 @@ trained_model = model.fit(
 print('params\n', trained_model.params)
 # -
 
-# More importantly, we can forecast using the trained model. To do that, we need to at which time-step in the training data the model should stat and at which time-step it should stop. Since we want the predictions for validation data, we need to start right after last index of training data, so we use starting index as `len(df_train)` (Note that indexing starts from `0`).<br> Likewise, the last index would be sum of the lengths of training and validation sets.
+# More importantly, we can forecast using the trained model. To do that, we need to specify at which time-step in the training data the model should start and at which time-step it should stop. Since we want the predictions for validation data, we need to start right after last index of training data, so we use starting index as `len(df_train)` (Note that indexing starts from `0`).<br> Likewise, the last index would be sum of the lengths of training and validation sets.
 
 # +
 start = len(df_train)
@@ -202,6 +200,8 @@ df_train['target'].plot(ax=ax, legend=True, label="Train")
 df_valid['target'].plot(ax=ax, legend=True, label="Actual")
 forecast.plot(ax=ax, legend=True, label="Forecast")
 # -
+
+# ## Metrics
 
 # It's not very close. But how close? We need to put a value on the goodness of the result. To do this, we can use metrics. There are various metrics which can be used here, such as root of mean squared error (RMSE), mean squered error (MSE), mean absolute error (MAE), $R^2$, and many more. Sometimes for a certain application you might need to use particular metric.<br>
 #
@@ -245,6 +245,8 @@ df_valid['target'].plot(ax=ax, legend=True, label="Actual")
 forecast.plot(ax=ax, legend=True, label="Forecast")
 mape(df_valid, forecast)
 
+# Note that the MAPE is lower, meaning it is a better fit
+
 # <div class="alert alert-success">
 #   <h2>Exercise</h2>
 #
@@ -260,7 +262,7 @@ mape(df_valid, forecast)
 #   <details>
 #   <summary><b>→ Hints</b></summary>
 #
-#   * try `model.fit(maxlag=30,  trend='nc')`
+#   * try `model.fit(maxlag=30,  trend='c')`
 #       
 #   </details>
 #
@@ -291,17 +293,7 @@ mape(df_valid, forecast)
 #
 #
 
-model = AR(df_train)
-model = model.fit(maxlag=7,  trend='nc')
-start = len(df_train)
-end = len(df_train) + len(df_valid) - 1
-forecast = model.predict(start, end)
-fig = plt.figure()
-ax = fig.gca()
-df_train['target'].plot(ax=ax, legend=True, label="Train")
-df_valid['target'].plot(ax=ax, legend=True, label="Actual")
-forecast.plot(ax=ax, legend=True, label="Forecast")
-mape(df_valid, forecast)
+
 
 # # Prophet
 # Prophet is a time series analysis and forecasting package developed by Facebook. Prophet allows you to train forecasting models with minimal need to adjust the models parameters. Prophet is particularly useful when you are dealing with data that has multiple levels of seasonality.
@@ -310,19 +302,44 @@ mape(df_valid, forecast)
 
 from fbprophet import Prophet
 
+# +
+# Load data
+df = block0 = pd.read_csv("../../data/processed/smartmeter/block_0.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
+# Get the mean over all houses, by day
+df = df.groupby('day').mean()
+# Rename energy to target
+df = df.rename(columns={'energy_sum':'target'})
+
+n_split = -int(len(df)*0.85)
+df_train = df[:-n_split]
+df_valid = df[-n_split:]
+
+ax = df_train['target'].plot(legend=True, label="Train")
+df_valid['target'].plot(ax=ax, legend=True, label="Validation")
+
+# df.plot()
+# -
+
 # Prophet needs the input data to be in a very specific format. The data needs to have a column containing daily dates called `"ds"`, and a column containing values named `"y"`. So we create a new data frame and use the required column names.
 
-df = pd.DataFrame({"ds": df.index, "y": df["target"]}).reset_index(drop=True)
-df
+# +
+df_trainp = pd.DataFrame({"ds": df_train.index, "y": df_train["target"]}).reset_index(drop=True)
+df_trainp
+
+df_validp = pd.DataFrame({"ds": df_valid.index, "y": df_valid["target"]}).reset_index(drop=True)
+df_validp
+# -
 
 # Now the data is ready. We need to create a Prophet model and train it on the data.
 
 # %%time
 model = Prophet()
-model.fit(df)
+model.fit(df_trainp)
 
 # And that's it! The model is trained and ready to be used.<br>
 # Let's forecast the next year using the model. To forecast using Prophet we need to first create an empty dataframe for future values. This data frame contains the future dates. Then we feed this dataframe to `.predict()` and will get the forecasted values.
+
+
 
 future = model.make_future_dataframe(periods=365)
 future.head()
@@ -335,15 +352,15 @@ forecast.head()
 # The result contains various components of the time series. The forecasted values can be found on `yhat` column. It is difficult to see how model has performed, so let's plot the results. We can do that using Prophets built-in plot function.
 
 fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['target'], 'k.', c='r', label='validation')
+fig.gca().plot(df_validp.ds, df_validp['y'], 'k.', c='r', label='validation')
 ''
 
 # As you can see at some periods the predictions are poor and at some points they are pretty close. Let's have a closer look at the future.
 
 fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['target'], 'k.', c='r', label='validation')
-plt.xlim(pd.to_datetime(["2014-02-15", "2014-03-15"]))
-plt.ylim([15, 30])
+fig.gca().plot(df_validp.ds, df_validp['y'], 'k.', c='r', label='validation')
+plt.xlim(pd.to_datetime(["2013-06-15", "2013-08-15"]))
+plt.ylim([10, 24])
 
 # The model has found annual and weekly seasonalities. We can have closer look at these components using `.plot_components()`
 
@@ -354,8 +371,16 @@ model.plot_components(forecast)
 
 # ## Cross_validation
 
-# We created a model and forecasted the future. But we still don't know how good the model is. So like before we need a training and a validation set. We train a model on a training set, and then measure the accuracy of its prediction on validation set using metrics.<br>
-# One issue with this approach is that even when we get a value for predictions accuracy of a model, how do we know this value is reliable. Let's say we are comparing two models and mean absolute error for model A is 0.5 and for model B is 0.45. How do we know that B is better than A and it didn't just get lucky over this data set? One way to ensure which one is better is by comparing them over multiple sections of data sets. This approach is called cross validation. In Prophet, we start by training the model over the data from the eginning up to a certain point (cut-off point) and then predict for a few time steps (Horizon). Then we move cut-off point by a certain period and repeat the process. We can then calculate the metrics for each model over multiple sections of the data and have a better comparison at the end.
+# We created a model and forecasted the future. But we still don't know how good the model is. 
+#
+# So like before we need a training and a validation set. We train a model on a training set, and then measure the accuracy of its prediction on validation set using metrics.
+#
+#
+# One issue with this approach is that even when we get a value for prediction accuracy of a model, how do we know this value is reliable. Let's say we are comparing two models and mean absolute error for model A is 0.5 and for model B is 0.45. How do we know that B is better than A and it didn't just get lucky over this data set? 
+#
+# One way to ensure which one is better is by comparing them over multiple sections of data sets. This approach is called `cross validation`. In Prophet, we start by training the model over the data from the beginning up to a certain point (cut-off point) and then predict for a few time steps (Horizon). Then we move the cut-off point by a certain period and repeat the process. We can then calculate the metrics for each model over multiple sections of the data and have a better comparison at the end.
+#
+# <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/K-fold_cross_validation_EN.svg"/>
 
 # You need to specify the following inputs:
 # - initial: The initial length of training set.
@@ -368,9 +393,10 @@ from fbprophet.diagnostics import cross_validation
 
 # Cross validation
 cv = cross_validation(model, initial="365 days", period="90 days", horizon="30 days")
+cv.head()
 # -
 
-cv.head()
+
 
 # The cross validation data frame shows the forecasted value (yhat) and its confidence range (yhat_upper and yhat_lower). We can use `performance_metrics` function to calculate the metrics.
 
@@ -381,9 +407,6 @@ perf = performance_metrics(cv)
 perf.index = pd.Index(perf.horizon.dt.days, name='days')
 perf
 # -
-
-
-
 # The dataframe above has multiple metrics for model's predictions.
 #
 
@@ -397,8 +420,6 @@ perf
 # -
 
 # Before running the next cell look at the performance data frame and find the first and last horizon days and enter it in the next cell as `start` and `end`.
-
-
 
 perf[['mape']][:-1].plot(ylim=[0,1])
 plt.xticks(rotation=45)
@@ -418,9 +439,11 @@ holiday_df = pd.read_csv(
 )
 holiday_df.head()
 
+cross_validation?
+
 # +
 model2 = Prophet(holidays=holiday_df)
-model2.fit(df)
+model2.fit(df_trainp)
 
 # Cross validation
 cv2 = cross_validation(model2, initial="365 days", period="90 days", horizon="30 days")
@@ -440,7 +463,6 @@ perf2
 fig, ax = plt.subplots(figsize=(10, 4))
 perf['mape'][:-1].plot(ax=ax, label="+ holidays")
 perf2['mape'][:-1].plot(ax=ax, label="- holidays")
-# ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=1))
 plt.xticks(rotation=45)
 plt.title("Mean Absolute Percent Error of forecasts")
 plt.ylabel("mape")
@@ -455,6 +477,7 @@ from fbprophet.plot import plot_cross_validation_metric
 
 fig = plot_cross_validation_metric(cv, metric="mape")
 plt.ylim(0, 1)
+plt.xlim(0, 27)
 # -
 
 # ## Trends
@@ -465,26 +488,34 @@ plt.ylim(0, 1)
 from fbprophet.plot import add_changepoints_to_plot
 
 model = Prophet()
-model.fit(df)
-future = model.make_future_dataframe(periods=len(df_valid))
+model.fit(df_trainp)
+future = model.make_future_dataframe(periods=len(df_validp))
 forecast = model.predict(future)
 fig = model.plot(forecast)
 ax = fig.gca()
 a = add_changepoints_to_plot(ax, model, forecast)
-ax.plot(df_valid.index, df_valid['target'], 'k.', c='r', label='validation')
+ax.plot(df_validp.ds, df_validp['y'], 'k.', c='r', label='validation')
 # -
 
 
 
 # We can change the sensitivity of the model to the changes by setting `changepoint_prior_scale`.
 
-model = Prophet(changepoint_prior_scale=0.2)
-model.fit(df)
-future = model.make_future_dataframe(periods=365)
+model = Prophet(
+    changepoint_range=0.90,
+    changepoint_prior_scale=0.2,
+)
+model.fit(df_trainp)
+future = model.make_future_dataframe(periods=len(df_validp))
 forecast = model.predict(future)
 fig = model.plot(forecast)
-a = add_changepoints_to_plot(fig.gca(), model, forecast)
-fig.gca().plot(df_valid.index, df_valid['target'], 'k.', c='r', label='validation')
+ax = fig.gca()
+a = add_changepoints_to_plot(ax, model, forecast)
+ax.plot(df_validp.ds, df_validp['y'], 'k.', c='r', label='validation')
+
+
+
+
 
 # Prophet has many other parameters you can set to improve your model, including seasonality, growth type, etc. You can find more information about Facebook Prophet [here](https://facebook.github.io/prophet/docs/diagnostics.html).
 
@@ -492,82 +523,47 @@ fig.gca().plot(df_valid.index, df_valid['target'], 'k.', c='r', label='validatio
 
 # Now that we have learned about various time series forecasting techniques, try to apply some of these techniques to another block of houses from electricity usage.
 
-df = block0 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
-df = df.groupby('day').mean()
-df = df.rename(columns={'energy_sum':'target'})
-df.plot()
-
-# # Further Reading
-# - [Introduction to the Fundamentals of Time Series Data and Analysis](https://www.aptech.com/blog/introduction-to-the-fundamentals-of-time-series-data-and-analysis/)
-# - [The Complete Guide to Time Series Analysis and Forecasting](https://towardsdatascience.com/the-complete-guide-to-time-series-analysis-and-forecasting-70d476bfe775)
-# - [Generate Quick and Accurate Time Series Forecasts using Facebook’s Prophet](https://www.analyticsvidhya.com/blog/2018/05/generate-accurate-forecasts-facebook-prophet-python-r/#:~:text=Prophet%20is%20an%20open%20source,of%20custom%20seasonality%20and%20holidays!)
-# - [Facebook Prophet Documentation](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
 #
+#   Now that we have learned about various time series forecasting techniques, try to apply some of these techniques to another block of houses from electricity usage.
+#
+#   ```python
+#     
+# df = block0 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
+# df = df.groupby('day').mean()
+# df = df.rename(columns={'energy_sum':'target'})
+# df.plot()
+#   ```
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * One
+#   * Two
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
+#   a = 1
+#   ```
+#
+#   </details>
+#
+#   </div>
 
 df = block0 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
 df = df.groupby('day').mean()
 df = df.rename(columns={'energy_sum':'target'})
 df.plot()
-
-
-
-import xarray as xr
-ds_perth = xr.open_dataset(
-    "../../data/processed/weatherbench/perth_5.625deg_z_t.nc"
-).drop(["lon", "lat"]).sel(time=slice('2015', '2016'))
-df = ds_perth['t'].to_dataframe()[['t']]
-df = df.rename(columns={'t':'target'})['2015':'2016']
-df.plot(figsize=(14,6))
-df = pd.DataFrame({"ds": df.index, "y": df["target"]})#.reset_index(drop=True)
-df
-
-# +
-n_split = -int(len(df)*0.7)
-df_train = df[:-n_split]
-df_valid = df[-n_split:]
-
-ax = df_train['y'].plot(legend=True, label="Train")
-df_valid['y'].plot(ax=ax, legend=True, label="Validation")
-# -
-
-
-
-# +
-# %%time
-model = Prophet()
-# add same periods as bcm see https://en.wikipedia.org/wiki/Theory_of_tides (additive)
-model.add_seasonality(name='Moon2', period=12.4206012/24, fourier_order=1, prior_scale=40)
-model.add_seasonality(name='Sun2', period=12/24, fourier_order=1, prior_scale=30)
-model.add_seasonality(name='N2', period=12.65834751/24, fourier_order=1, prior_scale=10)
-
-model.add_seasonality(name='K1', period=23.93447213/24, fourier_order=1, prior_scale=20)
-model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=1, prior_scale=10)
-
-model.add_seasonality(name='Mm', period=27.554631896, fourier_order=1, prior_scale=4)
-model.add_seasonality(name='Ssa', period=182.628180208, fourier_order=1, prior_scale=4)
-model.add_seasonality(name='Sa', period=365.256360417, fourier_order=1, prior_scale=4)
-
-
-model.add_seasonality(name='M4', period=6.210300601/24, fourier_order=1, prior_scale=2)
-model.add_seasonality(name='M6', period=4.140200401/24, fourier_order=1, prior_scale=2)
-model.add_seasonality(name='MK3', period=8.177140247/24, fourier_order=1, prior_scale=2)
-model.fit(df_train)
-
-# +
-# future = model.make_future_dataframe(periods=365)
-
-forecast = model.predict(df_valid)
-forecast.head()
-# -
-
-
-
-fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
-''
-
-model.plot_components(forecast)
-1
 
 # ## Custom Seasonality
 #
@@ -576,7 +572,33 @@ model.plot_components(forecast)
 # Here we use current speed from the [IMOS - Australian National Mooring Network (ANMN) Facility - Current velocity time-series](https://catalogue-imos.aodn.org.au/geonetwork/srv/api/records/ae86e2f5-eaaf-459e-a405-e654d85adb9c). We will use tidal periods related to the Sun and Moon instead of human calender periods related to Weeks and Holidays.
 
 # +
+# # xd = xr.open_dataset("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/WA/WACA20/aggregated_timeseries/IMOS_ANMN-WA_VZ_20100124_WACA20_FV01_velocity-aggregated-timeseries_END-20181203_C-20200602.nc?UCUR[0:1:9819140],VCUR[0:1:9819140],TIME[0:1:9819140]")
+# # df2 = xd.to_dataframe()
+# # df3 = df2.set_index('TIME')
+# # df3['CSPD'] = np.sqrt(df3.UCUR**2 + df3.VCUR**2)
+# # df4 = df3['CSPD'].resample('3H').mean()
+
+# df = pd.read_csv("../../data/processed/IMOS_ANMN/IMOS_ANMN-WA_VZ_20100124_WACA20_FV01_velocity-aggregated-timeseries_END-20181203_C-20200602.csv", parse_dates=['TIME']).set_index('TIME')
+
+# # Format for prophet
+# df = pd.DataFrame({"ds": df.index, "y": df['CSPD']})
+
+# # Split
+# n_split = -int(len(df)*0.7)
+# df_trainp = df[:-n_split]
+# df_validp = df[-n_split:]
+
+# df.y.iloc[:1000].plot()
+# df
+# -
+
+
+
+
+
+# +
 # from https://catalogue-imos.aodn.org.au/geonetwork/srv/api/records/ae86e2f5-eaaf-459e-a405-e654d85adb9c
+import xarray as xr
 xd = xr.open_dataset("../../data/processed/IMOS_ANMN/IMOS_ANMN-WA_AETVZ_20111221T060300Z_WATR20_FV01_WATR20-1112-Continental-194_END-20120704T050500Z_C-20200916T043212Z.nc")
 name='CSPD'
 df = xd.isel(HEIGHT_ABOVE_SENSOR=0)['CSPD'].isel(TIME=slice(0, -1000)).to_dataframe()[['CSPD']]
@@ -590,38 +612,54 @@ df = pd.DataFrame({"ds": df.index, "y": df['CSPD']})
 
 # Split
 n_split = -int(len(df)*0.7)
-df_train = df[:-n_split]
-df_valid = df[-n_split:]
+df_trainp = df[:-n_split]
+df_validp = df[-n_split:]
 
-ax = df_train['y'].plot(legend=True, label="Train")
-df_valid['y'].plot(ax=ax, legend=True, label="Validation")
+ax = df_trainp['y'].plot(legend=True, label="Train")
+df_validp['y'].plot(ax=ax, legend=True, label="Validation")
 plt.ylabel('Current Speed')
+# -
+
+
 
 # +
 # %%time
 # First let's try it with the default calender/holiday seasonalities
-model = Prophet(
-    changepoint_range=0.8,
-    n_changepoints=125,
-)
+model = Prophet(growth='flat')
 
-model.fit(df_train)
+model.fit(df_trainp)
 
-forecast = model.predict(df_valid)
+forecast = model.predict(df_validp)
 forecast.index = forecast.ds
 
 fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+a = add_changepoints_to_plot(plt.gca(), model, forecast)
+fig.gca().plot(df_validp.index, df_validp['y'], 'k.', c='r', label='validation')
 plt.show()
 ''
 
+
+# -
+
+# Cross validation
+cv = cross_validation(model, horizon="7 days", period="4 days", initial="60 days", parallel='threads')
+perf = performance_metrics(cv)
+perf.index = pd.Index(perf.horizon.dt.days, name='days')
+print('mape', perf.mape.mean())
+# perf.mape.plot()
+# perf
+
+model.plot_components(forecast)
+
+# This is tidal data, and the default (daily, weeklly, yearly) seasonalities don't capture the dominant monthly seasonality in the tides. Lets add tidal frequencies and see if it does better.
+#
+# Also not that we have made growth flat, since tides tend to return to the mean.
 
 # +
 # %%time
 
 model = Prophet(
-    changepoint_range=0.8,
-    n_changepoints=125,
+    growth='flat', # Recent addition https://github.com/facebook/prophet/pull/1466
     
     # Disable default seasons
     yearly_seasonality=False,
@@ -632,61 +670,61 @@ model = Prophet(
 )
 
 # Add periods from the theory of tides https://en.wikipedia.org/wiki/Theory_of_tides (additive)
-model.add_seasonality(name='K1', period=23.93447213/24, fourier_order=1)
-model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=1)
+# Period is in days
+# Fourier order is how many fourier functions can be used, higher is more complex and unstable
 
-model.add_seasonality(name='Mm', period=27.554631896, fourier_order=12)
-model.add_seasonality('quarterly', period=91.25, fourier_order=5)
-model.add_seasonality(name='Ssa', period=182.628180208, fourier_order=1, prior_scale=4)
-model.add_seasonality(name='Sa', period=365.256360417, fourier_order=1, prior_scale=4)
 
-model.fit(df_train)
+# Short
+# model.add_seasonality(name='M4', period=6.21/24, fourier_order=1)
+# model.add_seasonality(name='M6', period=4.14/24, fourier_order=1)
+# model.add_seasonality(name='M6', period=8.17/24, fourier_order=1)
 
-forecast = model.predict(df_valid)
-forecast.index = forecast.ds
+# Semi-diurnal
+model.add_seasonality(name='M2', period=12.4206012/24, fourier_order=1)
+model.add_seasonality(name='S2', period=12/24, fourier_order=1)
+# model.add_seasonality(name='K2', period=12.65834751/24, fourier_order=1)
 
-fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
-plt.show()
-''
-
-# +
-# %%time
-
-model = Prophet(
-    changepoint_range=0.8,
-    n_changepoints=125,
-    
-    # Disable default seasons
-    yearly_seasonality=False,
-    holidays=None,
-    daily_seasonality=False,
-    weekly_seasonality=False,
-    holidays_prior_scale=0.001,
-)
-
-# Add periods from the theory of tides https://en.wikipedia.org/wiki/Theory_of_tides (additive)
+# diurnal
 model.add_seasonality(name='K1', period=23.93447213/24, fourier_order=2)
-model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=2)
+# model.add_seasonality(name='O1', period=25.81933871/24, fourier_order=2)
 
-model.add_seasonality(name='Mm', period=27.554631896, fourier_order=12)
-model.add_seasonality('quarterly', period=91.25, fourier_order=5)
-model.add_seasonality(name='Ssa', period=182.628180208, fourier_order=1, prior_scale=4)
-model.add_seasonality(name='Sa', period=365.256360417, fourier_order=1, prior_scale=4)
+# Monthly and higher
+model.add_seasonality(name='Mm', period=27.554631896, fourier_order=2)
+# model.add_seasonality(name='quarterly', period=91.25, fourier_order=5)
+# model.add_seasonality(name='Ssa', period=182.628180208, fourier_order=1)
+# model.add_seasonality(name='Sa', period=365.256360417, fourier_order=1)
 
-model.fit(df_train)
+model.fit(df_trainp)
 
-forecast = model.predict(df_valid)
+forecast = model.predict(df_validp)
 forecast.index = forecast.ds
 
 fig = model.plot(forecast)
-fig.gca().plot(df_valid.index, df_valid['y'], 'k.', c='r', label='validation')
+fig.gca().plot(df_validp.index, df_validp['y'], 'k.', c='r', label='validation')
+a = add_changepoints_to_plot(plt.gca(), model, forecast)
 plt.show()
 ''
 # -
 
+# Cross validation
+cv = cross_validation(model, horizon="7 days", period="4 days", initial="60 days", parallel='threads')
+perf = performance_metrics(cv)
+perf.index = pd.Index(perf.horizon.dt.days, name='days')
+print('mape', perf.mape.mean())
+# perf.mape.plot()
+# perf
+
 model.plot_components(forecast)
 1
+
+# # Further Reading
+# - [Introduction to the Fundamentals of Time Series Data and Analysis](https://www.aptech.com/blog/introduction-to-the-fundamentals-of-time-series-data-and-analysis/)
+# - [The Complete Guide to Time Series Analysis and Forecasting](https://towardsdatascience.com/the-complete-guide-to-time-series-analysis-and-forecasting-70d476bfe775)
+# - [Generate Quick and Accurate Time Series Forecasts using Facebook’s Prophet](https://www.analyticsvidhya.com/blog/2018/05/generate-accurate-forecasts-facebook-prophet-python-r/#:~:text=Prophet%20is%20an%20open%20source,of%20custom%20seasonality%20and%20holidays!)
+# - [Facebook Prophet Documentation](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
+#
+
+
 
 
 
