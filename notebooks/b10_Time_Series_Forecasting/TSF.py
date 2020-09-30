@@ -17,18 +17,14 @@
 # # Time Series Forcasting
 
 #
-# - TODO go through prophet
-#
 # In time series forcasting (TSF) the goal is to predict the future values using the behaviour of data in the past. We can use some of the tehniques we learned about in the last notebook. For instance, Holt-Winters methods can be used for forcasting as well as analysis.
 
-# +
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import warnings
-
+plt.rcParams["figure.figsize"] = [12,5]
 warnings.simplefilter("ignore")
-# -
 
 # We will load a subset of London Smart meters dataset. This dataset shows electricity consumption of 5,567 houses in London. We will only use the data for a single block. 
 #
@@ -37,10 +33,11 @@ warnings.simplefilter("ignore")
 # Load data
 df = block0 = pd.read_csv("../../data/processed/smartmeter/block_0.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
 # Get the mean over all houses, by day
-df = df.groupby('day').mean()
+df = df.groupby('day').mean().iloc[:-1]
 # Rename energy to target
 df = df.rename(columns={'energy_sum':'target'})
 df.plot()
+df
 
 # In forcasting we try to predict the next step, therefore it is essential that we specify the frequency of data so the model knows what we mean by next step. 
 #
@@ -62,6 +59,7 @@ df.index.freq = "1D"
 # Let's split our data into training and validation set. Let's split in a way so that last 30% is in validation set and the rest in training set.
 
 # +
+# We are forecasting, so split into past and future
 n_split = -int(len(df)*0.7)
 df_train = df[:-n_split]
 df_valid = df[-n_split:]
@@ -70,33 +68,64 @@ ax = df_train['target'].plot(legend=True, label="Train")
 df_valid['target'].plot(ax=ax, legend=True, label="Validation")
 # -
 
-# __Change the value of alpha, beta, and gamma and see whether it improves the model.__
-
 # ## Stationarity
 #
 # A time series is considered stationary when its properties (mean and standard deviation) does not change with time. Therefore, any time series with trend or seasonality is not stationary. An example of stationary data is white noise:
 
-# Make random noise
+plt.figure(figsize=(12, 8))
+plt.plot(range(100), np.arange(100)/50, ls=':', c='b', label='line - not stationary')
+plt.plot(range(100),np.sin(np.arange(100)/5)-2, c='b', label='sin - not stationary')
+plt.plot(range(100), np.zeros(100), c='r', label='zeros - stationary')
+plt.plot(range(100), np.random.randn(100)+4, ls='--', c='r', label='random noise - stationary')
+plt.legend()
+plt.xlabel('time [days]')
+plt.title('examples of non/stationary series')
+
+# Why is random noise stationary?
+# The std and mean are constant
 np.random.seed(42)
-random_noise = np.random.randn(200)
-plt.plot(random_noise)
+random_noise = pd.Series(np.random.randn(200))
+plt.plot(random_noise, label='random noise')
+random_noise.rolling(30).mean().plot(label='mean')
+random_noise.rolling(30).std().plot(label='std')
+plt.legend()
+
+# Sin - this is not stationary
+# The std and mean are not constant
+np.random.seed(42)
+series_sin = pd.Series(np.sin(np.arange(200)/5))
+plt.plot(series_sin, label='sin(x/5)')
+series_sin.rolling(50).mean().plot(label='mean')
+series_sin.rolling(50).std().plot(label='std')
+plt.legend()
 
 # While it is easy to tell if a time series is not stationary when there is a clear trend, in some cases it might be pretty difficult to decide whether a time series is stationary or not. Therefore, we use statistical tests to make a decision.
 #
 
+# __Why is it important if a time series is stationary or not?__<br>
+# We know that in a stationary time series the characteristics will remain constant. This makes it easier to predict their future behaviour as we expect them to behave similarly. But when the series is not stationary we don't know how it is going to behave in the future. In reality, most of the time series we are going to work with are not stationary. But using various techniques we might be able to transform them into a stationary time series. This is exactly what we just did. We use STL to remove the trend and seasonality to get a stationary time series.
+
 # #### Augmented Dickey-Fuller test
 #
-# TODO mike understand or delete unit root
+# [Augmented Dickey-Fuller test](https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test) (ADF) is a statistical test for stationarity. We are not going to discuss the statistical details of this test, but what matters to us is the result. 
 #
-# [Augmented Dickey-Fuller test](https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test) (ADF) is a statistical test for stationarity. We are not going to discuss the statistical details of this test, but what matters to us is the result. The null hpothesis of ADF is that there is a [unit root](https://en.wikipedia.org/wiki/Unit_root) in the time series. The alternative hypothesis is that the series is stationary. To use the test we are looking for the p-value. If p-value is lower than a threshold (commonly 0.05), it means the null hypothesis is rejected and therefore the time series is stationary.<br>
+# The null hpothesis of ADF is: `the series is stationary.`
+#
 # Let's test it on our data.
+#
 
 # +
 from statsmodels.tsa.stattools import adfuller
 
 def adf_p_value(data):
-    res = adfuller(data)
-    return res[1], 'not stationary' if res[1]>0.05 else 'stationary'
+    p = adfuller(data)[1]
+    
+    # If p-value is lower than a threshold (commonly 0.05),
+    if p<0.05:
+        # it means the null hypothesis is rejected and therefore the time series is stationary.
+        return f'stationary (p={p:2.2g})'
+    else:
+        return f'not stationary (p={p:2.2g})'
 
 
 # -
@@ -109,6 +138,8 @@ adf_p_value(df["target"])
 adf_p_value(random_noise)
 
 # The value is very small, which suggests we can reject the null hypothesis and therefore the series is stationary.
+
+# ## Decomposing
 
 # What if we remove trend and seasonality from the data using STL method?
 
@@ -123,10 +154,11 @@ res.plot()
 
 adf_p_value(res.resid.dropna())
 
-# The residual is stationary since hte p value is lower than 0.05.
+# The residual is stationary since the p value is lower than 0.05.
 
-# __Why is it important if a time series is stationary or not?__<br>
-# We know that in a stationary time series the characteristics will remain constant. This makes it easier to predict their future behaviour as we expect them to behave similarly. But when the series is not stationary we don't know how it is going to behave in the future. In reality, most of the time series we are going to work with are not stationary. But using various techniques we might be able to transform them into a stationary time series. This is exactly what we just did. We use STL to remove the trend and seasonality to get a stationary time series.
+df.plot()
+df.diff().plot()
+df.diff(2).plot()
 
 # Another technique to make a time series stationary is differencing. Differencing means that we calculate the difference between two consecutive points in time. Then we use the differences for forcasting.<br>
 # Let's see how differencing will affect our data. Pandas has a builtin method for differencing (`.diff()`):
@@ -149,9 +181,10 @@ adf_p_value(df.diff(2).dropna()["target"])
 # The shaded area is the confidence threshold on the correlation using Bartlett's formula $1/\sqrt{N}$ which assumes a guassian distribution. If a correlations is below this threshold is it's likely to be a coincidence.
 
 from statsmodels.graphics.tsaplots import plot_acf
+df.plot()
 
 plot_acf(df)
-plt.xlabel('Lag (Months)')
+plt.xlabel('Lag (day)')
 plt.ylabel('Correlation coeffecient')
 ''
 
@@ -187,9 +220,10 @@ trained_model = model.fit(
 print('params\n', trained_model.params)
 # -
 
-# More importantly, we can forecast using the trained model. To do that, we need to specify at which time-step in the training data the model should start and at which time-step it should stop. Since we want the predictions for validation data, we need to start right after last index of training data, so we use starting index as `len(df_train)` (Note that indexing starts from `0`).<br> Likewise, the last index would be sum of the lengths of training and validation sets.
+# More importantly, we can forecast using the trained model. 
 
 # +
+# specify at which time-step in the training data the model should start and at which time-step it should stop
 start = len(df_train)
 end = len(df_train) + len(df_valid) - 1
 forecast = trained_model.predict(start, end)
@@ -207,19 +241,27 @@ forecast.plot(ax=ax, legend=True, label="Forecast")
 #
 # We will use Mean Absolute Percentage Error.
 #
+# $$MAPE=\frac{\lvert y_{true}-y_{pred}\rvert}{y_{true}}$$
+#
 # There is a package called Scikit Learn which is a commonly used for machine learning and data science. This package contains many useful functions and algorithms. One of them is the metrics submodule where various types of metrics are available. 
+#
+#
 
 # +
 from sklearn.metrics.regression import _check_reg_targets
 
 def mape(y_true, y_pred, epsilon=1e-3):
     """
-    This function already exists in newer version of sklearn.
+    Mean absolute percentage error
+    
+    This function already exists in newer versions of sklearn.
     
     https://scikit-learn.org/dev/modules/generated/sklearn.metrics.mean_absolute_percentage_error.html
     """
     y_type, y_true, y_pred, multioutput = _check_reg_targets(
         y_true, y_pred, 'uniform_average')
+    
+    # This is the important line
     mape = np.abs(y_pred - y_true) / np.maximum(np.abs(y_true), epsilon)
     return np.average(mape)
 
@@ -308,7 +350,7 @@ df = block0 = pd.read_csv("../../data/processed/smartmeter/block_0.csv", parse_d
 # Get the mean over all houses, by day
 df = df.groupby('day').mean()
 # Rename energy to target
-df = df.rename(columns={'energy_sum':'target'})
+df = df.rename(columns={'energy_sum':'target'}).iloc[:-1]
 
 n_split = -int(len(df)*0.85)
 df_train = df[:-n_split]
@@ -319,6 +361,8 @@ df_valid['target'].plot(ax=ax, legend=True, label="Validation")
 
 # df.plot()
 # -
+
+
 
 # Prophet needs the input data to be in a very specific format. The data needs to have a column containing daily dates called `"ds"`, and a column containing values named `"y"`. So we create a new data frame and use the required column names.
 
@@ -332,8 +376,10 @@ df_validp
 
 # Now the data is ready. We need to create a Prophet model and train it on the data.
 
+
+
 # %%time
-model = Prophet()
+model = Prophet(holidays_prior_scale=0.01)
 model.fit(df_trainp)
 
 # And that's it! The model is trained and ready to be used.<br>
@@ -353,6 +399,7 @@ forecast.head()
 
 fig = model.plot(forecast)
 fig.gca().plot(df_validp.ds, df_validp['y'], 'k.', c='r', label='validation')
+plt.legend()
 ''
 
 # As you can see at some periods the predictions are poor and at some points they are pretty close. Let's have a closer look at the future.
@@ -421,8 +468,7 @@ perf
 
 # Before running the next cell look at the performance data frame and find the first and last horizon days and enter it in the next cell as `start` and `end`.
 
-perf[['mape']][:-1].plot(ylim=[0,1])
-plt.xticks(rotation=45)
+perf[['mape']][:-1].plot(ylim=[0, 0.3])
 plt.title("Mean Absolute Percent Error of forecasts")
 
 # This plot shows the further we are from the cut-off point the larger the error is, which is what we expect. Now, let's compare this model with another one.<br>
@@ -439,7 +485,7 @@ holiday_df = pd.read_csv(
 )
 holiday_df.head()
 
-cross_validation?
+
 
 # +
 model2 = Prophet(holidays=holiday_df)
@@ -460,10 +506,9 @@ perf2
 
 # Now let's compare the models.
 
-fig, ax = plt.subplots(figsize=(10, 4))
+ax=plt.gca()
 perf['mape'][:-1].plot(ax=ax, label="+ holidays")
 perf2['mape'][:-1].plot(ax=ax, label="- holidays")
-plt.xticks(rotation=45)
 plt.title("Mean Absolute Percent Error of forecasts")
 plt.ylabel("mape")
 plt.legend()
@@ -529,19 +574,29 @@ ax.plot(df_validp.ds, df_validp['y'], 'k.', c='r', label='validation')
 #   Now that we have learned about various time series forecasting techniques, try to apply some of these techniques to another block of houses from electricity usage.
 #
 #   ```python
+#     # Load data
+#     df = block1 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
+#     # Get the mean over all houses, by day
+#     df = df.groupby('day').mean()
+#     # Rename energy to target
+#     df = df.rename(columns={'energy_sum':'target'}).iloc[:-1]
+#
+#     n_split = -int(len(df)*0.85)
+#     df_train = df[:-n_split]
+#     df_valid = df[-n_split:]
+#
+#     df_trainp = pd.DataFrame({"ds": df_train.index, "y": df_train["target"]}).reset_index(drop=True)
+#     df_validp = pd.DataFrame({"ds": df_valid.index, "y": df_valid["target"]}).reset_index(drop=True)
 #     
-# df = block0 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
-# df = df.groupby('day').mean()
-# df = df.rename(columns={'energy_sum':'target'})
-# df.plot()
+#     # COPY PREVIOUS CELL HERE (And change parameters)
 #   ```
 #       
 #
 #   <details>
 #   <summary><b>→ Hints</b></summary>
 #
-#   * One
-#   * Two
+#   * Copy the cell above, and enter the new dataframe
+#   * Perhaps try `Prophet(    changepoint_range=0.90, changepoint_prior_scale=0.2, holidays=holiday_df,)`
 #
 #   </details>
 #
@@ -553,48 +608,62 @@ ax.plot(df_validp.ds, df_validp['y'], 'k.', c='r', label='validation')
 #   </summary>
 #
 #   ```python
-#   a = 1
+#     # Load data
+#     df = block1 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
+#     # Get the mean over all houses, by day
+#     df = df.groupby('day').mean()
+#     # Rename energy to target
+#     df = df.rename(columns={'energy_sum':'target'}).iloc[:-1]
+#
+#     n_split = -int(len(df)*0.85)
+#     df_train = df[:-n_split]
+#     df_valid = df[-n_split:]
+#
+#     df_trainp = pd.DataFrame({"ds": df_train.index, "y": df_train["target"]}).reset_index(drop=True)
+#     df_validp = pd.DataFrame({"ds": df_valid.index, "y": df_valid["target"]}).reset_index(drop=True)
+#
+#     # help(Prophet)
+#     model = Prophet(
+#         changepoint_range=0.90,
+#         changepoint_prior_scale=0.2,
+#         holidays=holiday_df,
+#     )
+#     model.fit(df_trainp)
+#     future = model.make_future_dataframe(periods=len(df_validp))
+#     forecast = model.predict(future)
+#     fig = model.plot(forecast)
+#     ax = fig.gca()
+#     a = add_changepoints_to_plot(ax, model, forecast)
+#     ax.plot(df_validp.ds, df_validp['y'], 'k.', c='r', label='validation')
 #   ```
 #
 #   </details>
 #
 #   </div>
 
-df = block0 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
+# +
+# Load data
+df = block1 = pd.read_csv("../../data/processed/smartmeter/block_1.csv", parse_dates=['day'], index_col=['day'])[['energy_sum']]
+# Get the mean over all houses, by day
 df = df.groupby('day').mean()
-df = df.rename(columns={'energy_sum':'target'})
-df.plot()
+# Rename energy to target
+df = df.rename(columns={'energy_sum':'target'}).iloc[:-1]
 
-# ## Custom Seasonality
+n_split = -int(len(df)*0.85)
+df_train = df[:-n_split]
+df_valid = df[-n_split:]
+
+df_trainp = pd.DataFrame({"ds": df_train.index, "y": df_train["target"]}).reset_index(drop=True)
+df_validp = pd.DataFrame({"ds": df_valid.index, "y": df_valid["target"]}).reset_index(drop=True)
+
+# COPY PREVIOUS CELL HERE (And change parameters)
+# -
+
+# # (Advanced) Custom Seasonality
 #
 # This library is made by facebook for tracking user trends. That means it is set up for growing tends to do with humans, with holidays and weekly seasonality. What if we have data that has a differen't seasonality?
 #
 # Here we use current speed from the [IMOS - Australian National Mooring Network (ANMN) Facility - Current velocity time-series](https://catalogue-imos.aodn.org.au/geonetwork/srv/api/records/ae86e2f5-eaaf-459e-a405-e654d85adb9c). We will use tidal periods related to the Sun and Moon instead of human calender periods related to Weeks and Holidays.
-
-# +
-# # xd = xr.open_dataset("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/WA/WACA20/aggregated_timeseries/IMOS_ANMN-WA_VZ_20100124_WACA20_FV01_velocity-aggregated-timeseries_END-20181203_C-20200602.nc?UCUR[0:1:9819140],VCUR[0:1:9819140],TIME[0:1:9819140]")
-# # df2 = xd.to_dataframe()
-# # df3 = df2.set_index('TIME')
-# # df3['CSPD'] = np.sqrt(df3.UCUR**2 + df3.VCUR**2)
-# # df4 = df3['CSPD'].resample('3H').mean()
-
-# df = pd.read_csv("../../data/processed/IMOS_ANMN/IMOS_ANMN-WA_VZ_20100124_WACA20_FV01_velocity-aggregated-timeseries_END-20181203_C-20200602.csv", parse_dates=['TIME']).set_index('TIME')
-
-# # Format for prophet
-# df = pd.DataFrame({"ds": df.index, "y": df['CSPD']})
-
-# # Split
-# n_split = -int(len(df)*0.7)
-# df_trainp = df[:-n_split]
-# df_validp = df[-n_split:]
-
-# df.y.iloc[:1000].plot()
-# df
-# -
-
-
-
-
 
 # +
 # from https://catalogue-imos.aodn.org.au/geonetwork/srv/api/records/ae86e2f5-eaaf-459e-a405-e654d85adb9c
@@ -618,14 +687,11 @@ df_validp = df[-n_split:]
 ax = df_trainp['y'].plot(legend=True, label="Train")
 df_validp['y'].plot(ax=ax, legend=True, label="Validation")
 plt.ylabel('Current Speed')
-# -
-
-
 
 # +
 # %%time
 # First let's try it with the default calender/holiday seasonalities
-model = Prophet(growth='flat')
+model = Prophet()
 
 model.fit(df_trainp)
 
@@ -637,10 +703,9 @@ a = add_changepoints_to_plot(plt.gca(), model, forecast)
 fig.gca().plot(df_validp.index, df_validp['y'], 'k.', c='r', label='validation')
 plt.show()
 ''
-
-
 # -
 
+# %%time
 # Cross validation
 cv = cross_validation(model, horizon="7 days", period="4 days", initial="60 days", parallel='threads')
 perf = performance_metrics(cv)
@@ -650,6 +715,7 @@ print('mape', perf.mape.mean())
 # perf
 
 model.plot_components(forecast)
+1
 
 # This is tidal data, and the default (daily, weeklly, yearly) seasonalities don't capture the dominant monthly seasonality in the tides. Lets add tidal frequencies and see if it does better.
 #
