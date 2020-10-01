@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 import dask
 import dask.dataframe as dd
 import os
+import logging
 import psutil
 
 # For the beginning to see the difference in the performance of Dask vs Pandas, let's read a 70 MB csv file with both libraries. Of course 70 MB is not considered a large file and we can easily fit it into memory, but it is large enough to see the advantage of using Dask.
@@ -146,11 +147,11 @@ result
 
 from dask import array
 
-big_array = array.random.normal(size=(10000000, 100))
+big_array = array.random.normal(size=(10000000, 100), chunks=200000)
 
 big_array
 
-# This data takes 8 GB if we wanted to store it in RAM. But Dask only generates the numbers in chunks when it needs them. So at each steps it has to deal with a chunk which is 125 MB in this case.
+# This data takes 8 GB if we wanted to store it in RAM. But Dask only generates the numbers in chunks when it needs them. So at each steps it has to deal with a chunk which is ~160 MB in this case.
 
 task = (big_array * big_array).mean(axis=1)
 with ProgressBar():
@@ -376,8 +377,10 @@ cannot_compile(frozenset(("a", "b", "c")))
 def cannot_compile(x):
     return "a" in x
 
-
-cannot_compile(frozenset(("a", "b", "c")))
+try:
+    cannot_compile(frozenset(("a", "b", "c")))
+except Exception as e:
+    logging.exception(e)
 
 
 # -
