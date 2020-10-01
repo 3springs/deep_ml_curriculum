@@ -341,10 +341,10 @@ cur_step = 0
 mean_generator_loss = 0
 mean_discriminator_loss = 0
 test_generator = True  # Whether the generator should be tested
-for epoch in tqdm(range(n_epochs)):
-    print(epoch)
+for epoch in tqdm(range(n_epochs), unit='epoch'):
+    print('epoch', epoch)
     # Dataloader returns the batches
-    for real, _ in dataloader:
+    for real, _ in tqdm(dataloader, desc='train'):
         cur_batch_size = len(real)
         # Flatten the batch of real images from the dataset
         real = real.view(cur_batch_size, -1).to(device)
