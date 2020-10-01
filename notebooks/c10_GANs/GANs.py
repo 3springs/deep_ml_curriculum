@@ -239,7 +239,7 @@ lr = 0.00001
 device = "cuda"
 # Load MNIST dataset as tensors
 dataloader = DataLoader(
-    MNIST("../../processed/", download=True, transform=transforms.ToTensor()),
+    MNIST("../../data/processed/MNIST", download=False, transform=transforms.ToTensor()),
     batch_size=batch_size,
     shuffle=True,
 )
