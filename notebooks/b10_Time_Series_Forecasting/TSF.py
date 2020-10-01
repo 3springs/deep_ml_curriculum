@@ -793,5 +793,3 @@ model.plot_components(forecast)
 
 
 
-
-

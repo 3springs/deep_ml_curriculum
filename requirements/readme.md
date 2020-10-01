@@ -16,7 +16,7 @@ jupyter nbextension enable execute_time/ExecuteTime
 jupyter nbextension enable skip-traceback/main
 
 # get code
-git clone https://github.com/3springs/deep_ml_curriculum.git notebooks/
+git clone https://github.com/3springs/deep_ml_curriculum.git notebooks/deep_ml_curriculum
 cd ~/notebooks/deep_ml_curriculum
 git checkout run01
 
@@ -50,6 +50,5 @@ python -m ipykernel install --user --name py37_pytorch
 
 # in jupyter open notebooks/deep_ml_curriculum/notebooks
 # choose kernel py37_pytorch
-
 
 ```

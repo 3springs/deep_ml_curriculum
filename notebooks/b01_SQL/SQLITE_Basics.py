@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -8,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: py37_pytorch
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: conda-env-py37_pytorch-py
+#     name: deep_ml_curriculum
 # ---
 
 
@@ -26,6 +27,17 @@ import sqlite3
 # Let's start by connecting to a database. We can do that using `sqlite.connect` which returns a connection object.
 
 # create a database connection to the SQLite database specified by the db_file:
+
+# +
+import logging
+from shutil import copyfile
+import datetime
+
+# Make a temporary copy of the db
+ts = datetime.datetime.isoformat(datetime.datetime.utcnow()).replace(':', '_')
+db_file = f"Sales_{ts}.db" 
+copyfile("Sales.db", db_file)
+# -
 
 db_file = "Sales.db"
 conn = sqlite3.connect(db_file)
@@ -66,6 +78,13 @@ def execute_query(conn, query):
     rows = cur.fetchall()
     for i, row in enumerate(rows):
         print(f"{i+1}. {row}")
+
+
+def return_query(conn, query):
+    cur = conn.cursor()
+    cur.execute(query)
+    rows = cur.fetchall()
+    return list(rows)
 
 
 # ## SQL clauses
@@ -317,6 +336,44 @@ execute_query(conn, query)
 
 # **Note:** `LIMIT` should always be used with `ORDER BY` so the rows are always in a specific order.
 
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
+#
+#   Make a query that:
+#   - Selects all distinct surnames for customers
+#   - order by City
+#   - and limit to 40
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * Copy the code from the `DISTINCT City` example, and change City to Surname
+#   * Add LIMIT 40 at the end
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
+#     query = """
+#     SELECT DISTINCT Surname
+#     FROM Customers
+#     ORDER BY City
+#     LIMIT 40
+#     """
+#     execute_query(conn, query)
+#   ```
+#
+#   </details>
+#
+#   </div>
+
 # ## Joins
 # As you have probably noticed the data in this database is in various tables. Each table contains a specific part of data. For instance, one table has the information about invoices and another table has information about customers. These tables are linked together so we can find which invoice belongs to which customer. To do this we use various types of `JOIN`. Each join clause determines how SQLite uses data from one table to match with rows in another table.<br>
 # Tables are connected using unique identifiers. For instance, __Sales__ table has a column called _CustomerId_. The same column name can be found in __Customers__ table. By looking up the customer id from invoices in the customers table we can find the information about the customer of each invoice.`JOIN` used this identifiers to connect the tables and look up information.
@@ -475,12 +532,90 @@ INNER JOIN Customers as c
 """
 execute_query(conn, query)
 
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
+#
+#   Instead of doing a left join of Customers on Sales, do Sales on Customers. How are the results different?
+#     
+#     
+#   <img src="left_join.svg"/>
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * Copy the code from the left join example
+#   * replace `FROM Customers LEFT JOIN Sales` with the opposite
+#   * run it and compare the first few rows to the original query
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#     There are more results. 
+#
+#   ```python
+#     # Original
+#     query = """
+#     SELECT Surname, ProductID, Quantity, PurchaseDate
+#     FROM Customers
+#     LEFT JOIN Sales ON
+#         Customers.CustomerID = Sales.CustomerID
+#     ORDER BY Surname;
+#     """
+#
+#     print(' Customers LEFT JOIN Sales')
+#     execute_query(conn, query)
+#
+#     # Swapped
+#     query = """
+#     SELECT Surname, ProductID, Quantity, PurchaseDate
+#     FROM Sales
+#     LEFT JOIN Customers ON
+#         Customers.CustomerID = Sales.CustomerID
+#     ORDER BY Surname;
+#     """
+#
+#     print(' Sales LEFT JOIN Customers')
+#     execute_query(conn, query)
+#
+#     # Note that one has extra. 
+#     # This is because `FROM Customers LEFT JOIN Sales` ignores the ones only in sales.
+#     # While `FROM Sales LEFT JOIN Customers` ignores those only in customers. 
+#     # So sales has more rows, therefore less are ignored, leading to more results
+#       
+#     #  Customers LEFT JOIN Sales
+#     # 1. ('Acosta', 65, 1, '2019-02-17')
+#     # 2. ('Acosta', 138, 1, '2019-02-17')
+#     # 3. ('Acosta', 196, 1, '2017-04-08')
+#
+#     #  Sales LEFT JOIN Customers
+#     # 1. ('Acosta', 196, 1, '2017-04-08')
+#     # 2. ('Acosta', 65, 1, '2019-02-17')
+#     # 3. ('Acosta', 138, 1, '2019-02-17')
+#     # 4. ('Adams', 43, 1, '2013-02-03')
+#     # 5. ('Adams', 149, 2, '2013-02-03')
+#   ```
+#
+#   </details>
+#
+#   </div>
+
 # ## CRUD
 # CRUD is an acronym for four main database operations: Create, Read, Update, and Delete.<br>
 # We have already used `SELECT` to read data from database. Now we can learn about other operations. Let's start by adding data to a database. But before that we need to create a new database and a new table inside it.
 #
 
-db_file = "sampledb.db"
+# Make a temporary copy of the db
+ts = datetime.datetime.isoformat(datetime.datetime.utcnow()).replace(':', '_')
+db_file = f"sampledb_{ts}.db" 
+db_file
+
 conn = sqlite3.connect(db_file)
 
 # __Note:__ When no file is found by the name we have entered, it will create a new database by that name.
@@ -544,7 +679,10 @@ INSERT INTO employees
 VALUES ("Luke","Skywalker","456123789")
 
 """
-execute_query(conn, query)
+try:
+    execute_query(conn, query)
+except Exception as e:
+    logging.exception(e)
 
 # There is an error: _`table employees has 4 columns but 3 values were supplied`_ <br>
 # The reason is the database manager doesn't know which value you have not entered.
@@ -609,19 +747,59 @@ execute_query(conn, "SELECT * FROM employees")
 
 # As you can see the query doesn't return anything, which suggests the table is empty.
 
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
+#
+#   Add Yoda to the database
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * ("Minch","Yoda","1337","yoda@swamp.mist")
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
+#     query = """
+#     INSERT INTO employees(FirstName,Surname,PhoneNumber,Email)
+#     VALUES ("Minch","Yoda","1337","yoda@swamp.mist")
+#     """
+#     execute_query(conn, query)
+#   ```
+#
+#   </details>
+#
+#   </div>
+#     
+#
+
+
+
 # When your work is done on a database make sure you close the connection.
 
 conn.close()
 
-
-
-# ## Exrecises
-# To make sure you learned writing a query try creating the following tables:
-# - How many customers are there in each country?
-# - How many products are in each category?
-# - A list of customers ordered by their total purchase (it can be across multiple invoices)
-# - A list of products orders by the number of time they have been ordered
-# - A list of total sales per country
+#  <div class="alert alert-success">
+#   <h2>(Advanced) Exercises</h2>
+#
+#     To make sure you learned writing a query try creating the following tables:
+#     - How many customers are there in each country?
+#     - How many products are in each category?
+#     - A list of customers ordered by their total purchase (it can be across multiple invoices)
+#     - A list of products orders by the number of time they have been ordered
+#     - A list of total sales per country
+#
+#
+#   </details>
+#
+#   </div>
 
 
 

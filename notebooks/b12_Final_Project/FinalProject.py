@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -5,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.6.0
+#       format_version: '1.4'
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -17,27 +18,30 @@
 
 # __Welcome to the final project of Data Visualisation and Data Science!__ 
 #
+# Sometimes the biggest step in learning is going from the ordered tutorial environment into the wild. It can be confusing and frustrating, so it's best to give it a try now, while you can get help.
+#
 # In this project, you will explore a geological image dataset by applying some popular supervised and unsupervised machine learning techniques using scikit-learn. 
 #
 # This notebook will walk you through some of the steps for preprocessing and preparing the dataset. As part of the final project, you will need to complete this notebook by building some models, creating visualisation to better represent the data and evaluating those models.
 #
-# For this final project you will need to finish the following tasks:
+# For this final project you will try to do the following tasks:
 #
-# - Data preparation
-#   - Apply 3 different techniques of unsupervised learning for Dimensionality Reduction.
-#   - Select the appropiate number of features for each tecnique applied.
-#   - Visualise the 2d plots for the 3 different clusters (Each cluster representing one type of rock).
-# - Model Development
-#   - Use 2 different techniques of clustering and create 2d plots to visualise those.
-#       <div class="alert alert-info" style="font-size:100%">
-# <b>HINT</b>: <br>
-#         Use the same reduced data you used for the 2d plots. You might find that some tecniques works better than other. So it is worth to explore and visualise different 2d clusters.
-#       </div>
-#     
-#   - Use 3 different supervised learning techniques to predict if an image corresponds to `carbonate`,`coal`, or `sandstone` and evaluate their performance.
-#   - Choose the best one based on the metrics below.
-# - Evaluation
-#   - Evaluate the supervised learning models created using TP,TN, FP, FN, accuracy, recall, precision, confusion matrixc, F1-Score, AUC and ROC curves. Create visualisations when possible for those metrics (For example, AUC, Confusion Matrix and ROC). 
+# - Data preparation: Dimensionality Reduction and plot
+# - Model Development: Clustering vs Supervised learning and plot
+# - Evaluation: Evaluate the best model based on metrics
+#   
+# # Proceedure
+#   
+# This is hard, so you will need to ask the instructors for guidance in how to do it. We suggest:
+# 1. The instructor will walk you through the problem and starter code
+# 2. Feel confused, and realise this is hard
+# 3. Read the whole problem
+# 4. Read the whole notebook
+# 5. Try to understand the what the first step is
+# 6. Look for code you can use in previous notebooks you can copy
+# 7. Encounter a problem, ask for help
+# 8. Repeat
+#  
 
 # # Import Libraries
 
@@ -59,12 +63,23 @@ warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 
 # # Load Dataset
 
+# ## About the dataset
+#
+# This data is from the [DeepRock-SR](https://www.digitalrocksportal.org/projects/215) dataset. [Paper](https://arxiv.org/abs/1907.07131)
+#
+# The 2D dataset comprises of twelve thousand 500x500 HR unsegmented slices of various digital rocks with image resolution ranging from 2.7 to 25 um.
+#
+# - Rocks: Sandstone, Carbonate, and Coal Datasets
+# - Images are taken with [micro‐computed tomography](https://en.wikipedia.org/wiki/X-ray_microtomography). This uses x-ray from many differen't angles to producee pixel sizes of the cross-sections are in the micrometre range
+#
+#
+
 # For this project we will used a preproceseed version of the dataset. Please check the notebook ***** to understand the process.
 
 datadir = Path("../../data/processed/deep-rock-sr/")
 
-# Load the
-sorted(datadir_out.glob("**/*train_*"))
+# Look at what data is available
+sorted(datadir.glob("**/*train_*"))
 
 # Load 2D Images
 data_train = torchvision.datasets.ImageFolder(
@@ -78,8 +93,6 @@ data_train.classes
 
 # Let's visualise the first image in the dataset
 data_train[0][0]
-
-# Now let's visualise all images in the dataset using `interact`. We can pass any python function followed by arguments (e.g. `interval` to the show.
 
 # Number of images in the dataset
 len(data_train)
@@ -100,6 +113,8 @@ def show_image(interval):
     display(data_train[interval][0])
 
 
+# (advanced) Now let's visualise all images in the dataset using `interact`.
+# We can pass any python function followed by arguments (e.g. `interval` to the show_image function)
 interact(show_image, interval=(0, len(data_train) - 1))
 
 # Images are a type of data. For colored images they usually range from 0 to 255 and have 3 dimensions for every channel (R)ed, (G)reen, (B)lue.
@@ -134,7 +149,7 @@ y = np.array(data_train.targets)
 
 X.shape
 
-# In this line of code we are selecting only the first channel and reshapping our features array
+# In this line of code we are selecting only the first channel and reshaping our features array
 X = X[:, :, :, 0]
 
 print(X.shape)
@@ -151,7 +166,7 @@ print(
 print(X[0])
 print("Shape:", X[0].shape)
 
-# Let's check if remove tha right channels. We can use `Image.fromarray` to convert back an array to a PIL Image. We will do this just to visually check if the new array is ok.
+# Let's check if remove the right channels. We can use `Image.fromarray` to convert back an array to a PIL Image. We will do this just to visually check if the new array is ok.
 
 display(Image.fromarray(X[0]))
 
@@ -160,13 +175,28 @@ display(Image.fromarray(X[0]))
 # Complete the code and organise your code in a clear way. Add comments to your code the best as you can to explain your approach.
 
 # ## 1. Data preparation and visualisation
+#
+#   - Apply 3 different techniques of unsupervised learning for Dimensionality Reduction.
+#   - Select the appropiate number of features for each tecnique applied.
+#   - Visualise the 2d plots for the 3 different clusters (Each cluster representing one type of rock).
 
 
 
 # ## 2. Model Development
+#
+#   - Use 2 different techniques of clustering and create 2d plots to visualise those.
+#       <div class="alert alert-info" style="font-size:100%">
+# <b>HINT</b>: <br>
+#         Use the same reduced data you used for the 2d plots. You might find that some tecniques works better than other. So it is worth to explore and visualise different 2d clusters.
+#       </div>
+#     
+#   - Use 3 different supervised learning techniques to predict if an image corresponds to `carbonate`,`coal`, or `sandstone` and evaluate their performance.
+#   - Choose the best one based on the metrics below.
 
 
 
 # ## 3. Evaluation
+#
+#   - Evaluate the supervised learning models created using TP,TN, FP, FN, accuracy, recall, precision, confusion matrixc, F1-Score, AUC and ROC curves. Create visualisations when possible for those metrics (For example, AUC, Confusion Matrix and ROC). 
 
 
