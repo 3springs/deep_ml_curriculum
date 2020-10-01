@@ -23,6 +23,7 @@ import torchvision
 from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
 import time
+from pathlib import Path
 import os
 import copy
 from torch.utils.data import DataLoader
@@ -50,6 +51,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # Now let's create a ResNet model using pretrained weights of the [ImageNet dataset](http://www.image-net.org/).
 
+model_path = Path('../../data/processed/models/resnet18-5c106cde.pth').absolute().resolve()
+models.resnet.model_urls['resnet18'] = 'file://{}'.format(model_path)
 model_ft = models.resnet18(pretrained=True)
 
 # Now let's check the architecture of the ResNet model
