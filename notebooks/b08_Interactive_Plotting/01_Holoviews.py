@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       format_version: '1.5'
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: deep_ml_curriculum
 #     language: python
@@ -466,9 +466,11 @@ path = "../../data/processed/deep-rock-sr/DeepRockSR-3D/coal3D/coal3D_valid_LR_d
 fp = h5py.File(path, "r")
 mat = fp.get("temp")
 
-path = "../../data/raw/deep-rock-sr/DeepRockSR-3D/coal3D/coal3D_valid_HR/0801.mat"
+path = "../../data/processed/deep-rock-sr/DeepRockSR-3D/coal3D/coal3D_valid_HR/0801.mat"
 fp = h5py.File(path, "r")
 mat = fp.get("temp")
+
+
 
 # First we need to convert it to a numpy array.
 
@@ -674,7 +676,7 @@ def production_callback2(product1, product2, year):
         ).opts(
             xlabel=product1.upper(),
             ylabel=product2.upper(),
-            title='Year: {}'.format(year),
+            title=f"Year: {year}",
             logx=True,
             logy=True,
             color=cmap[i],
