@@ -249,6 +249,8 @@ def visualize_model(model, num_images=6):
     model.eval()
     images_so_far = 0
     fig = plt.figure()
+    dataloader_val = dataloaders['val']
+    
 
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(dataloader_val):
@@ -274,7 +276,6 @@ def visualize_model(model, num_images=6):
                     model.train(mode=was_training)
                     return
         model.train(mode=was_training)
-
 
 visualize_model(model_ft, num_images=6)
 
