@@ -79,6 +79,7 @@ from torchvision.datasets import MNIST  # Training dataset
 from torchvision.utils import make_grid
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+from tqdm.auto import tqdm
 
 torch.manual_seed(2020)  # Set for testing purposes, please do not change!
 
@@ -238,7 +239,7 @@ lr = 0.00001
 device = "cuda"
 # Load MNIST dataset as tensors
 dataloader = DataLoader(
-    MNIST(".", download=True, transform=transforms.ToTensor()),
+    MNIST("../../processed/", download=True, transform=transforms.ToTensor()),
     batch_size=batch_size,
     shuffle=True,
 )
@@ -340,7 +341,8 @@ cur_step = 0
 mean_generator_loss = 0
 mean_discriminator_loss = 0
 test_generator = True  # Whether the generator should be tested
-for epoch in range(n_epochs):
+for epoch in tqdm(range(n_epochs)):
+    print(epoch)
     # Dataloader returns the batches
     for real, _ in dataloader:
         cur_batch_size = len(real)
