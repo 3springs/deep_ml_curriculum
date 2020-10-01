@@ -34,7 +34,6 @@
 # - [4. Clustering](#4)
 #     - [4.1. KMeans](#4-1)
 #     - [4.2. DBScan](#4-2)
-#     - [4.3. Hierarchical Clustering](#4-3)
 #
 
 # # 0. Packages <a name="0"></a>
@@ -549,11 +548,67 @@ ax.grid()
 
 # <div class="alert alert-success" style="font-size:100%">
 #
-# **Exercise 1:** <br>
-# Plot a 2d PCA, Kernel PCA, tsne and ISOMAP for a different well log. Compare and analyse which method worked better for the specific well log selected.
-#     
-# **Exercise 2 (Optional):** <br>
-# Use a different dataset such us the `Titanic` dataset or `iris` dataset and apply different techniques of dimensionality reduction to visualise 2d plots of the data points.
+#   <h2>Exercise 1:</h2><br/>
+#   Plot a 2d PCA for a different well log:
+#
+#   1. Select the well log '16_7-4' and sample 1000 points.
+#   2. Apply PCA using 2 components.
+#   3. Preprocess data and plot a 2-dimensional representation of the data.
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
+#     ########################################################################
+#     # SELECT A DIFFERENT WELL LOG
+#     ########################################################################
+#     # Sample the data points
+#     sample_dataset_2 = geolink.xs('16_7-4').sample(n=1000, replace=False, random_state=2020)
+#     # Separating features
+#     X_2 = sample_dataset_2[list(sample_dataset_2.columns[1:])]
+#     # Separating target
+#     y_2 = sample_dataset_2[["LITHOLOGY_GEOLINK"]]
+#     # Standardizing the features
+#     X_2 = StandardScaler().fit_transform(X_2)
+#     ########################################################################
+#     # FIT DATA USING PCA
+#     ########################################################################
+#     # We will use 2 components so we can later use a 2d plot.
+#     pca_2 = PCA(n_components=2)
+#     # We are reducing the dimensions in this step from 6 features to only 2
+#     pca_X_2 = pca.fit_transform(X_2)
+#     ########################################################################
+#     # PREPROCESS DATA
+#     ########################################################################
+#     pca_df_2 = pd.DataFrame(data=pca_X_2, columns=["PCA 1", "PCA 2"])
+#     # Concatenate two dataframes
+#     final_df_2 = pd.concat([pca_df_2, y_2.reset_index()["LITHOLOGY_GEOLINK"]], axis=1)
+#     # Rename column
+#     final_df_2 = final_df_2.rename(columns={"LITHOLOGY_GEOLINK": "target"})
+#     # List of lithologies in our dataset
+#     targets_2 = list(final_df_2["target"].unique())
+#     ########################################################################
+#     # VISUALIZE DATA
+#     ########################################################################
+#     fig = plt.figure(figsize=(8, 8))
+#     ax = fig.add_subplot(1, 1, 1)
+#     ax.set_xlabel("PCA 1", fontsize=15)
+#     ax.set_ylabel("PCA 2", fontsize=15)
+#     ax.set_title("2d PCA", fontsize=20)
+#
+#     for target, color in zip(targets_2, colors):
+#         indicesToKeep = final_df_2["target"] == target
+#         ax.scatter(
+#             final_df_2.loc[indicesToKeep, "PCA 1"],
+#             final_df_2.loc[indicesToKeep, "PCA 2"],
+#             c=color,
+#             s=50,
+#         )
+#     ax.legend(targets_2)
+#     ax.grid()
+#   ```
+#   </details>
 #     
 # </div>
 
@@ -777,61 +832,6 @@ for k, col in zip(unique_labels, colors):
 plt.title("Estimated number of clusters: %d" % n_clusters_)
 plt.show()
 # -
-
-# <div class="alert alert-success" style="font-size:100%">
-#
-# **Exercise 3:** <br>
-# 1. Select a Well log from the geolink dataset.
-# 2. Apply DBScan to determine the ideal number of clusters
-# 3. Plot the clusters using the DBScan labels
-#
-# </div>
-
-# # 4.3 Hierarchical Clustering
-#
-# Source: [Wikipedia](https://en.wikipedia.org/wiki/Hierarchical_clustering)
-#
-# > In data mining and statistics, hierarchical clustering (also called hierarchical cluster analysis or HCA) is a method of cluster analysis which seeks to build a hierarchy of clusters. 
-# - Agglomerative: This is a "bottom-up" approach: each observation starts in its own cluster, and pairs of clusters are merged as one moves up the hierarchy.
-# - Divisive: This is a "top-down" approach: all observations start in one cluster, and splits are performed recursively as one moves down the hierarchy.
-#
-# Examples from: [Agglomerative Clustering](https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html#sklearn.cluster.AgglomerativeClustering), [Feature Agglomerative](https://scikit-learn.org/stable/modules/generated/sklearn.cluster.FeatureAgglomeration.html#sklearn.cluster.FeatureAgglomeration)
-#
-#
-# **Example Agglomerative Clustering:**
-
-# +
-from sklearn.cluster import AgglomerativeClustering
-
-X = np.array([[1, 2], [1, 4], [1, 0], [4, 2], [4, 4], [4, 0]])
-
-clustering = AgglomerativeClustering().fit(X)
-clustering.labels_
-# -
-
-# **Example Feature Agglomerative:**
-
-# +
-from sklearn import datasets, cluster
-
-digits = datasets.load_digits()
-images = digits.images
-X = np.reshape(images, (len(images), -1))
-print(X.shape)
-agglo = cluster.FeatureAgglomeration(n_clusters=32)
-agglo.fit(X)
-# -
-
-X_reduced = agglo.transform(X)
-X_reduced.shape
-
-# <div class="alert alert-success" style="font-size:100%">
-#
-# **Exercise 4 (Optional):** <br>
-#
-# 1. Apply Hierarchical Clustering to the `iris` or`geolink` dataset.
-# 2. Reduce the number of features to 2 and plot a 2-dimensional plot.
-# </div>
 
 # # References and further reading
 #

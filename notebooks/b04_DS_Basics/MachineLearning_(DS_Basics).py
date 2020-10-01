@@ -24,24 +24,17 @@
 # - [1. Scikit Learn](#1)
 #     - [1.1 Alternatives](#1-1)
 # - [2. Supervised Learning](#2)
-#     - [2.1 Regression](#2-1)
-#         - [Other Linear Regression Models](#2-1-1)
+#     - [2.1 Classification](#2-1)
+#         - [Jupyter Notebook Widgets (Data Visualisation)](#2-1-1)
 #         - [Preprocessing](#2-1-2)
-#         - [Making Predictions](#2-1-3)
-#     - [2.2 Classification](#2-2)
-#         - [Jupyter Notebook Widgets (Data Visualisation)](#2-2-1)
-#         - [Classify Digits](#2-2-2)
+#         - [Classify Digits](#2-1-3)
+#         - [Categorical Variables Encoding](#2-1-4)
+#     - [2.2 Regression](#2-2)
+#         - [Other Linear Regression Models](#2-2-1)
+#         - [Making Predictions](#2-2-2)
 # - [3.Unsupervised Learning](#3)
 #     - [3.2 Clustering](#3-1)
 #     - [3.1 PCA](#3-2)
-# - [4. Key Concepts](#4) 
-#     - [4.1 one-hot / label encoding](#4-1)
-#         - [One Hot Encoding](#4-1-1)
-#         - [Exercise 1: One Hot Encoding Part 1](#ex-1)
-#         - [Exercise 2: One Hot Encoding Part 2](#ex-2)
-#         - [Label Encoding](#4-1-2)
-#     - [4.2 Normalisation](#4-2)
-#     - [4.3 Underfitting/Overfitting](#4-3)
 
 # # 0. Packages <a name="0"></a>
 #
@@ -58,6 +51,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import sklearn
+from sklearn import preprocessing
 # Set a seed
 np.random.seed(2020)
 # Magic Function
@@ -149,7 +143,326 @@ warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 # -  3. Stuart J. Russell, Peter Norvig (2010) Artificial Intelligence: A Modern Approach, Third Edition, Prentice Hall ISBN 9780136042594.
 # -  4. Mehryar Mohri, Afshin Rostamizadeh, Ameet Talwalkar (2012) Foundations of Machine Learning, The MIT Press ISBN 9780262018258.
 
-# # 2.1 Regression <a name="2-1"></a>
+# Consider the example below where we have the ground truth label `y` and 3 predictions made by different machine learning algorithm. We will determine what is the best prediction using `Mean Absolute Error` (MAE).
+#
+# *Note:* `MAE` is not usually used for classification problems. Instead, there are better metrics for classification that will be discussed in the next session. However, `MAE` is one of the simplest error functions.
+
+# +
+y = np.array([0,0,0,0,1,0,0,0,0,0])
+
+print('Correct Answer:', y.argmax())
+
+pred_1 = np.array([0,0,0,0,0,0,0,0,0,1])
+pred_2 = np.array([0.01,0,0,0,0.89,0,0,0,0,0.1]) 
+pred_3 = np.array([0,0,0,0,0.95,0,0,0,0,0.05]) 
+
+error1 = np.abs(y-pred_1).mean()
+error2 = np.abs(y-pred_2).mean()
+error3 = np.abs(y-pred_3).mean()
+
+print(error1, error2, error3)
+# -
+
+#  <div class="alert alert-success">
+#   <h2>Exercise 1</h2>
+#
+#   Description:
+#   
+#   1. Given `y` calculate the error using `Mean Absolute Error` (MAE) for every prediction.
+#     
+#   ```python
+#     y = np.array([0.35,0.05,0.05,0,0,0,0.55,0,0,0]) 
+#     pred_1 = np.array([0.75,0,0,0,0,0,0,0.2,0,0.05])
+#     pred_2 = np.array([0.01,0,0,0,0.89,0,0,0,0,0.1]) 
+#     pred_3 = np.array([0,0,0,0,0,0,0,0.95,0,0.05]) 
+#   ```
+#     
+#   2. Another popular error is `Mean Square Error` or `MSE`. Calculate `MSE` for every prediction using `np.square` instead of `np.abs`
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#   - Use `np.abs` and `.mean()` to calculate the `Mean Absolute Error`.
+#   - To calculate `Mean Squared Error` use `np.square(y-pred).mean()`
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   Mean Absolute Error:
+#   ```python
+#     error1 = np.abs(y-pred_1).mean()
+#     error2 = np.abs(y-pred_2).mean()
+#     error3 = np.abs(y-pred_3).mean()
+#
+#     print(error1, error2, error3)
+#   ```
+#       
+#   Mean Squared Error:
+#   ```python
+#     error1 = np.square(y-pred_1).mean()
+#     error2 = np.square(y-pred_2).mean()
+#     error3 = np.square(y-pred_3).mean()
+#
+#     print(error1, error2, error3)
+#   ```
+#
+#   </details>
+#
+#   </div>
+
+# # 2.1 Classification <a name="2-1"></a>
+#
+#
+# While regression methods map inputs to a continuous dependent variable from a number of independent variables. In classification problems, the inputs will be mapped to a defined set of classes. There are many ML algorithms for regression and classification.
+#
+# For this session, we will explore the most basic ML algorithm for binary classification, the <code>Logistic Regression</code>.
+#
+# > ... the logistic model (or logit model) is used to model the probability of a certain class or event existing such as pass/fail, win/lose, alive/dead or healthy/sick. This can be extended to model several classes of events such as determining whether an image contains a cat, dog, lion, etc. Each object detected in the image would be assigned a probability between 0 and 1, with a sum of one.
+#
+#
+# In the next session, we will explore more complex methods for classification.
+#
+# ## Classifying Images of Digits
+#
+# Scikit-learn provides some datasets that can be used to test different machine learning techniques. For this example, we will use the Digits dataset provided by Scikit-learn which consists of 1,797 images of 8x8 pixels. Each image, like the one shown below, is of a hand-written digit. In order to utilize an 8x8 figure like this, we would have to first transform it into a feature vector with length 64.
+#
+# Source: [The Digit Dataset](https://scikit-learn.org/stable/auto_examples/datasets/plot_digits_last_image.html)
+#
+# More information about the dataset [here](https://archive.ics.uci.edu/ml/datasets/Pen-Based+Recognition+of+Handwritten+Digits)
+#
+#
+
+# +
+from sklearn import datasets
+
+# Load the digits dataset
+digits = datasets.load_digits()
+#  Get keys from dictionary
+digits.keys()
+# -
+
+# # Let's see the targets
+
+print(digits['target'], len(digits['target']))
+
+idx = 100
+# Let's first see one of the images
+plt.figure(1, figsize=(3, 3))
+print('Target: {}'.format(digits.target[0]))
+plt.imshow(digits.images[idx], cmap=plt.cm.gray_r)
+plt.show()
+
+# <a name="2-1-1"></a>
+# # Jupyter Notebook Widgets
+# Let's explore the dataset in a different way using widgets !
+
+# +
+from ipywidgets import interact, widgets
+from IPython.display import display
+
+fig = plt.figure(figsize=(10, 10))
+
+total_images = digits.target.shape[0]
+
+
+def f(index):
+    print('Target: {}'.format(digits.target[index]))
+    plt.imshow(digits.images[index], cmap=plt.cm.gray_r)
+    fig.canvas.draw()
+    display(fig)
+    plt.show()
+    
+interact(f, index=widgets.IntSlider(min=0, max=total_images-1))
+# -
+
+# <a name="2-1-2"></a>
+# # Preprocessing
+#
+# Before training any ML model, we have to prepare the raw data and process it to make it suitable for a machine learning model.
+#
+# Usually, in the preprocessing step, we have to deal with some problems like:
+#
+# 1. Finding Missing Data and dealing with it
+# 2. Encoding categorical features
+# 3. Splitting the dataset into training and test set.
+# 4. Data Normalisation
+#
+# In this session and futures ones, we will provide examples of those problems and how to deal with them.
+#
+
+# To apply a classifier on this data, we need to flatten the image, to turn the data in a (samples, features) matrix:
+
+# +
+n_samples = len(digits.images)
+X = digits.images.reshape((n_samples, 64))
+y = digits.target
+
+print(digits.images.shape)
+print(X.shape)
+# -
+
+# We will further divide the dataset into the <code>train</code> and <code>test</code> set. To do that, scikit-learn provides the <code>sklearn.model_selection.train_test_split</code> function.
+#
+# In ML is important to separate the dataset and have one subset for training only and another one for testing and validation. In order to evaluate the performance of ML algorithms, it is important that we test in unseen data. There are some exceptions to this rule when using much advance evaluation techniques such as cross-validation, but we will talk about it in future sessions.
+
+# <a name="2-1-3"></a>
+# # Train, Predict and Evaluate
+
+# +
+from sklearn.linear_model import LogisticRegression
+# Let's import the train_test_split function
+from sklearn.model_selection import train_test_split
+
+# Create a classifier: a Logistic Regression with All vs Rest multiclass strategy
+classifier = LogisticRegression(multi_class="ovr", max_iter=1000, random_state=2020)
+
+# Split data into train and test subsets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, shuffle=False)
+
+# We learn the digits on the first half of the digits
+classifier.fit(X_train, y_train)
+
+# Now predict the value of the digit
+predicted = classifier.predict(X_test)
+
+# Let's check the accuracy achieved by our model
+print('Accuracy: {}'.format(sklearn.metrics.accuracy_score(y_test, predicted)))
+# -
+
+# We achieved an accuracy of 92% using one of the most basic classification algorithms, the Logistic Regression, for small images. 
+#
+# **Note:** For more complex images with higher dimensionality is recommended to use Deep Learning techniques such as Convolutional Neural Networks or CNNs.
+
+# <a name="2-1-4"></a>
+# ## Encoding Categorical Features
+#
+# Encoding is a preprocessing step where we convert categorical features to representations that an ML algorithm can process.
+#
+# There are two popular types of encoding:
+#
+# - One Hot Encoding: [`OneHotEncoder`](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html) is a utility function in scikit-learn that helps to encode categorical features as a one-hot numeric array.
+# - Integer/Ordinal Encoding:
+#     In this type of encoding we will map a label or class to an integer representation. Scikit-learn provides two functions to do this. <code>[OrdinalEncoder](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OrdinalEncoder.html)</code> and <code>[LabelEncoder](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelEncoder.html)</code>.
+#     
+#
+
+# ## One Hot Encoding
+#
+# For this example, imagine that you have an output sequence of the following 3 labels corresponding to the number of medals a country got in the last Olympic Games. 
+#
+# - "bronze"
+# - "silver"
+# - "gold"
+#
+# This sequence might be represented using an integer representation using `LabelEncoder` from scikit-learn. Using integer encoding the labels might have this representations:
+#
+# - "bronze" -> 1
+# - "silver" -> 2
+# - "gold"   -> 3
+#
+# One-hot encoding uses binary vectors instead to represent the labels. 
+#
+# The example below shows an intuitive one-hot representation for the labels where `1` represents the presence of the label and `0` the abscence of it.
+#
+# - "bronze" -> [1,0,0]
+# - "silver" -> [0,1,0]
+# - "gold"   -> [0,0,1]
+#
+# We are currently using 3-length vectors to represent the labels. However, there are more efficient ways of representing the same data using different representations. For example, consider the one-hot prepresentations below:
+#
+# - "bronze" -> [0,0]
+# - "silver" -> [1,0]
+# - "gold"   -> [0,1]
+#
+# If we had one more label we could use [1,1] to represent it. This is the main idea behind the one-hot encoding process. You could create your own code to create these representations, however, there are different variations and in some cases it might be easier to use `OneHotEncoder` from scikit-learn, which handles special cases.
+#
+#
+#
+# Consider the example below which encodes two variables (two cagegorical and three numerical) into a single one-hot representation using `OneHotEncoder` in scikit-learn:
+
+# +
+from sklearn.preprocessing import OneHotEncoder
+
+# OneHotEncoder will ignore classes that were not seen during fit
+enc = OneHotEncoder(handle_unknown="ignore")
+
+X = [["bronze"], ["silver"], ["gold"]]
+# Learn Categories from seen data
+enc.fit(X)
+# -
+
+# Now let's see what categories were learnt by the encoder
+
+enc.categories_
+
+# Transform Cagegorical values to one-hot encoding
+enc.transform([["silver"], ["gold"], ["bronze"],["bronze"]]).toarray()
+
+# You can reverse the operation as well
+enc.inverse_transform([[0, 1, 0], [1.0, 0.0, 0.0]])
+
+# Now let's try with two encoded categorical values
+
+# Data
+X_2 = [["bronze","archery"],["bronze","weightlifting"],["silver","fencing"],["gold","table tennis"]]
+enc_2 = OneHotEncoder(handle_unknown="ignore")
+enc_2.fit(X_2)
+
+enc_2.get_feature_names(["medal", "sport"])
+
+# <a name="ex-2"></a>
+# <div class="alert alert-success">
+#   <h2>Exercise 2</h2>
+#
+# Have a look at the result of the one-hot encoding in the example below.
+#
+# 1. Analyse the one-hot encoding results and compare it with the input. Can you spot any pattern?
+# 2. Change the values of the input with valid data and try to determine if there is any pattern.
+# </div>
+#
+#
+
+test = ["silver", "archery"], ["gold", "archery"], ["gold", "fencing"], ["bronze","fencing"]
+enc_2.transform(test).toarray()
+
+# One can always drop the first column for each feature:
+
+drop_enc = OneHotEncoder(drop='first').fit(X_2)
+drop_enc.categories_
+
+# <a name="ex-3"></a>
+# <div class="alert alert-success">
+#   <h2>Exercise 3</h2>
+#
+#   - Now that we dropped the first column, analyse how the encoding `drop_enc` changed compared to the first one-hot encoding.
+# </div>
+#
+
+test
+
+drop_enc.transform(test).toarray()
+
+# ## Label Encoding
+#
+# Example:
+
+le = preprocessing.LabelEncoder()
+le.fit(["apples", "blueberries", "pineapple", "apples", "apples", "coconut"])
+
+print(le.classes_)
+print(le.transform(["coconut", "apples", "apples", "blueberries"]))
+
+# Create a random list with 10 elements in the range from 0 to 4
+data_example = np.random.randint(0, 4, 10)
+print(data_example)
+
+le.inverse_transform(data_example)
+
+# # 2.2 Regression <a name="2-2"></a>
 #
 #
 # According to Wikipedia:
@@ -190,12 +503,37 @@ b = reg.intercept_[0]
 print('m:{} b:{}'.format(m, b))
 # -
 
-# Let's plot the line that minimised the dis
+# Let's plot the line that minimise the distance to the points
+
 predictions = [(m * x[i]) + b for i in range(len(x))]
 plt.scatter(x, y)
 plt.plot(x, predictions, color="r")
+plt.xlabel('input')
+plt.ylabel('output')
 
-# <a name="2-1-1"></a>
+# Let's create some test data:
+
+# Generate 30 random numbers
+x_2 = np.linspace(0, 50, 30)
+# Random Delta
+delta_2 = np.random.uniform(-10, 10, x.size)
+test_x = 0.5 * x + 5 + delta
+test_y = reg.predict(test_x.reshape(-1,1))
+
+# Let's plot the new predictions:
+
+predictions = [(m * x[i]) + b for i in range(len(x))]
+plt.scatter(x, y)
+plt.scatter(test_x, test_y, color='g')
+plt.plot(x, predictions, color="r")
+plt.xlabel('input')
+plt.ylabel('output')
+
+# In this case, our features will be the pixels of the images. However, to use the image input we will need to convert it into a 1-dimensional array with length 64.
+#
+#
+
+# <a name="2-2-1"></a>
 # # Other Linear Regression Models 
 #
 # Let's see how different linear regression methods finds solutions to the same problem.
@@ -207,7 +545,7 @@ bayesian_ridge.fit(x.reshape(-1, 1), y.reshape(-1, 1))
 m2 = bayesian_ridge.coef_[0]
 b2 = bayesian_ridge.intercept_
 print('m:{} b:{}'.format(m2, b2))
-# Let's plot the line that minimised the dis
+# Let's plot the line that minimise the distance
 predictions2 = [(m2 * x[i]) + b2 for i in range(len(x))]
 plt.scatter(x, y)
 plt.plot(x, predictions2, color="g")
@@ -239,25 +577,8 @@ plt.show()
 
 # Let's use pandas to explore the dataset
 # Load the dataset
-students = pd.read_csv(
-    "https://drive.google.com/u/0/uc?id=1F7ojGCB-Ye2qQudkdy1cyTBxRIZ1zhkg&export=download"
-)
+students = pd.read_csv('hours_vs_scores.csv')
 students
-
-# <a name="2-1-2"></a>
-# # Preprocessing
-#
-# Before training any ML model, we have to prepare the raw data and process it to make it suitable for a machine learning model.
-#
-# Usually, in the preprocessing step, we have to deal with some problems like:
-#
-# 1. Finding Missing Data and dealing with it
-# 2. Encoding categorical features
-# 3. Splitting the dataset into training and test set.
-# 4. Data Normalisation
-#
-# In this session and futures ones, we will provide examples of those problems and how to deal with them.
-#
 
 # ## Splitting the dataset
 #
@@ -268,20 +589,11 @@ X = students.iloc[:, 0]
 # Being y, what we want to predict (score)
 y = students.iloc[:, 1]
 
-# However, we will further divide the dataset into the <code>train</code> and <code>test</code> set. To do that, scikit-learn provides the <code>sklearn.model_selection.train_test_split</code> function.
-#
-# In ML is important to separate the dataset and have one subset for training only and another one for testing and validation. In order to evaluate the performance of ML algorithms, it is important that we test in unseen data. There are some exceptions to this rule when using much advance evaluation techniques such as cross-validation, but we will talk about it in future sessions.
-
-# +
-# Let's import the train_test_split function
-from sklearn.model_selection import train_test_split
-
 # We can specify the percentage for the splitting for test_size. This means that 20% of the data will be used for testing and the rest for training.
 # random_state is set for reproducibility
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=2020
 )
-# -
 
 X_train.shape
 
@@ -296,7 +608,7 @@ regressor.fit(X_train.values.reshape(-1, 1), y_train.values.reshape(-1, 1))
 print(regressor.coef_[0][0])
 print(regressor.intercept_[0])
 
-# <a name="2-1-3"></a>
+# <a name="2-1-2"></a>
 # # Making Predictions
 # Now let's make some predictions. 
 #
@@ -310,107 +622,36 @@ y_pred
 df = pd.DataFrame({"Actual": y_test, "Predicted": y_pred})
 df
 
-# # 2.2 Classification <a name="2-2"></a>
+# <div class="alert alert-success">
+#   <h2>Exercise 4</h2>
 #
+#   Description:
+#   
+#   - Given `actual` and `predicted` calculate the error using `Mean Absolute Error` and `Mean Squared Error`.
+#  
+#   <br/>
+#   <details>
+#       <summary><b>→ Hints</b></summary>
+#   - Use `np.abs` and `.mean()` to calculate the `Mean Absolute Error`.
+#   - Use `np.squared` and `.mean()` to calculate the `Mean Squared Error`. Alternatively you can calculate it like: `((actual-predicted)**2).mean()`
+#   </details>
 #
-# While regression methods map inputs to a continuous dependent variable from a number of independent variables. In classification problems, the inputs will be mapped to a defined set of classes. There are many ML algorithms for regression and classification.
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#     
+#   ```python
+# actual = df.iloc[:,0]
+# predicted = df.iloc[:,1]
+# mae = np.abs(actual-predicted).mean()
+# mse = np.square(actual-predicted).mean()
+#   ```
+#   </details>
 #
-# For this session, we will explore the most basic ML algorithm for binary classification, the <code>Logistic Regression</code>.
-#
-# > ... the logistic model (or logit model) is used to model the probability of a certain class or event existing such as pass/fail, win/lose, alive/dead or healthy/sick. This can be extended to model several classes of events such as determining whether an image contains a cat, dog, lion, etc. Each object detected in the image would be assigned a probability between 0 and 1, with a sum of one.
-#
-#
-# In the next session, we will explore more complex methods for classification.
-#
-# ## Classifying Images of Digits
-#
-# Scikit-learn provides some datasets that can be used to test different machine learning techniques. For this example, we will use the Digits dataset provided by Scikit-learn which consists of 1,797 images of 8x8 pixels. Each image, like the one shown below, is of a hand-written digit. In order to utilize an 8x8 figure like this, we would have to first transform it into a feature vector with length 64.
-#
-# Source: [The Digit Dataset](https://scikit-learn.org/stable/auto_examples/datasets/plot_digits_last_image.html)
-#
-# More information about the dataset [here](https://archive.ics.uci.edu/ml/datasets/Pen-Based+Recognition+of+Handwritten+Digits)
-#
-#
-
-# +
-from sklearn import datasets
-
-# Load the digits dataset
-digits = datasets.load_digits()
-#  Get keys from dictionary
-digits.keys()
-# -
-
-# In this case, our features will be the pixels of the images. However, to use the image input we will need to convert it into a 1-dimensional array with length 64.
-#
-#
-
-# Let's first see one of the images
-plt.figure(1, figsize=(3, 3))
-print('Target: {}'.format(digits.target[0]))
-plt.imshow(digits.images[0], cmap=plt.cm.gray_r)
-plt.show()
-
-# <a name="2-2-1"></a>
-# # Jupyter Notebook Widgets
-# Let's explore the dataset in a different way using widgets !
-
-# +
-from ipywidgets import interact, widgets
-from IPython.display import display
-
-fig = plt.figure(figsize=(10, 10))
-
-total_images = digits.target.shape[0]
-
-
-def f(index):
-    print('Target: {}'.format(digits.target[index]))
-    plt.imshow(digits.images[index], cmap=plt.cm.gray_r)
-    fig.canvas.draw()
-    display(fig)
-    plt.show()
-
-
-# -
-
-interact(f, index=widgets.IntSlider(min=0, max=total_images))
-
-# To apply a classifier on this data, we need to flatten the image, to turn the data in a (samples, features) matrix:
-
-# <a name="2-2-2"></a>
-# # Classify Digits
-
-# +
-n_samples = len(digits.images)
-X = digits.images.reshape((n_samples, 64))
-y = digits.target
-
-print(digits.images.shape)
-print(X.shape)
-
-# +
-from sklearn.linear_model import LogisticRegression
-
-# Create a classifier: a Logistic Regression with All vs Rest multiclass strategy
-classifier = LogisticRegression(multi_class="ovr", max_iter=1000, random_state=2020)
-
-# Split data into train and test subsets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, shuffle=False)
-
-# We learn the digits on the first half of the digits
-classifier.fit(X_train, y_train)
-
-# Now predict the value of the digit
-predicted = classifier.predict(X_test)
-
-# Let's check the accuracy achieved by our model
-print('Accuracy: {}'.format(sklearn.metrics.accuracy_score(y_test, predicted)))
-# -
-
-# We achieved an accuracy of 92% using one of the most basic classification algorithms, the Logistic Regression, for small images. 
-#
-# **Note:** For more complex images with higher dimensionality is recommended to use Deep Learning techniques such as Convolutional Neural Networks or CNNs.
+#   </div>
 
 # <a name="3"></a>
 # # 3. Unsupervised Learning
@@ -437,186 +678,7 @@ print('Accuracy: {}'.format(sklearn.metrics.accuracy_score(y_test, predicted)))
 #
 # Sources: [Wikipedia](https://en.wikipedia.org/wiki/Principal_component_analysis)
 #
-# In session 11, we will provide examples of the different techniques mentioned here for clustering and dimensionality reduction.
-
-# <a name="4"></a>
-#
-# # 4. Key Concepts
-#
-# <a name="4-1"></a>
-# ## 4.1 Encoding Categorical Features
-#
-# Encoding is a preprocessing step where we convert categorical features to representations that an ML algorithm can process.
-#
-# There are two popular types of encoding:
-#
-# - One Hot Encoding: [`OneHotEncoder`](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html) is a utility function in scikit-learn that helps to encode categorical features as a one-hot numeric array.
-# - Integer/Ordinal Encoding:
-#     In this type of encoding we will map a label or class to an integer representation. Scikit-learn provides two functions to do this. <code>[OrdinalEncoder](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OrdinalEncoder.html)</code> and <code>[LabelEncoder](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelEncoder.html)</code>.
-#     
-#
-
-# <a name="4-1-1"></a>
-# ## One Hot Encoding
-#
-# For this example, imagine that you have an output sequence of the following 3 labels:
-#
-# - "bronze"
-# - "silver"
-# - "gold"
-#
-# This sequence might be represented using an integer representation using `LabelEncoder` from scikit-learn. Using integer encoding the labels might have this representations:
-#
-# - "bronze" -> 1
-# - "silver" -> 2
-# - "gold"   -> 3
-#
-# One-hot encoding uses binary vectors instead to represent the labels. 
-#
-# The example below shows an intuitive one-hot representation for the labels where `1` represents the presence of the label and `0` the abscence of it.
-#
-# - "bronze" -> [1,0,0]
-# - "silver" -> [0,1,0]
-# - "gold"   -> [0,0,1]
-#
-# We are currently using 3-length vectors to represent the labels. However, there are more efficient ways of representing the same data using different representations. For example, consider the one-hot prepresentations below:
-#
-# - "bronze" -> [0,0]
-# - "silver" -> [1,0]
-# - "gold"   -> [0,1]
-#
-# If we had one more label we could use [1,1] to represent it. This is the main idea behind the one-hot encoding process. You could create your own code to create these representations, however, there are different variations and in some cases it might be easier to use `OneHotEncoder` from scikit-learn, which handles special cases.
-#
-#
-#
-# Consider the example below which encodes two variables (two cagegorical and three numerical) into a single one-hot representation using `OneHotEncoder` in scikit-learn:
-
-# +
-from sklearn.preprocessing import OneHotEncoder
-
-# OneHotEncoder will ignore classes that were not seen during fit
-enc = OneHotEncoder(handle_unknown="ignore")
-# Data
-X = [["Male", 1], ["Female", 3], ["Female", 2]]
-# Learn Categories from seen data
-enc.fit(X)
-# -
-
-# Now let's see what categories were learnt by the encoder
-
-enc.categories_
-
-# Transform Cagegorical values to one-hot encoding
-enc.transform([["Female", 0], ["Female", 4]]).toarray()
-
-# You can reverse the operation as well
-enc.inverse_transform([[0, 1, 1, 0, 0], [1.0, 0.0, 0.0, 0.0, 1.0]])
-
-enc.get_feature_names(["gender", "group"])
-
-# <a name="ex-1"></a>
-# ## Exercise 1
-#
-# Have a look at the result of the one-hot encoding in the example below.
-#
-# 1. Analyse the one-hot encoding results and compare it with input. Can you spot any pattern?
-# 2. Change the values of the input with valid data and try to determine if there is any pattern.
-
-
-
-# Complete exercise 1 here
-enc.transform([["Female", 1], ["Male", 2], ["Female", 3], ["Male", 0]]).toarray()
-
-# One can always drop the first column for each feature:
-
-drop_enc = OneHotEncoder(drop="first").fit(X)
-drop_enc.categories_
-
-drop_enc.transform([["Female", 1], ["Male", 2]]).toarray()
-
-# <a name="ex-2"></a>
-# ## Exercise 2
-#
-# 1. Now that we dropped the first column, analyse how the encoding `drop_enc` changed compared to the first one-hot encoding.
-
-# +
-# Complete Exercise 2 here
-# -
-
-# <a name="4-1-2"></a>
-# ## Label Encoding
-#
-# Example:
-
-# +
-from sklearn import preprocessing
-
-le = preprocessing.LabelEncoder()
-le.fit([1, 2, 2, 6])
-# -
-
-le.classes_
-
-le.transform([1, 1, 2, 6])
-
-le.inverse_transform([0, 0, 1, 2])
-
-# Let's try with another example. This time we will used text labels.
-
-le = preprocessing.LabelEncoder()
-le.fit(["apples", "blueberries", "pineapple", "apples", "apples", "coconut"])
-
-le.classes_
-
-le.transform(["coconut", "apples", "apples", "blueberries"])
-
-# Create a random list with 10 elements in the range from 0 to 4
-data_example = np.random.randint(0, 4, 10)
-print(data_example)
-
-le.inverse_transform(data_example)
-
-# <a name="4-2"></a>
-# ## 4.2 Normalised Data
-#
-# ### Why normalise the data?
-#
-# Many machine learning (ML) algorithms attempt to find trends in the data by comparing the features of data points. However, machine learning algorithms usually struggle more in the training phase when the features are on different scales. Normalise the data will almost always improve the results for ML algorithms.
-#
-# There are different ways to normalised the data and usually, each method has pros and cons. For example, some methods are better at dealing with outliers than others.
-#
-#
-# Two of the most popular methods for normalising the data are:
-#
-# * Standard Score:
-# $\frac {X-\mu }{\sigma }$
-#
-# * Min-Max Feature Scaling:
-# $X'={\frac {X-X_{\min }}{X_{\max }-X_{\min }}}$
-#
-# More information about normalisation [here](https://en.wikipedia.org/wiki/Normalization_(statistics))
-#
-# In the next session, we will talk more about normalisation and will provide examples of how and when we should use it.
-#
-# <a name="4-3"></a>
-# ## 4.3 Overfitting vs Underfitting
-#
-# In the image below, we have an example where we want to train a model to create a boundary that separates class 1 (blue points) and class 2 (red points). The green line represents an overfitted model and the black line represents a regularized (able to generalise better) model. While the green line best follows the training data, it is too dependent on that data and it is likely to have a higher error rate on new unseen data, compared to the black line.
-#
-# <img width=500 height=500 src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Overfitting.svg/1920px-Overfitting.svg.png' />
-#
-# Source: [Overfitting Image](https://en.wikipedia.org/wiki/Overfitting#/media/File:Overfitting.svg)
-# License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-#
-#
-# On the other side of the spectrum, we have underfitted models, where the model is too simplistic and does not fit the model properly. The blue dashed line represents an underfitted model. A straight line can never fit a parabola. This model is too simple.
-#
-# <img width=500 height=500 src='https://upload.wikimedia.org/wikipedia/en/5/5c/Parabola_on_line.png' />
-#
-#
-# To determine if a model is overfitted or underfitted we will first need to understand how to measure the performance of the model.
-#
-#
+# There is a session dedicated to unsupervised learning, we will provide examples of the different techniques mentioned here for clustering and dimensionality reduction.
 
 # ## References and further reading
 # The following sources have been used in the creation of this notebook:
