@@ -171,8 +171,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # Get types of Lithology
 classes = list(geolink["LITHOLOGY_GEOLINK"].unique())
-print(f"Classes: {classes}")
-print(f"Total Classes: {len(classes)}")
+print('Classes: {}'.format(classes))
+print('Total Classes: {}'.format(len(classes)))
 
 # Let's check the classes
 y_train.to_numpy()
@@ -207,7 +207,7 @@ knn_classifier.fit(X_train, transformed_y_train)
 # Evaluation Time
 y_pred = knn_classifier.predict(X_test)
 y_true = le.transform(y_test.to_numpy())
-print(f"Accuracy: {accuracy_score(y_true, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
 
 # We were able to predict the 11 different classes with 93.2% accuracy using new data. This is slightly better than random, however the accuracy is still very low. Let's train using the same algorithm and hyperparameters but this time we will normalise the data.
 
@@ -259,7 +259,7 @@ knn_classifier_norm.fit(X_train, transformed_y_train)
 # Evaluation Time
 y_pred = knn_classifier_norm.predict(X_test)
 y_true = le.transform(y_test)
-print(f"Accuracy: {accuracy_score(y_true, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
 
 # So now we got an accuracy of 90%. Normalising will usually help in the training process. So it's a good practice to preprocess the data before the training phase. However, some machine learning algorithms such as KNN are robust enough to work well with different scales so normalization might not be necessary in some cases. 
 
@@ -284,7 +284,7 @@ knn_classifier_norm.fit(X_train, transformed_y_train)
 # Evaluation Time
 y_pred = knn_classifier_norm.predict(X_test)
 y_true = le.transform(y_test)
-print(f"Accuracy: {accuracy_score(y_true, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
 
 n_neighbors = 5
 # Normalized knn
@@ -296,7 +296,7 @@ knn_classifier_norm.fit(X_train, transformed_y_train)
 # Evaluation Time
 y_pred = knn_classifier_norm.predict(X_test)
 y_true = le.transform(y_test)
-print(f"Accuracy: {accuracy_score(y_true, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
 
 n_neighbors = 1
 # Normalized knn
@@ -308,7 +308,7 @@ knn_classifier_norm.fit(X_train, transformed_y_train)
 # Evaluation Time
 y_pred = knn_classifier_norm.predict(X_test)
 y_true = le.transform(y_test)
-print(f"Accuracy: {accuracy_score(y_true, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
 
 # <div class="alert alert-success">
 #   <h2>Exercise 1</h2>
@@ -535,7 +535,7 @@ categories = y_sample.unique()
 y_pred = clf.predict(X_test)
 y_pred = pd.Categorical(y_pred, categories=categories)
 y_true = y_test
-print(f"Accuracy: {accuracy_score(y_true, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
 # -
 
 print(sklearn.metrics.classification_report(y_true, y_pred))
@@ -629,7 +629,7 @@ clf = clf.fit(X_train, y_train)
 
 # Evaluation Time
 y_pred = clf.predict(X_test)
-print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
 # -
 
 # We got an accuracy of 93%~ just with the default hyperparameters. Let's train the DT again with a different hyperparameter.
@@ -640,7 +640,7 @@ clf2 = clf2.fit(X_train, y_train)
 
 # Evaluation Time
 y_pred = clf2.predict(X_test)
-print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
 # -
 
 # We got now an accuracy of 92%~ just with the hyperparameter max_depth=10. Let's train the DT again with a different hyperparameter. In appearance, the first model would be better, however, there are other metrics besides accuracy that should be taken into account. There are also other methods to avoid overfitting. We will go deeper into this topic in the next sessions.
@@ -669,14 +669,14 @@ print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
 clf = RandomForestClassifier()
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
-print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
 
 # Let's train again the model with different hyperparameters.
 
 clf = RandomForestClassifier(max_depth=100, n_estimators=100)
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
-print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
 
 # ## References and further reading
 # The following sources have been used in the creation of this notebook:

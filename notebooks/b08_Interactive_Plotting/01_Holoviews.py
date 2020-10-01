@@ -674,7 +674,7 @@ def production_callback2(product1, product2, year):
         ).opts(
             xlabel=product1.upper(),
             ylabel=product2.upper(),
-            title=f"Year: {year}",
+            title='Year: {}'.format(year),
             logx=True,
             logy=True,
             color=cmap[i],

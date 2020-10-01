@@ -145,10 +145,10 @@ df_all_clean2 = df_all_clean2.dropna(subset=["LITHOLOGY_GEOLINK"])
 print("nans", df_all_clean2.isna().mean().sort_values())
 # Remove logs which are present less than half the time
 df_all_clean1 = df_all_clean2.dropna(axis=1, thresh=0.9 * len(df_all_clean2))
-print(f"kept {len(df_all_clean1.columns)/len(df_all_clean2.columns):%} cols")
+print('kept {:%} cols'.format(len(df_all_clean1.columns) / len(df_all_clean2.columns)))
 # Drop columns with Nan's
 df_all_clean = df_all_clean1.dropna(axis=0)
-print(f"kept {len(df_all_clean)/len(df_all_clean2):%} rows")
+print('kept {:%} rows'.format(len(df_all_clean) / len(df_all_clean2)))
 df_all_clean
 
 # +
@@ -396,9 +396,9 @@ def dset_to_nc(dset, f, engine="netcdf4", compression={"zlib": True}):
     if isinstance(dset, xr.DataArray):
         dset = dset.to_dataset(name="data")
     encoding = {k: {"zlib": True} for k in dset.data_vars}
-    print(f"saving to {f}")
+    print('saving to {}'.format(f))
     dset.to_netcdf(f, engine=engine, encoding=encoding)
-    print(f"Wrote {f.stem}.nc size={f.stat().st_size/1e6} M")
+    print('Wrote {}.nc size={} M'.format(f.stem, f.stat().st_size / 1000000.0))
 
 
 
@@ -424,14 +424,14 @@ def dset_to_zarr(dset, f):
     if isinstance(dset, xr.DataArray):
         dset = dset.to_dataset(name="data")
     encoding = {k: {"zlib": True} for k in dset.data_vars}
-    print(f"saving to {f}")
+    print('saving to {}'.format(f))
     if f.exists():
         try:
             return xr.open_zarr(f)
         except:
             shutil.rmtree(f)
     dset.to_zarr(str(f))
-    print(f"{f.stem}.zarr size={get_dir_size(str(f))/1e6} M")
+    print('{}.zarr size={} M'.format(f.stem, get_dir_size(str(f)) / 1000000.0))
     
 dset_to_zarr(dset=xr_all.drop(['geometry']),
           f=interim_locations/'geolink_norge_well_logs.zarr')

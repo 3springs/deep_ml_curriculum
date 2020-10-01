@@ -55,7 +55,7 @@ def load_test_data(path, var, years=slice("2017", "2018")):
     Returns:
         dataset: Concatenated dataset for 2017 and 2018
     """
-    ds = xr.open_mfdataset(f"{path}/*.nc", combine="by_coords")[var]
+    ds = xr.open_mfdataset('{}/*.nc'.format(path), combine="by_coords")[var]
     if var in ["z", "t"]:
         try:
             ds = ds.sel(level=500 if var == "z" else 850).drop("level")
@@ -148,12 +148,12 @@ class WorldBench3D(torch.utils.data.Dataset):
 DATADIR = "../../data/processed/weatherbench/5.625deg"
 
 # Load the validation subset of the data: 2017 and 2018
-z500_valid = load_test_data(f"{DATADIR}/geopotential_500", "z")
-t850_valid = load_test_data(f"{DATADIR}/temperature_850", "t")
+z500_valid = load_test_data('{}/geopotential_500'.format(DATADIR), "z")
+t850_valid = load_test_data('{}/temperature_850'.format(DATADIR), "t")
 valid = xr.merge([z500_valid, t850_valid])
 
-z = xr.open_mfdataset(f"{DATADIR}/geopotential_500/*.nc", combine="by_coords")
-t = xr.open_mfdataset(f"{DATADIR}/temperature_850/*.nc", combine="by_coords").drop(
+z = xr.open_mfdataset('{}/geopotential_500/*.nc'.format(DATADIR), combine="by_coords")
+t = xr.open_mfdataset('{}/temperature_850/*.nc'.format(DATADIR), combine="by_coords").drop(
     "level"
 )
 
@@ -219,13 +219,13 @@ ds_train.isel(time=4200)["z"].plot()
 DATADIR = data_in / "5.625deg"
 
 # Load the validation subset of the data: 2017 and 2018
-z500_valid = load_test_data(f"{DATADIR}/geopotential_500", "z")
-t850_valid = load_test_data(f"{DATADIR}/temperature_850", "t")
+z500_valid = load_test_data('{}/geopotential_500'.format(DATADIR), "z")
+t850_valid = load_test_data('{}/temperature_850'.format(DATADIR), "t")
 valid = xr.merge([z500_valid, t850_valid]).isel()
 
 
-z = xr.open_mfdataset(f"{DATADIR}/geopotential_500/*.nc", combine="by_coords")
-t = xr.open_mfdataset(f"{DATADIR}/temperature_850/*.nc", combine="by_coords").drop(
+z = xr.open_mfdataset('{}/geopotential_500/*.nc'.format(DATADIR), combine="by_coords")
+t = xr.open_mfdataset('{}/temperature_850/*.nc'.format(DATADIR), combine="by_coords").drop(
     "level"
 )
 

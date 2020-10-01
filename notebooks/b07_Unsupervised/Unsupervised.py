@@ -439,7 +439,7 @@ def kernel_pca(X, kernel):
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlabel("K_PCA 1", fontsize=15)
     ax.set_ylabel("K_PCA 2", fontsize=15)
-    ax.set_title(f"2 component KPCA using kernel={kernel}", fontsize=20)
+    ax.set_title('2 component KPCA using kernel={}'.format(kernel), fontsize=20)
     for target, color in zip(targets, colors):
         indicesToKeep = final_df["target"] == target
         ax.scatter(

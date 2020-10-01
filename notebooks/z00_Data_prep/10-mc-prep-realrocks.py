@@ -96,7 +96,7 @@ df_depths = df_csv.groupby(["well_name", "md"]).first()
 df_depths
 
 paths_images = sorted(
-    (datadir_in / f"public_core_images_crop_3570m_mid_norway").glob("**/*.jpg")
+    (datadir_in / 'public_core_images_crop_3570m_mid_norway'.format()).glob("**/*.jpg")
 )
 len(paths_images)
 

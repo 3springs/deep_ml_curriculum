@@ -227,7 +227,7 @@ def GridSearch(train_data, test_data, hyperparameters):
                     criterion = get_criterion("cross_entropy")
                     optimizer = get_optimizer(opt, model, learning_rate)
                     print(
-                        f"Training NN...optimizer:{opt}, activation:{activation}, epochs:{epochs}, learning rate:{learning_rate}"
+                        'Training NN...optimizer:{}, activation:{}, epochs:{}, learning rate:{}'.format(opt, activation, epochs, learning_rate)
                     )
                     # Let's train the model using our custom hyperparameters
                     clf = train(
@@ -249,7 +249,7 @@ def GridSearch(train_data, test_data, hyperparameters):
                         best_parameters["optimizer"] = opt
                         best_parameters["learning_rate"] = learning_rate
 
-                    print(f"Accuracy Testing: {accuracy}")
+                    print('Accuracy Testing: {}'.format(accuracy))
     return best_parameters
 
 
@@ -337,7 +337,7 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
         optimizer = get_optimizer(opt, model, l_rate)
 
         print(
-            f"Training NN...optimizer:{opt}, activation:{activation}, epochs:{epochs}, learning rate:{learning_rate}"
+            'Training NN...optimizer:{}, activation:{}, epochs:{}, learning rate:{}'.format(opt, activation, epochs, learning_rate)
         )
         # Let's train the model using our custom hyperparameters
         clf = train(
@@ -360,7 +360,7 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
             best_parameters["optimizer"] = opt
             best_parameters["learning_rate"] = learning_rate
 
-        print(f"Accuracy Testing: {accuracy}")
+        print('Accuracy Testing: {}'.format(accuracy))
 
     return best_parameters
 

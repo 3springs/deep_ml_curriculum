@@ -195,11 +195,11 @@ def train(epoch, loss_function, log_interval=50):
             pct = 100.0 * batch_idx / len(train_loader)
             l = loss.item() / len(data)
             print(
-                f"#{epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({pct:.0f}%)]\tLoss: {l:.6f}  ",
+                '#{} [{}/{} ({:.0f}%)]\tLoss: {:.6f}  '.format(epoch, batch_idx * len(data), len(train_loader.dataset), pct, l),
                 end="\r",
                 flush=True,
             )
-    print(f"#{epoch} Train loss: {train_loss / len(train_loader.dataset):.4f}")
+    print('#{} Train loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
 
 def test(epoch, loss_function, log_interval=50):
@@ -212,7 +212,7 @@ def test(epoch, loss_function, log_interval=50):
             test_loss += loss_function(recon_batch, data).item()
 
     test_loss /= len(test_loader.dataset)
-    print(f"#{epoch} Test loss: {test_loss:.4f}")
+    print('#{} Test loss: {:.4f}'.format(epoch, test_loss))
 
 
 # -
@@ -337,11 +337,11 @@ def train(epoch, loss_function, log_interval=50):
             pct = 100.0 * batch_idx / len(train_loader)
             l = loss.item() / len(data)
             print(
-                f"#{epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({pct:.0f}%)]\tLoss: {l:.6f}  ",
+                '#{} [{}/{} ({:.0f}%)]\tLoss: {:.6f}  '.format(epoch, batch_idx * len(data), len(train_loader.dataset), pct, l),
                 end="\r",
                 flush=True,
             )
-    print(f"#{epoch} Train loss: {train_loss / len(train_loader.dataset):.4f}")
+    print('#{} Train loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
 
 def test(epoch, loss_function, log_interval=50):
@@ -354,7 +354,7 @@ def test(epoch, loss_function, log_interval=50):
             test_loss += loss_function(recon_batch, data, mu, logvar).item()
 
     test_loss /= len(test_loader.dataset)
-    print(f"#{epoch} Test loss: {test_loss:.4f}")
+    print('#{} Test loss: {:.4f}'.format(epoch, test_loss))
 
 
 # -
@@ -594,11 +594,11 @@ def train(epoch, loss_function, log_interval=20):
             pct = 100.0 * batch_idx / len(train_loader)
             l = loss.item() / len(data)
             print(
-                f"#{epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({pct:.0f}%)]\tLoss: {l:.6f}  ",
+                '#{} [{}/{} ({:.0f}%)]\tLoss: {:.6f}  '.format(epoch, batch_idx * len(data), len(train_loader.dataset), pct, l),
                 end="\r",
                 flush=True,
             )
-    print(f"#{epoch} Train loss: {train_loss / len(train_loader.dataset):.4f}")
+    print('#{} Train loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
 
 def test(epoch, loss_function, log_interval=20):
@@ -611,7 +611,7 @@ def test(epoch, loss_function, log_interval=20):
             test_loss += loss_function(recon_batch, data, mu, logvar).item()
 
     test_loss /= len(test_loader.dataset)
-    print(f"#{epoch} Test loss: {test_loss:.4f}")
+    print('#{} Test loss: {:.4f}'.format(epoch, test_loss))
 
 
 # -
@@ -628,7 +628,7 @@ for epoch in range(1, epochs + 1):
     t = perf_counter()
     train(epoch, loss_bce_kld)
     test(epoch, loss_bce_kld)
-    print(f"Epoch#{epoch} took {perf_counter()-t:.1f} seconds")
+    print('Epoch#{} took {:.1f} seconds'.format(epoch, perf_counter() - t))
 
 
 # ## Results
@@ -640,7 +640,7 @@ def show_result(sample):
     model.eval()
     output, _, _ = model(sample)  # we only grab the reconstructed image
     loss = F.binary_cross_entropy(output, sample, reduction="sum")
-    print(f"Loss: {loss.item():.2f}")
+    print('Loss: {:.2f}'.format(loss.item()))
 
     # return the data to cpu for visualisation
     output = output.squeeze(0).permute(1, 2, 0).to("cpu")
@@ -862,8 +862,8 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
         train_loss.append(loss.item())
-        print(f"loss: {loss.item():.2f}   ", end="\r", flush=True)
-    print(f"Training Loss epoch#{epoch+1}: {np.mean(train_loss):.2f}")
+        print('loss: {:.2f}   '.format(loss.item()), end="\r", flush=True)
+    print('Training Loss epoch#{}: {:.2f}'.format(epoch + 1, np.mean(train_loss)))
 # -
 
 # When the model is trained you can test it on the data similar to the [example](#Inference) we saw before.

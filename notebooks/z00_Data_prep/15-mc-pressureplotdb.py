@@ -36,14 +36,14 @@ datadir_out.mkdir(exist_ok=True, parents=True)
 
 
 # +
-cmd = f"mdb-tables {datadir_in}"
+cmd = 'mdb-tables {}'.format(datadir_in)
 tables = getoutput(cmd).split()
 tables
 
 for table in tables:
-    cmd = f"mdb-export {datadir_in} {table}" % ()
+    cmd = 'mdb-export {} {}'.format(datadir_in, table) % ()
     csv = getoutput(cmd)
-    fo = f"{datadir_out}/{table}.csv"
+    fo = '{}/{}.csv'.format(datadir_out, table)
     print(fo)
     open(fo, "w").write(csv)
 
@@ -78,7 +78,7 @@ for i, (n, g) in enumerate(df_dst.groupby("WELL_NAME")):
     ax2 = plt.twiny()
     g.plot.scatter(x="PRESSURE", y="DELTA_T", ax=ax, c="blue")
     g.plot.scatter(x="TEMPERATURE", y="DELTA_T", ax=ax2, c="y")
-    plt.title(f"{n}")
+    plt.title('{}'.format(n))
     plt.show()
     if i > 2:
         break
@@ -121,7 +121,7 @@ for i, (n, g) in enumerate(df_poroperm.groupby("WELL_NAME")):
         break
     if len(g) > 10:
         im = plt.scatter(x=g["PERMEABILITY"], y=g["POROSITY"], c=g.xs(n).index)
-        plt.title(f"well name: {n}")
+        plt.title('well name: {}'.format(n))
         plt.colorbar(label="TOP_INTERVAL")
         plt.show()
 # -

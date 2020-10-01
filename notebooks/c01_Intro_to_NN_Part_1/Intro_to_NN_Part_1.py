@@ -152,7 +152,7 @@ import matplotlib.pyplot as plt
 digits = datasets.load_digits()
 # Let's first see one of the images
 plt.figure(1, figsize=(3, 3))
-print(f"Target: {digits.target[0]}")
+print('Target: {}'.format(digits.target[0]))
 plt.imshow(digits.images[0], cmap=plt.cm.gray_r)
 plt.show()
 

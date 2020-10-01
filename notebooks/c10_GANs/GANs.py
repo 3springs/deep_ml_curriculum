@@ -385,7 +385,7 @@ for epoch in range(n_epochs):
         ## Visualization code ##
         if cur_step % display_step == 0 and cur_step > 0:
             print(
-                f"Step {cur_step}: Generator loss: {mean_generator_loss}, discriminator loss: {mean_discriminator_loss}"
+                'Step {}: Generator loss: {}, discriminator loss: {}'.format(cur_step, mean_generator_loss, mean_discriminator_loss)
             )
             fake_noise = get_noise(cur_batch_size, z_dim, device=device)
             fake = gen(fake_noise)

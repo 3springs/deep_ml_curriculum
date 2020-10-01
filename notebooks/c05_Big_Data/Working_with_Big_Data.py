@@ -36,7 +36,7 @@ def memory_usage():
     """String with current memory usage in MB. Requires `psutil` package."""
     pid = os.getpid()
     mem_bytes = psutil.Process(pid).memory_info().rss
-    print(f"[Process {pid} uses {mem_bytes/1024/1024:.1f}MB]")
+    print('[Process {} uses {:.1f}MB]'.format(pid, mem_bytes / 1024 / 1024))
     return mem_bytes / 1024 / 1024
 
 

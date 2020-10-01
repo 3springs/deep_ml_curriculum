@@ -171,7 +171,7 @@ for epoch in tqdm(range(epochs)):
     loss.backward()
     optimizer.step()
     if epoch % 50 == 0:
-        print(f"#{epoch} Loss = {loss.item():.5f}")
+        print('#{} Loss = {:.5f}'.format(epoch, loss.item()))
 # -
 
 # Note that when using `xtrain` and `ytrain` we first converted them to tensors, then used `unsqueeze(-1)`. `unsqueeze(-1)` adds a dimension to the end of the tensor. Why did we do that? The reason is to specify that the model is dealing with only one value.
@@ -260,7 +260,7 @@ def train_model(model, x, y, epochs=1):
         loss.backward()
         optimizer.step()
         if (epoch + 1) % 50 == 0:
-            print(f"#{epoch+1} Loss = {loss.item():.5f}")
+            print('#{} Loss = {:.5f}'.format(epoch + 1, loss.item()))
 
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 236, "referenced_widgets": ["c1048481b4694b12ab408fcb1ddb8b31", "c17715512f7c44ca9a1126844f832a41", "bf8163e5e5d640dc94e74413ce3137b5", "d6d149b77d024d8a81f0df42ee176200", "a41a857b0bcf4d16b95599f019f125bf", "4e2682af756042e5808bb471c318a154", "70ccc0ca7efc48599f9514c6201b2073", "f3806fac15e545f597473d41d3708200"]} colab_type="code" id="_RqKioH6s-36" outputId="f9458fd4-aabd-4ae0-b368-61c4c4db9b93"
@@ -388,7 +388,7 @@ def train_model(model, x, y, epochs=1):
         loss.backward()
         optimizer.step()
         if (epoch + 1) % 20 == 0:
-            print(f"#{epoch+1} Loss = {loss.item():.5f}", end="\r", flush=True)
+            print('#{} Loss = {:.5f}'.format(epoch + 1, loss.item()), end="\r", flush=True)
 
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 1000, "referenced_widgets": ["a37da43322f54d0cb3a587c85f87f146", "2e9111de005e458faa5dadf8f4757ce0", "1bb877b53ce64c5c89a0e0fddf99510f", "967cb446a5ee4a5a9f592104126b6aeb", "9113c8e51cb44ccba8f7d76dcaf1f2b3", "8f31d4f3e4f343c2b45596c7a8acd798", "996b5d7e77e14820ac4694ce102f3d2d", "3c46c1b220494ef4830e6c1f6c75f2d3"]} colab_type="code" id="oSOPC4SX6KKF" outputId="a6ea4543-74d7-40ce-abaa-d217ae3b70c6"
@@ -408,7 +408,7 @@ def test_model(model, x, y, plot_results=False):
     model_input = torch.Tensor(x)
     pred_test = to_numpy(model(model_input))
     mse = ((pred_test - y) ** 2).mean()
-    print(f"MSE = {mse:.5f}")
+    print('MSE = {:.5f}'.format(mse))
     if plot_results:
         plt.figure(figsize=(15, 5))
         plt.plot(pred_test, ":x", label="Predictions")
@@ -520,7 +520,7 @@ def get_train(x):
 df_test = df.groupby(level=0).apply(get_test)
 df_train = df.groupby(level=0).apply(get_train)
 print('train', df_train.shape, 'test', df_test.shape)
-print(f'Train {len(df_train)/len(df):.0%}, test {len(df_test)/len(df):.0%}')
+print('Train {:.0%}, test {:.0%}'.format(len(df_train) / len(df), len(df_test) / len(df)))
 # -
 
 # We will be using depth and other measurements to determine the lithology. We dealt with the same problem in the tablular data. But in tabular data we only look at the measurements at each depth to find the class, while here we can look at the variations in the measurements as well.
@@ -692,7 +692,7 @@ def training_loop(epochs=1, bs=128):
 #                 )
 
             print(
-                f"Epoch {epoch+1}/{epochs}: Training Loss = {np.mean(training_loss):.2f}, f1 = {np.mean(f1):.3f}"
+                'Epoch {}/{}: Training Loss = {:.2f}, f1 = {:.3f}'.format(epoch + 1, epochs, np.mean(training_loss), np.mean(f1))
             )
 
             model.eval()
@@ -709,7 +709,7 @@ def training_loop(epochs=1, bs=128):
                 test_f1.append(f1)
                 pbar2.update(1)
             print(
-                f"Epoch {epoch+1}/{epochs}: Test Loss = {np.mean(test_loss):.2f}, f1 = {np.mean(test_f1):.3f}"
+                'Epoch {}/{}: Test Loss = {:.2f}, f1 = {:.3f}'.format(epoch + 1, epochs, np.mean(test_loss), np.mean(test_f1))
             )
             print("-" * 50)
             all_losses.append([np.mean(training_loss), np.mean(test_loss)])

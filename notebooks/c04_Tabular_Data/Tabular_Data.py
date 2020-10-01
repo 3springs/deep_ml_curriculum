@@ -202,10 +202,10 @@ def train_model(model, epochs=10, bs=256):
             optimizer.step()
             training_loss.append(loss.item())
             if i % 1000 == 0:
-                print(f"Loss: {loss.item():.3f}", end="\r", flush=True)
+                print('Loss: {:.3f}'.format(loss.item()), end="\r", flush=True)
         preds = model(x_test)
         loss = loss_func(preds, y_test)
-        print(f"Epoch#{epoch+1} Test Loss = {loss.item():.3f}")
+        print('Epoch#{} Test Loss = {:.3f}'.format(epoch + 1, loss.item()))
 
 
 model.to(device)
@@ -430,10 +430,10 @@ def train_emb_model(model, epochs=10, bs=256):
             optimizer.step()
             training_loss.append(loss.item())
             if i % 1000 == 0:
-                print(f"Loss: {loss.item():.3f}", end="\r", flush=True)
+                print('Loss: {:.3f}'.format(loss.item()), end="\r", flush=True)
         preds = model(xnum_test, xcat_test)
         loss = loss_func(preds, y_test)
-        print(f"Epoch#{epoch+1} Test Loss = {loss.item():.3f}")
+        print('Epoch#{} Test Loss = {:.3f}'.format(epoch + 1, loss.item()))
 
 
 train_emb_model(model, epochs=10, bs=256)

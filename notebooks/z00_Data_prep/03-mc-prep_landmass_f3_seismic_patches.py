@@ -50,7 +50,7 @@ for key in f["LANDMASS-1"].keys():
         ax.set_yticks([])
 
     #     plt.tight_layout()
-    plt.suptitle(f"{key}")
+    plt.suptitle('{}'.format(key))
     plt.show()
 
 f = h5py.File(data_in / "Landmass_CC-BY-SA.h5", "r")
@@ -69,7 +69,7 @@ for key in f["LANDMASS-2"].keys():
         ax.set_yticks([])
 
     #     plt.tight_layout()
-    plt.suptitle(f"{key}")
+    plt.suptitle('{}'.format(key))
     plt.show()
 
 # # Split

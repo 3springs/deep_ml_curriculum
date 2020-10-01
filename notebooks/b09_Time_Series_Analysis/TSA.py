@@ -473,7 +473,7 @@ ax.set_figheight(8)
 # By default the model used additive approach for the data. If we want to use multiplicative approach we need to specify it in the function. But what is the difference between additive and multiplicative? Additive approach is used when the height of the repeating patterns are constant. This means the amplitude of seasonal component is not changing. But in this data we can clearly see the seasonal component is getting larger and larger. This is also visible in the residual component. The residual component is meant to look like random noise but we can clearly see some regular oscillation in there. So let's try multiplicative approach.
 
 result = seasonal_decompose(cust["Customers"], model="multiplicative")
-print(f'sum of residuals {result.resid.sum():2.2f}')
+print('sum of residuals {:2.2f}'.format(result.resid.sum()))
 ax = result.plot()
 ax.set_figwidth(16)
 ax.set_figheight(8)
@@ -507,7 +507,7 @@ df
 from statsmodels.tsa.seasonal import seasonal_decompose
 result = seasonal_decompose(df['target'],model = 'add')
 result.plot();
-print(f'sum of residuals {result.resid.sum():2.2f}')
+print('sum of residuals {:2.2f}'.format(result.resid.sum()))
 
 #
 # <div class="alert alert-success">

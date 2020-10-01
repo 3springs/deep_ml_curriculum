@@ -419,7 +419,7 @@ def instance_segmentation_api(img_path, threshold=0.5, rect_th=1, text_size=1):
 
 # -
 
-instance_segmentation_api(f"./exercise2/mask1.jpg", threshold=0.5)
+instance_segmentation_api('./exercise2/mask1.jpg'.format(), threshold=0.5)
 
 # <div class="alert alert-success" style="font-size:100%">
 #

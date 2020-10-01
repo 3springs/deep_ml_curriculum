@@ -158,7 +158,7 @@ len_after = 125 * 125
 print("No. fearures before:", len_before)
 print("No. features now:", len_after)
 print(
-    f"So we just removed a 1/3 of the redundant data. That's about {len_before-len_after} less than before"
+    "So we just removed a 1/3 of the redundant data. That's about {} less than before".format(len_before - len_after)
 )
 
 # Let's check the first image

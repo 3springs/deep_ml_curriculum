@@ -35,7 +35,7 @@ import datetime
 
 # Make a temporary copy of the db
 ts = datetime.datetime.isoformat(datetime.datetime.utcnow()).replace(':', '_')
-db_file = f"Sales_{ts}.db" 
+db_file = 'Sales_{}.db'.format(ts) 
 copyfile("Sales.db", db_file)
 # -
 
@@ -77,7 +77,7 @@ def execute_query(conn, query):
     cur.execute(query)
     rows = cur.fetchall()
     for i, row in enumerate(rows):
-        print(f"{i+1}. {row}")
+        print('{}. {}'.format(i + 1, row))
 
 
 def return_query(conn, query):
@@ -613,7 +613,7 @@ execute_query(conn, query)
 
 # Make a temporary copy of the db
 ts = datetime.datetime.isoformat(datetime.datetime.utcnow()).replace(':', '_')
-db_file = f"sampledb_{ts}.db" 
+db_file = 'sampledb_{}.db'.format(ts) 
 db_file
 
 conn = sqlite3.connect(db_file)

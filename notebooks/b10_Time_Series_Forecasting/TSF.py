@@ -123,9 +123,9 @@ def adf_p_value(data):
     # If p-value is lower than a threshold (commonly 0.05),
     if p<0.05:
         # it means the null hypothesis is rejected and therefore the time series is stationary.
-        return f'stationary (p={p:2.2g})'
+        return 'stationary (p={:2.2g})'.format(p)
     else:
-        return f'not stationary (p={p:2.2g})'
+        return 'not stationary (p={:2.2g})'.format(p)
 
 
 # -

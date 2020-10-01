@@ -187,7 +187,7 @@ reg.fit(x.reshape(-1, 1), y.reshape(-1, 1))
 # Check Regression coefficients and intercept
 m = reg.coef_[0][0]
 b = reg.intercept_[0]
-print(f"m:{m} b:{b}")
+print('m:{} b:{}'.format(m, b))
 # -
 
 # Let's plot the line that minimised the dis
@@ -206,7 +206,7 @@ bayesian_ridge = linear_model.BayesianRidge()
 bayesian_ridge.fit(x.reshape(-1, 1), y.reshape(-1, 1))
 m2 = bayesian_ridge.coef_[0]
 b2 = bayesian_ridge.intercept_
-print(f"m:{m2} b:{b2}")
+print('m:{} b:{}'.format(m2, b2))
 # Let's plot the line that minimised the dis
 predictions2 = [(m2 * x[i]) + b2 for i in range(len(x))]
 plt.scatter(x, y)
@@ -219,7 +219,7 @@ lasso = linear_model.Lasso(alpha=0.1)
 lasso.fit(x.reshape(-1, 1), y.reshape(-1, 1))
 m3 = lasso.coef_[0]
 b3 = lasso.intercept_
-print(f"m:{m3} b:{b3}")
+print('m:{} b:{}'.format(m3, b3))
 # Let's plot the line that minimised the dis
 predictions3 = [(m3 * x[i]) + b3 for i in range(len(x))]
 plt.scatter(x, y)
@@ -347,7 +347,7 @@ digits.keys()
 
 # Let's first see one of the images
 plt.figure(1, figsize=(3, 3))
-print(f"Target: {digits.target[0]}")
+print('Target: {}'.format(digits.target[0]))
 plt.imshow(digits.images[0], cmap=plt.cm.gray_r)
 plt.show()
 
@@ -365,7 +365,7 @@ total_images = digits.target.shape[0]
 
 
 def f(index):
-    print(f"Target: {digits.target[index]}")
+    print('Target: {}'.format(digits.target[index]))
     plt.imshow(digits.images[index], cmap=plt.cm.gray_r)
     fig.canvas.draw()
     display(fig)
@@ -405,7 +405,7 @@ classifier.fit(X_train, y_train)
 predicted = classifier.predict(X_test)
 
 # Let's check the accuracy achieved by our model
-print(f"Accuracy: {sklearn.metrics.accuracy_score(y_test, predicted)}")
+print('Accuracy: {}'.format(sklearn.metrics.accuracy_score(y_test, predicted)))
 # -
 
 # We achieved an accuracy of 92% using one of the most basic classification algorithms, the Logistic Regression, for small images. 

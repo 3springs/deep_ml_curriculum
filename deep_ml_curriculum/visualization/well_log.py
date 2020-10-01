@@ -148,4 +148,3 @@ def plot_well_pred(well_name:str, logs:pd.DataFrame, facies_true:pd.Categorical,
     ax[-1].set_xticklabels([])
     f.suptitle('Well: %s'%well_name, fontsize=14,y=0.94)
     return f, ax
-    

@@ -972,7 +972,7 @@ for cls in range(0, 3):
         tpr[cls],
         color="darkorange",
         lw=lw,
-        label=f"ROC curve class={cls}  (area = %0.2f)" % roc_auc[cls],
+        label='ROC curve class={}  (area = %0.2f)'.format(cls) % roc_auc[cls],
     )
     plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
     plt.xlim([0.0, 1.0])
