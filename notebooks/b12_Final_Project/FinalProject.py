@@ -130,6 +130,7 @@ well_name = Wells.head(50).sample(1).index[0]
 
 print('well_name', well_name)
 geolink = geolink_all.xs(well_name)
+geolink
 # -
 
 # View your well
@@ -148,6 +149,7 @@ y = sample_dataset[["LITHOLOGY_GEOLINK"]]
 
 # Standardizing the features
 X = StandardScaler().fit_transform(X)
+X.shape, y.shape
 # -
 
 # # Project
@@ -156,4 +158,5 @@ X = StandardScaler().fit_transform(X)
 #
 # The purpose is to try things yourself with more help and less guidance.
 
-
+# +
+# YOUR COPIED CODE HERE
