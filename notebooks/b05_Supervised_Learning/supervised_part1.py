@@ -6,12 +6,12 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       format_version: '1.5'
+#       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: deep_ml_curriculum
+#     display_name: Python 3
 #     language: python
-#     name: deep_ml_curriculum
+#     name: python3
 # ---
 
 # # Introduction
@@ -44,7 +44,7 @@
 # +
 import sklearn
 #Metrics
-from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, confusion_matrix
 #Classifiers
 from sklearn.svm import LinearSVC
 from sklearn import tree
@@ -137,7 +137,6 @@ geolink
 # -
 
 geolink['LITHOLOGY_GEOLINK'].astype('category')
-geolink['LITHOLOGY_GEOLINK'] = geolink['LITHOLOGY_GEOLINK'].values.remove_unused_categories()
 
 from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
 plot_well("30_4-1", geolink, facies=geolink['LITHOLOGY_GEOLINK'].astype('category').values)
@@ -171,8 +170,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # Get types of Lithology
 classes = list(geolink["LITHOLOGY_GEOLINK"].unique())
-print('Classes: {}'.format(classes))
-print('Total Classes: {}'.format(len(classes)))
+print("Classes: {}".format(classes))
+print("Total Classes: {}".format(len(classes)))
 
 # Let's check the classes
 y_train.to_numpy()
@@ -196,18 +195,17 @@ le.fit(classes)
 # Source: [Wikipedia](https://en.wikipedia.org/wiki/Hyperparameter_(machine_learning)#:~:text=In%20machine%20learning%2C%20a%20hyperparameter,weights%20are%20derived%20via%20training.)
 
 # Number of Neighbors around our datapoint to be classified
-n_neighbors = 15
-knn_classifier = KNeighborsClassifier(n_neighbors)
+knn_classifier = KNeighborsClassifier(n_neighbors = 15)
 # Now we will use the y values and transform the labels.
 transformed_y_train = le.transform(y_train.to_numpy())
-print(transformed_y_train)
+print('Transformed labels:',transformed_y_train)
 # Let's fit the data
 knn_classifier.fit(X_train, transformed_y_train)
 
 # Evaluation Time
 y_pred = knn_classifier.predict(X_test)
 y_true = le.transform(y_test.to_numpy())
-print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
 # We were able to predict the 11 different classes with 93.2% accuracy using new data. This is slightly better than random, however the accuracy is still very low. Let's train using the same algorithm and hyperparameters but this time we will normalise the data.
 
@@ -244,22 +242,24 @@ X_train, X_test, y_train, y_test = train_test_split(
     normalized_df, y.to_numpy(), test_size=0.2, random_state=2020
 )
 
+# +
 # Label Encoder
 le = preprocessing.LabelEncoder()
 # This will help the LabelEncoder to map the classes to a corresponding value between 0 and n_classes-1
 le.fit(y.to_numpy())
 
-# Normalized knn
-knn_classifier_norm = KNeighborsClassifier(n_neighbors)
 # Now we will use the y values and transform the labels.
 transformed_y_train = le.transform(y_train)
+# -
+
+# Normalized knn
+knn_classifier_norm = KNeighborsClassifier(n_neighbors=15)
 # Let's fit the data
 knn_classifier_norm.fit(X_train, transformed_y_train)
-
 # Evaluation Time
 y_pred = knn_classifier_norm.predict(X_test)
 y_true = le.transform(y_test)
-print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
 # So now we got an accuracy of 90%. Normalising will usually help in the training process. So it's a good practice to preprocess the data before the training phase. However, some machine learning algorithms such as KNN are robust enough to work well with different scales so normalization might not be necessary in some cases. 
 
@@ -274,41 +274,32 @@ print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
 # - n_neighbors = 1,  accuracy: 92.2%
 # We could  manually try different values until we find the best hyperparameters. Of course, this approach could be very time consuming, in particular, when we have a big feature space and want to optimise many hyperparameters. One way to solve this problem is automating the search of hyperparameters. This is also called Hyperparameter Optimisation. We will get deeper into this concept in the next sessions.
 
-n_neighbors = 10
 # Normalized knn
-knn_classifier_norm = KNeighborsClassifier(n_neighbors)
-# Now we will use the y values and transform the labels.
-transformed_y_train = le.transform(y_train)
+knn_classifier_knn10 = KNeighborsClassifier(n_neighbors=10)
 # Let's fit the data
-knn_classifier_norm.fit(X_train, transformed_y_train)
+knn_classifier_knn10.fit(X_train, transformed_y_train)
 # Evaluation Time
-y_pred = knn_classifier_norm.predict(X_test)
+y_pred = knn_classifier_knn10.predict(X_test)
 y_true = le.transform(y_test)
-print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
-n_neighbors = 5
-# Normalized knn
-knn_classifier_norm = KNeighborsClassifier(n_neighbors)
-# Now we will use the y values and transform the labels.
-transformed_y_train = le.transform(y_train)
+# Normalized knn 5
+knn_classifier_knn5 = KNeighborsClassifier(n_neighbors=5)
 # Let's fit the data
-knn_classifier_norm.fit(X_train, transformed_y_train)
+knn_classifier_knn5.fit(X_train, transformed_y_train)
 # Evaluation Time
-y_pred = knn_classifier_norm.predict(X_test)
+y_pred = knn_classifier_knn5.predict(X_test)
 y_true = le.transform(y_test)
-print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
-n_neighbors = 1
 # Normalized knn
-knn_classifier_norm = KNeighborsClassifier(n_neighbors)
-# Now we will use the y values and transform the labels.
-transformed_y_train = le.transform(y_train)
+knn_classifier_knn1 = KNeighborsClassifier(n_neighbors=1)
 # Let's fit the data
-knn_classifier_norm.fit(X_train, transformed_y_train)
+knn_classifier_knn1.fit(X_train, transformed_y_train)
 # Evaluation Time
-y_pred = knn_classifier_norm.predict(X_test)
+y_pred = knn_classifier_knn10.predict(X_test)
 y_true = le.transform(y_test)
-print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
 # <div class="alert alert-success">
 #   <h2>Exercise 1</h2>
@@ -388,37 +379,37 @@ print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
 #     n_neighbors = 5
 #     cls_5nn = KNeighborsClassifier(n_neighbors)
 #     # Let's fit the data
-#     cls_5nn .fit(X_train, transformed_y_train)
+#     cls_5nn.fit(X_train, transformed_y_train)
 #
 #     # 10NN
 #     n_neighbors = 10
 #     cls_10nn = KNeighborsClassifier(n_neighbors)
 #     # Let's fit the data
-#     cls_10nn .fit(X_train, transformed_y_train)
+#     cls_10nn.fit(X_train, transformed_y_train)
 #
 #     # 15NN
 #     n_neighbors = 15
 #     cls_15nn = KNeighborsClassifier(n_neighbors)
 #     # Let's fit the data
-#     cls_15nn .fit(X_train, transformed_y_train)
+#     cls_15nn.fit(X_train, transformed_y_train)
 #
 #     # 4. Compare the accuracy of your models
 #
 #     # Evaluation Time
 #     y_pred = cls_1nn.predict(X_test)
-#     print(f"Accuracy 1NN: {accuracy_score(y_test_true, y_pred)}")
+#     print("Accuracy 1NN: {}".format(accuracy_score(y_test_true, y_pred)))
 #
 #     # Evaluation Time
 #     y_pred = cls_5nn.predict(X_test)
-#     print(f"Accuracy 5NN: {accuracy_score(y_test_true, y_pred)}")
+#     print(f"Accuracy 5NN: {}".format(accuracy_score(y_test_true, y_pred)))
 #
 #     # Evaluation Time
 #     y_pred = cls_10nn.predict(X_test)
-#     print(f"Accuracy 10NN: {accuracy_score(y_test_true, y_pred)}")
+#     print(f"Accuracy 10NN: {}".format(accuracy_score(y_test_true, y_pred)))
 #
 #     # Evaluation Time
 #     y_pred = cls_15nn.predict(X_test)
-#     print(f"Accuracy 15NN: {accuracy_score(y_test_true, y_pred)}")     
+#     print(f"Accuracy 15NN: {}".format(accuracy_score(y_test_true, y_pred)))     
 #   ```
 #
 #   </details>
@@ -535,7 +526,7 @@ categories = y_sample.unique()
 y_pred = clf.predict(X_test)
 y_pred = pd.Categorical(y_pred, categories=categories)
 y_true = y_test
-print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 # -
 
 print(sklearn.metrics.classification_report(y_true, y_pred))
@@ -629,7 +620,7 @@ clf = clf.fit(X_train, y_train)
 
 # Evaluation Time
 y_pred = clf.predict(X_test)
-print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 # -
 
 # We got an accuracy of 93%~ just with the default hyperparameters. Let's train the DT again with a different hyperparameter.
@@ -640,7 +631,7 @@ clf2 = clf2.fit(X_train, y_train)
 
 # Evaluation Time
 y_pred = clf2.predict(X_test)
-print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 # -
 
 # We got now an accuracy of 92%~ just with the hyperparameter max_depth=10. Let's train the DT again with a different hyperparameter. In appearance, the first model would be better, however, there are other metrics besides accuracy that should be taken into account. There are also other methods to avoid overfitting. We will go deeper into this topic in the next sessions.
@@ -669,14 +660,14 @@ print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
 clf = RandomForestClassifier()
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
-print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 
 # Let's train again the model with different hyperparameters.
 
 clf = RandomForestClassifier(max_depth=100, n_estimators=100)
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
-print('Accuracy: {}'.format(accuracy_score(y_test, y_pred)))
+print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 
 # ## References and further reading
 # The following sources have been used in the creation of this notebook:

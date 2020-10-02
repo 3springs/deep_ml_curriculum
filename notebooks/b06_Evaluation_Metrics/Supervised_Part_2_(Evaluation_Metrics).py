@@ -31,7 +31,7 @@
 #         - [Accuracy, Recall & Precision](#1-2-2)
 #         - [Confusion Matrix](#1-2-3)
 #         - [AUC and ROC curves](#1-2-4)
-# - [2. Cross-validation](#2)
+# - [2. (OPTIONAL) Cross-validation](#2)
 
 # # 0. Packages <a name="0"></a>
 #
@@ -89,12 +89,12 @@ warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 # Set a seed for random numbers
 np.random.seed(2020)
 # Generate random numbers
-y = np.random.uniform(low=0.0, high=100.0, size=(10,))
-y
+y_pred = np.random.uniform(low=0.0, high=100.0, size=(10,))
+y_pred
 
 # Predictions
-y_pred = np.array([90, 85, 45, 34, 33, 22, 28, 33, 89, 16])
-y_pred
+y = np.array([90, 85, 45, 34, 33, 22, 28, 33, 89, 16])
+y
 
 
 # <a name='1-1-1'></a>
@@ -170,7 +170,7 @@ mean_squared_error(y, y_pred)
 #
 
 # +
-# Let's implement MAE using numpy
+# Let's implement RMSE using numpy
 def RMSE(y, y_pred):
     n_samples = len(y)
     mean_abs_err = np.sqrt(np.sum((y - y_pred) ** 2) / n_samples)
@@ -218,58 +218,54 @@ np.sqrt(mean_squared_error(y, y_pred))
 # <a name='ex-1'></a>
 # ### Exercise 1
 #
-# The first two metrics, `TP` and `FP` are implemented below. Based on that code, create two more functions for `TN` and `TP`.
+# The first two metrics, `TP` and `FP` are implemented below. Based on that code, create two more functions for `FN` and `FP`.
 
-# +
-# Let's set the threshold as 0.5 by default
-def true_positives(y, pred, th=0.5):
-    TP = 0
-    # get thresholded predictions
-    th_preds = (pred > th).astype(
-        int
-    )  # astype(int) converts an array of booleans to integers
-    # compute True Positives. Use numpy to calculate TP
-    TP = np.sum((y == 1) & (th_preds == 1))
-    return TP
-
-
-def true_negatives(y, pred, th=0.5):
-    TN = 0
-    # get thresholded predictions
-    th_preds = (pred > th).astype(
-        int
-    )  # astype(int) converts an array of booleans to integers
-    # compute True Negatives. Use numpy to calculate TN
-    TN = np.sum((y == 0) & (th_preds == 0))
-    return TN
-
-
-def false_positives(y, pred, th=0.5):
-    FP = 0
-    # get thresholded predictions
-    th_preds = pred > th
-    # COMPLETE CODE HERE
-    return FP
-
-
-def false_negatives(y, pred, th=0.5):
-    FN = 0
-    # get thresholded predictions
-    th_preds = pred > th
-    # COMPLETE CODE HERE
-    return FN
-
-
-# -
-
-# You can click in the button below the reveal the solution for exercise 1
+# <div class="alert alert-success">
+#   <h2>Exercise 1</h2>
 #
-# <details>    
-# <summary>
-#     <font size="4" color="darkblue"><b>See the solution for Exercise 1</b></font>
-# </summary>
+#   Description:
+#   
+#   The first two metrics, `TP` and `FP` are implemented below. Based on that code, create two more functions for `FN` and `FP`.
 #     
-# ```python
+#   ```python
+#     # Let's set the threshold as 0.5 by default
+# def true_positives(y, pred, th=0.5):
+#     TP = 0
+#     # get thresholded predictions
+#     th_preds = (pred > th).astype(int)  # astype(int) converts an array of booleans to integers
+#     # compute True Positives. Use numpy to calculate TP
+#     TP = np.sum((y == 1) & (th_preds == 1))
+#     return TP
+#
+#
+# def true_negatives(y, pred, th=0.5):
+#     TN = 0
+#     # get thresholded predictions
+#     th_preds = (pred > th).astype(int)  # astype(int) converts an array of booleans to integers
+#     # compute True Negatives. Use numpy to calculate TN
+#     TN = np.sum((y == 0) & (th_preds == 0))
+#     return TN
+#   ```
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#   Remember that:
+#       
+#   In binary classification we will represent a negative prediction with 0 and 1 for positive.
+#       
+# - true positive (TP): The model classifies the example as positive **(1)**, and the actual label also positive **(1)**.
+# - false positive (FP): The model classifies the example as positive **(1)**, **but** the actual label is negative **(0)**.
+# - true negative (TN): The model classifies the example as negative **(0)**, and the actual label is also negative **(0)**.
+# - false negative (FN): The model classifies the example as negative **(0)**, **but** the label is actually positive **(1)**.
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
 #     def false_positives(y, pred, th=0.5):
 #         FP = 0
 #         # get thresholded predictions
@@ -284,9 +280,69 @@ def false_negatives(y, pred, th=0.5):
 #         th_preds = (pred > th).astype(int)
 #         FN = np.sum(((y == 1) & (th_preds == 0)).astype(int))
 #         return FN
-#  ```
-# </details>
+#   ```
+#   </details>
 #
+# </div>
+
+# +
+# Let's set the threshold as 0.5 by default
+def true_positives(y, pred, th=0.5):
+    TP = 0
+    # get thresholded predictions
+    th_preds = (pred > th).astype(int)  # astype(int) converts an array of booleans to integers
+    # compute True Positives. Use numpy to calculate TP
+    TP = np.sum((y == 1) & (th_preds == 1))
+    return TP
+
+
+def true_negatives(y, pred, th=0.5):
+    TN = 0
+    # get thresholded predictions
+    th_preds = (pred > th).astype(int)  # astype(int) converts an array of booleans to integers
+    # compute True Negatives. Use numpy to calculate TN
+    TN = np.sum((y == 0) & (th_preds == 0))
+    return TN
+
+
+# -
+
+# Let's check how many TP and TN we have in the example below:
+
+# +
+np.random.seed(2020)
+y = np.array([0,1,0,0,1,1,1,0,0,0])
+y_pred = np.random.uniform(low=0.0, high=1.0, size=(10,))
+
+print('Prediction:',y_pred)
+print('Actual:',y)
+
+print('True positives:',true_positives(y,y_pred))
+print('True negatives:',true_negatives(y,y_pred))
+
+
+# +
+def false_positives(y, pred, th=0.5):
+    FP = 0
+    # get thresholded predictions
+    th_preds = (pred > th).astype(int)
+    # COMPLETE CODE HERE
+    return FP
+
+
+def false_negatives(y, pred, th=0.5):
+    FN = 0
+    # get thresholded predictions
+    th_preds = (pred > th).astype(int)
+    # COMPLETE CODE HERE
+    return FN
+
+
+# -
+
+print('True positives:',false_positives(y,y_pred))
+print('True negatives:',false_negatives(y,y_pred))
+
 
 # <a name='1-2-2'></a>
 # ## Accuracy, Precision, Recall
@@ -372,10 +428,12 @@ def false_negatives(y, pred, th=0.5):
 # So we got an accuracy of 0,7. No bad right? Now let's compare with the next example:
 #
 # <a name='ex-2'></a>
-# ### Exercise 2
 #
-# Imagine that you have trained another ML algorithm and you get the results below:
-# 1. Calculate results with a threshold of 0,5
+# <div class="alert alert-success">
+#   <h2>Exercise 2</h2>
+#
+#   Imagine that you have trained another ML algorithm and you get the results below:
+# 1. Calculate results with a threshold of 0.5
 # 2. Calculate TP, TN, FP, FN
 # 3. Calculate accuracy
 #
@@ -414,16 +472,22 @@ def false_negatives(y, pred, th=0.5):
 # | 0 | 0 |
 # | 0 | 0 |
 #
-# </td></tr></table>
-#
-# You can click in the button below the reveal the solution for exercise 2
-#
+# </td></tr>
+# </table>
+# <br/>
+# <br/>
 # <details>    
 # <summary>
-#     <font size="4" color="darkblue"><b>See the solution for Exercise 2</b></font>
+# <b>→ Hints</b>
 # </summary>
-#
-#
+# $\displaystyle \mathrm {ACC} ={\frac {\mathrm {TP} +\mathrm {TN} }{\mathrm {TP} +\mathrm {TN} +\mathrm {FP} +\mathrm {FN} }}$
+# </details>
+#     
+# <details>
+# <summary>
+# <b>→ Solution</b>
+# </summary>
+#       
 # <table>
 # <tr><th>Original </th><th>With Threshold 0,5</th><th>Results</th></tr>
 # <tr><td>
@@ -458,10 +522,10 @@ def false_negatives(y, pred, th=0.5):
 #
 # </td><td>
 #     
-# - $TP=0$
-# - $TN=8$
-# - $FP=0$
-# - $FN=2$    
+# $TP=0$<br/>
+# $TN=8$<br/>
+# $FP=0$<br/>
+# $FN=2$    
 #     
 #     
 # $\displaystyle \mathrm {ACC} ={\frac {\mathrm {0} +\mathrm {8} }{\mathrm {0} +\mathrm {8} +\mathrm {0} +\mathrm {2} }} = {\frac{8}{10}} = 0,8 $
@@ -473,8 +537,11 @@ def false_negatives(y, pred, th=0.5):
 #     
 # Actually, our first intuition would tell us that the first model is better, even if we are getting a better accuracy from the second model. Why is that?
 #     
-# If we check the results for the second model, we will notice that the second model always predicts 0.01. This is not a very useful model and that's why we should not rely only in the accuracy metric.
+# If we check the results for the second model, we will notice that the second model always predicts 0.01. This is not a very useful model and that's why we should not rely only in the accuracy metric
 # </details>
+#
+# </div>
+#
 
 # Let's talk now about recall and precision.
 #
@@ -513,14 +580,14 @@ def false_negatives(y, pred, th=0.5):
 #
 # $\displaystyle \mathrm {Precision} ={\frac {\mathrm {TP} }{\mathrm {TP} +\mathrm {FP} + \epsilon}}={\frac {\mathrm {0} }{\mathrm {0} +\mathrm {0} + 0,000001}}=0$
 #
-#
-# ### Exercise 3
+# <div class="alert alert-success">
+#     <h2>Exercise 3</h2>
 #
 # We already calculated the `precision` and `recall` for the second model of our example. We noticed that in both cases we got a value of zero. Despite of having an accuracy of 80%, a precision and recall of 0 is very suspicious. This would usually mean that there is something wrong either with our model or the test data set we are using to evaluate.
 #
 # - Calculate the precision and recall for the first model
 # - Compare how those accuracy, precision and recall differ between model 1 and model 2 
-#
+#     
 # Model 1:
 # <table>
 # <tr><th>Original </th><th>With Threshold 0,5</th></tr>
@@ -590,40 +657,56 @@ def false_negatives(y, pred, th=0.5):
 # | 0 | 0 |
 #
 # </td></tr></table>
-
-# You can click in the button below the reveal the solution for exercise 1
+# <br/>
+# <br/>
 # <details>    
 # <summary>
-#     <font size="4" color="darkblue"><b>See the solution for Exercise 3</b></font>
+# <b>→ Hints</b>
 # </summary>
+# <div style='background-color:white; color:black'>
+# <br/>
+# $\displaystyle \mathrm {Recall} ={\frac {\mathrm {TP} }{\mathrm {TP} +\mathrm {FN}}}$   <br/><br/>
+# $\displaystyle \mathrm {Precision} ={\frac {\mathrm {TP} }{\mathrm {TP} +\mathrm {FP}}}$
+# <br/>
+# </div>
+# </details>
 #     
-# **Model 1:**
-#     
+# <details>
+# <summary>
+# <b>→ Solution</b>
+# </summary>
+# <div style='background-color:white; color:black'>
+# <br/>
+# <b>Model 1:</b>
+#
 # - $\mathrm{TP = 4}$
 # - $\mathrm{TN = 3}$
 # - $\mathrm{FP = 1}$
 # - $\mathrm{FN = 2}$
 #
 # $\displaystyle \mathrm {ACC} ={\frac {\mathrm {4} +\mathrm {3} }{\mathrm {4} +\mathrm {3} +\mathrm {1} +\mathrm {2} }} = {\frac{7}{10}} = 0,7 $
-#     
+#
 # $\displaystyle \mathrm {Recall} ={\frac {\mathrm {TP} }{\mathrm {TP} +\mathrm {FN}}}={\frac {\mathrm {4}}{\mathrm {4} +\mathrm {2}}}=\frac {\mathrm {4}}{\mathrm {6}} = 0.67$
-#     
+#
 # $\displaystyle \mathrm {Precision} ={\frac {\mathrm {TP}}{\mathrm {TP} +\mathrm {FP}}}={\frac{\mathrm {4}}{\mathrm {4} +\mathrm {1}}}=\frac {\mathrm {4}}{\mathrm {5}} = 0.8$
-#     
+#
 # **Model 2:**
-#     
+#
 # - $\mathrm{TP = 0}$
 # - $\mathrm{TN = 8}$
 # - $\mathrm{FP = 0}$
 # - $\mathrm{FN = 2}$
-#     
+#
 # $\displaystyle \mathrm {ACC} ={\frac {\mathrm {0} +\mathrm {8} }{\mathrm {0} +\mathrm {8} +\mathrm {0} +\mathrm {2} }} = {\frac{8}{10}} = 0,8 $
-#     
+#
 # $\displaystyle \mathrm {Recall} ={\frac {\mathrm {TP} }{\mathrm {TP} +\mathrm {FN} +\epsilon}}={\frac {\mathrm {0}}{\mathrm {0} +\mathrm {2}+\epsilon}}=\frac {\mathrm {0}}{\mathrm {2}+\epsilon} = 0$
-#     
+#
 # $\displaystyle \mathrm {Precision} ={\frac {\mathrm {TP}}{\mathrm {TP} +\mathrm {FP}+\epsilon}}={\frac{\mathrm {0}}{\mathrm {0} +\mathrm {1}+\epsilon}}=\frac {\mathrm {0}}{\mathrm {0}+\epsilon} = 0$
+# <br/>
+# </div>
+# </details>
+#
 #     
-# </details>   
 
 # ### Metrics in Python
 # Let's implement the metrics for accuracy, recall, and precision in Python.
@@ -697,20 +780,29 @@ y_pred = (y_hat > th).astype(int)
 accuracy(y, y_pred)
 # -
 
-# # Exercise 4
-#
-# Implement the metrics for precision and recall in Python
-
-# +
-# IMPLEMENT CODE HERE
-# -
-
-# <details>    
-# <summary>
-#     <font size="4" color="darkblue"><b>See the solution for Exercise 4</b></font>
-# </summary>
+# <div class="alert alert-success">
+#   <h2>Exercise 4</h2>
+#   
+#   Implement the metrics for precision and recall in Python.
 #     
-# ```python
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#   <div style='background-color:white; color:black'>
+#   Remember that:
+#   $\displaystyle \mathrm {Recall} ={\frac {\mathrm {TP} }{\mathrm {TP} +\mathrm {FN} + \epsilon}}$
+#
+#   $\displaystyle \mathrm {Precision} ={\frac {\mathrm {TP} }{\mathrm {TP} +\mathrm {FP} + \epsilon}}$
+#   </div>
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
 # # Implementation of Recall in Python
 # def recall(y,y_hat):
 #     TP = true_positives(y,y_hat)
@@ -729,8 +821,14 @@ accuracy(y, y_pred)
 #
 # print(precision(y,y_hat))
 # # Output: 0.8
-# ```
-# </details>
+#   ```
+#   </details>
+#
+# </div>
+
+# +
+# IMPLEMENT CODE HERE 
+# -
 
 # <a name='1-1-3'></a>
 # ### Confusion Matrix and F1-Score
@@ -972,7 +1070,7 @@ for cls in range(0, 3):
         tpr[cls],
         color="darkorange",
         lw=lw,
-        label='ROC curve class={}  (area = %0.2f)'.format(cls) % roc_auc[cls],
+        label="ROC curve class={}  (area = {:0.2f})".format(cls,roc_auc[cls]),
     )
     plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
     plt.xlim([0.0, 1.0])
@@ -982,6 +1080,8 @@ for cls in range(0, 3):
     plt.title("Receiver operating characteristic example")
     plt.legend(loc="lower right")
     plt.show()
+
+# # (OPTIONAL)
 
 # <a name='2'></a>
 # # Cross-validation
@@ -1138,16 +1238,15 @@ for col in columns:
     le.fit(X_train[col])
     X_train[col] = le.transform(X_train[col])
     X_test[col] = le.transform(X_test[col])
+# -
 
-# +
 # Import models
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
-# Let's train some models and compare the results
-# -
+# # Let's train some models and compare the results
 
 # ### RandomForest Model
 
@@ -1224,5 +1323,3 @@ new_models_dataframe2
 # Examples:
 # - [Seaborn Datasets](https://seaborn.pydata.org/generated/seaborn.load_dataset.html)
 # - [Example Titanic](https://www.kaggle.com/sherli/complete-guide-for-titanic-survival-prediction)
-
-

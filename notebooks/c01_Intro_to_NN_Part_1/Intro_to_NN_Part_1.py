@@ -266,12 +266,10 @@ clf.score(X_test, y_test)
 #             # Let's train the model using our custom hyperparameters
 #             clf = train(X_train, y_train, num_hidden_layers, activation)
 #             # Let's evaluate the accuracy of the model using the test data
-#             print(clf.score(X_test, y_test))
+#             print('Accuracy:',clf.score(X_test, y_test))
 # ```
 #
 # </details>
-
-# Now we will build the same model using Pytorch ! 
 
 # <a name="3"></a>
 # # 3. Introduction to Pytorch
