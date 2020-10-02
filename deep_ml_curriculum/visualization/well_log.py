@@ -43,6 +43,16 @@ color_dict = {'Aeolian Sandstone': '#ffffe0',
  'Volcanic Tuff': '#ff6347',
 }
 
+def remove_unused_categories(cats):
+    """Takes in list of pd.Categorical. Gives them same, cleaned categories."""
+    new_categories = []
+    for c in cats:
+        new_categories += list(set(c))
+    new_categories = sorted(set(new_categories))
+    
+    cats = [pd.Categorical(c, categories=new_categories) for c in cats]
+    return cats
+
 def plot_facies(facies:pd.Categorical, ax=None, colorbar=True, xlabel='Facies'):
     """Plot as facies log.
     
@@ -96,6 +106,7 @@ def plot_well(well_name:str, logs:pd.DataFrame, facies:pd.Categorical, figsize=(
     ax[3].plot(logs.RHOB, logs.DEPT, '-')
     ax[3].set_xlabel("RHOB")
 
+    [facies] = remove_unused_categories([facies])
     plot_facies(facies, ax[-1])
     
     for i in range(len(ax)-1):
@@ -130,6 +141,7 @@ def plot_well_pred(well_name:str, logs:pd.DataFrame, facies_true:pd.Categorical,
     ax[3].plot(logs.RHOB, logs.DEPT, '-')
     ax[3].set_xlabel("RHOB")
 
+    [facies_pred, facies_true] = remove_unused_categories([facies_pred, facies_true])
     assert (facies_pred.categories == facies_true.categories).all()
     plot_facies(facies_pred, ax=ax[4], colorbar=False, xlabel='Facies (pred)')
     plot_facies(facies_true, ax=ax[5], xlabel='Facies (true)')

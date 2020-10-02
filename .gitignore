@@ -321,3 +321,4 @@ notebooks/b05_Interactive_Plotting/*.html
 notebooks/c06_Recurrent_Neural_Networks/06_diagram_ignore.ipynb
 notebooks/c06_Recurrent_Neural_Networks/06_diagram_ignore.py
 ignore/
+*/landmass_net.pth
