@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: jup3.7.3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: jup3.7.3
+#     name: deep_ml_curriculum
 # ---
 
 # Note download data from https://drive.google.com/drive/folders/1EgDN57LDuvlZAwr5-eHWB5CTJ7K9HpDP
@@ -436,6 +436,67 @@ def dset_to_zarr(dset, f):
 dset_to_zarr(dset=xr_all.drop(['geometry']),
           f=interim_locations/'geolink_norge_well_logs.zarr')
 # -
+# # Plot map
+
+import matplotlib.pyplot as plt
+# %matplotlib inline
+import os
+from tqdm.auto import tqdm
+import pandas as pd
+import geopandas as gpd
+import numpy as np
+
+# +
+# import pandas as pd
+# import xarray as xr
+# xf = xr.open_zarr("../../data/processed/geolink_norge_dataset/geolink_norge_well_logs.zarr")
+# df = xf.to_dataframe().swaplevel().sample(1000)
+# df['LITHOLOGY_GEOLINK'] = df['LITHOLOGY_GEOLINK'].astype('category')
+# df['Well'] = df.index.get_level_values(0).astype('category')
+# df['DEPT'] = df.index.get_level_values(1)
+# feature_cols = ['CALI', 'DTC', 'GR', 'RDEP', 'RHOB',
+#        'RMED', 'xc', 'yc', 'DEPT']
+# df = df.dropna(how='any', subset=feature_cols+['LITHOLOGY_GEOLINK'])
+# df = df.sort_index()
+
+# import geopandas as gpd
+# gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.xc, df.yc))
+# gdf = gdf.set_crs(epsg=4326).to_crs(epsg=3857)
+# gdf.plot()
+# -
+
+
+
+
+
+
+
+
+# # Plot contextily
+
+from pathlib import Path
+interim_locations = Path("../../data/processed/geolink_norge_dataset/")
+df_well_tops = gpd.read_file(interim_locations / "norge_well_tops.gpkg").set_crs(epsg=4326).to_crs(epsg=3857)#.head(40)
+# df_well_tops.plot()
+
+# +
+
+
+import contextily as ctx
+ax = df_well_tops.plot(figsize=(18, 18), edgecolor='k')
+ctx.add_basemap(ax, url=ctx.providers.Esri.OceanBasemap)
+
+# Plot every 5th
+df_well_tops[::5].apply(lambda x: 
+                   ax.annotate(
+                       s=x.wlbWellboreName, 
+                       xy=x.geometry.centroid.coords[0], 
+                       ha='left',
+                       c='white'
+                   ), axis=1);
+# -
+
+
 
 
 
