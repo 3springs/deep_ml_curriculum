@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -8,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: py37_pytorch
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: conda-env-py37_pytorch-py
+#     name: deep_ml_curriculum
 # ---
 
 # # Pandas
@@ -20,6 +21,7 @@ import pandas as pd
 import pandas_profiling as pp
 import numpy as np
 import warnings
+# %matplotlib inline
 
 warnings.simplefilter("ignore")
 # -
@@ -54,7 +56,7 @@ df
 import sqlite3
 
 # create a connection to database
-conn = sqlite3.connect("../01 SQL/Sales.db")
+conn = sqlite3.connect("../b01_SQL/Sales.db")
 
 # write a query
 query = """
@@ -236,11 +238,9 @@ df.pivot_table(
     fill_value=0,
 )
 
-
-
-# #### Exercise
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
 #
-# <div class="alert alert-success" style="font-size:100%">
 # Now to practice what we have learned so far, let's create a table of the total emissions (quantity in kg) of the top 10 substances (most commonly recorded substances in the dataset) for each postcode.<br>
 #     
 # 1. Find how many times each substance occurs `substance_count`
@@ -248,41 +248,38 @@ df.pivot_table(
 # 3. Create a seperate dataframe that shows the total weight of each substance per postcode `weight_by_postcode`
 # 4. Combine `weight_by_postcode` and `top10` to get the weight by postcode of the top 10 substances 
 #     
-# <details><summary>Hints</summary>
-#     
+# ```python
+# # 1. Find how many times each substance has been recorded (this has been done for you)
+# # substance_count = df[["site_address_postcode", "substance"]].??
+#
+# # 2. Sort it and find the substances that have been recorded the most (this has been done for you)
+# # top10 = substance_count.??
+#
+# # 3. Create a seperate table that shows the total weight of each substance per postcode (hint: pivot table or groupby)
+# # pivot = ??
+#
+# # 4. Combine the tables, to get a subset which only includes the top 10 substances
+# # pivot_top10 = ??
+# ```
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
 # 1. use groupby then count
 # 2. use .sort_values() then get the first 10 rows
 # 3. A pivot table will do this easily
 # 4. `weight_by_postcode[top10.index]`
 #
-# </details>
-# <div>
-
-
-
-# +
-# 1. Find how many times each substance has been recorded (this has been done for you)
-# substance_count = df[["site_address_postcode", "substance"]].??
-
-# 2. Sort it and find the substances that have been recorded the most (this has been done for you)
-# top10 = substance_count.??
-
-# 3. Create a seperate table that shows the total weight of each substance per postcode (hint: pivot table or groupby)
-# pivot = ??
-
-# 4. Combine the tables, to get a subset which only includes the top 10 substances
-# pivot_top10 = ??
-# -
-
-
-
-# #### Solution:
-
-# <details>    
-# <summary>
-#     <font size="4" color="darkblue"><b>See the solution for Exercise</b></font>
-# </summary>
-#     
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
 # ```python
 # # you can replace site_address_postcode by any other column. Since we are only counting it doesn't matter which column use.
 # substance_count = df[["site_address_postcode", "substance"]].groupby(by="substance").count()
@@ -303,9 +300,10 @@ df.pivot_table(
 # pivot_top10 = pivot[top10.index]
 # pivot_top10
 # ```
-# </details>
-
-
+#
+#   </details>
+#
+#   </div>
 
 # Now it's a good time to discuss dealing with missing values in a table.
 
