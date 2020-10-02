@@ -6,42 +6,28 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       format_version: '1.5'
+#       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: python3
+#     name: deep_ml_curriculum
 # ---
 
-# # Data Visualisation and Data Science
+# # Final project Data Visualisation and Data Science
 
 # __Welcome to the final project of Data Visualisation and Data Science!__ 
 #
 # Sometimes the biggest step in learning is going from the ordered tutorial environment into the wild. It can be confusing and frustrating, so it's best to give it a try now, while you can get help.
 #
-# In this project, you will explore a geological image dataset by applying some popular supervised and unsupervised machine learning techniques using scikit-learn. 
+# In this project, you will try your own project, with help from the instructors.
 #
-# This notebook will walk you through some of the steps for preprocessing and preparing the dataset. As part of the final project, you will need to complete this notebook by building some models, creating visualisation to better represent the data and evaluating those models.
 #
-# For this final project you will try to do the following tasks:
+# We suggest taking a new well log (shown below), then trying some techniques from the previous noteooks. For example 
+# - copy UMAP from the unsupervised notebook, run it on a new well
+# - your own idea
 #
-# - Data preparation: Dimensionality Reduction and plot
-# - Model Development: Clustering vs Supervised learning and plot
-# - Evaluation: Evaluate the best model based on metrics
-#   
-# # Proceedure
-#   
-# This is hard, so you will need to ask the instructors for guidance in how to do it. We suggest:
-# 1. The instructor will walk you through the problem and starter code
-# 2. Feel confused, and realise this is hard
-# 3. Read the whole problem
-# 4. Read the whole notebook
-# 5. Try to understand the what the first step is
-# 6. Look for code you can use in previous notebooks you can copy
-# 7. Encounter a problem, ask for help
-# 8. Repeat
-#  
+# Don't forget to ask for help, brainstorming, suggestions, etc
 
 # # Import Libraries
 
@@ -61,142 +47,113 @@ import warnings
 warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 # -
 
+# <details>
+# <summary><b>→ About the Geolink dataset </b></summary>
+#
+# This is a well dataset of Well's Petroleum wells drilled on the Norwegian continental shelf. It was released by the Norweigen Government, cleaned by Geolink, and loaded by LukasMosser. The full dataset has 221 wells, over 150 lithologies, with around 500 MB of data.
+#
+#
+# You don't need to understand the data fully for this course, but here's a brief overview
+#
+# - Well - The well name
+# - DEPT - Depth below the ground in meters
+# - LITHOLOGY_GEOLINK - This is the facies or lithology, which means rock type. This is a label, made by multiple human experts by looking at the context, the well, maps of the area, and often picture of rock samples extracted from the well.
+# - [Well logs](https://en.wikipedia.org/wiki/Well_logging): These are specialised measurements by instruments lowered down the well hole
+#     - CALI - [Caliper log](https://en.wikipedia.org/wiki/Caliper_log), this measures the size of the well bore
+#     - GR - [Gamma Ray](https://en.wikipedia.org/wiki/Gamma_ray_logging): Measure passive amount of high energy electromagnetic radiation naturally emitted from the rock
+#     - RHOB - [Bulk Density](https://en.wikipedia.org/wiki/Density_logging): Measured active amount high energy electromagnetic radiation. This has a transmitting source of gamma rays
+#     - DTC - [Compressional wave](https://en.wikipedia.org/wiki/Longitudinal_wave) travel time: This measure the how long a compressional wave takes to travel through the formationation
+#     - RDEP - [Resistivity](https://en.wikipedia.org/wiki/Resistivity_logging) Deep: Electrical resistivity through the rock with a deep penetration
+#     - RMED - Resistivity Medium: Electrical resistivity through the rock with a nedium penetration
+#     - *Many other well logs were removed as they were not present in all wells*
+#     
+# Interpreting lithology from well logs is a very hard problem for machine learning because:
+#
+# - It's usually done by expert humans (Petrophysicists) with years to decades of experience, not an random human
+# - it takes into account context in the form of prior knowledge, geology, nearby wells, rock samples, and many more. Many of these are forms of information the machine doesn't have access to
+# - The data is unbalanced with important rocks like sandstone sometimes appearing as very this layers
+#
+#
+# <table>
+#     <tr>
+#         <td>
+# <img width="480" src="../../reports/figures/30-4_1.png"/>
+#         </td>
+#         <td>
+# <img width="320" src="../../data/processed/geolink_norge_dataset/location of geolink wells.png"/>
+#         </td>
+#     </tr>
+# </table>
+#
+#
+# ### Data Disclaimer
+#
+# All the data serving as an input to these notebooks was generously donated by GEOLINK  
+# and is CC-by-SA 4.0 
+#
+# If you use this data please reference the dataset properly to give them credit for their contribution.
+#
+# **Note:** download data from https://drive.google.com/drive/folders/1EgDN57LDuvlZAwr5-eHWB5CTJ7K9HpDP
+#
+# Credit to this repo: https://github.com/LukasMosser/geolink_dataset
+#
+# ### Data Preparation
+#
+# The geolink dataset we will use in this notebook has been preprocessed. You can find the process of preparation of this dataset in [Data Preparation](../z00_Data_prep/00-mc-prep_geolink_norge_dataset.ipynb)
+#
+# </details>
+
 # # Load Dataset
 
-# ## About the dataset
+# +
+interim_locations = Path("../../data/processed/geolink_norge_dataset/")
+# Load processed dataset
+geolink_all = pd.read_parquet(
+    interim_locations / "geolink_norge_well_logs_train.parquet"
+).set_index(["Well", "DEPT"])
+# Add Depth as column
+geolink_all['DEPT'] = geolink_all.index.get_level_values(1)
+
+print('Choose a random well')
+Wells = geolink_all.index.get_level_values(0).value_counts()
+print(Wells.head(50).sample(10))
+# -
+
+# <div class="alert alert-info" style="font-size:100%">
+# Adopt a well by choosing a well name, and setting it below
+# </div>
+
+# +
+# Choose a well name here
+well_name = Wells.head(50).sample(1).index[0]
+# well_name = '35_X-X'
+
+print('well_name', well_name)
+geolink = geolink_all.xs(well_name)
+# -
+
+# View your well
+from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
+plot_well(well_name, geolink, facies=geolink['LITHOLOGY_GEOLINK'].astype('category').values)
+
+# +
+from sklearn.preprocessing import StandardScaler
+
+# Scale the data
+sample_dataset = geolink.sample(n=5000, replace=False, random_state=2020)
+# Separating features
+X = sample_dataset[list(sample_dataset.columns[1:])]
+# Separating target
+y = sample_dataset[["LITHOLOGY_GEOLINK"]]
+
+# Standardizing the features
+X = StandardScaler().fit_transform(X)
+# -
+
+# # Project
 #
-# This data is from the [DeepRock-SR](https://www.digitalrocksportal.org/projects/215) dataset. [Paper](https://arxiv.org/abs/1907.07131)
+# Here you decide what you want to do. If your not sure, browse the previous notebooks, and ask the instructors.
 #
-# The 2D dataset comprises of twelve thousand 500x500 HR unsegmented slices of various digital rocks with image resolution ranging from 2.7 to 25 um.
-#
-# - Rocks: Sandstone, Carbonate, and Coal Datasets
-# - Images are taken with [micro‐computed tomography](https://en.wikipedia.org/wiki/X-ray_microtomography). This uses x-ray from many differen't angles to producee pixel sizes of the cross-sections are in the micrometre range
-#
-#
-
-# For this project we will used a preproceseed version of the dataset. Please check the notebook ***** to understand the process.
-
-datadir = Path("../../data/processed/deep-rock-sr/")
-
-# Look at what data is available
-sorted(datadir.glob("**/*train_*"))
-
-# Load 2D Images
-data_train = torchvision.datasets.ImageFolder(
-    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
-    is_valid_file=lambda f: ("train_LR_default_X4" in f) and not ("shuffle" in f),
-)
-
-# The dataset have three types of rock:
-
-data_train.classes
-
-# Let's visualise the first image in the dataset
-data_train[0][0]
-
-# Number of images in the dataset
-len(data_train)
-
-# In this dataset, the first
-data_train[0]
-
-
-# In the first position there is a PIL image and the second one correspond to the label:
-#
-# 0: carbonate2D
-# 1: coal2D
-# 2: sandstone3D
-
-def show_image(interval):
-    print("label:", data_train[interval][1])
-    print("label_str:", data_train.classes[data_train[interval][1]])
-    display(data_train[interval][0])
-
-
-# (advanced) Now let's visualise all images in the dataset using `interact`.
-# We can pass any python function followed by arguments (e.g. `interval` to the show_image function)
-interact(show_image, interval=(0, len(data_train) - 1))
-
-# Images are a type of data. For colored images they usually range from 0 to 255 and have 3 dimensions for every channel (R)ed, (G)reen, (B)lue.
-#
-# More information related to the RGB colors space: https://en.wikipedia.org/wiki/RGB_color_model
-
-# let's check any random image
-img = data_train[4799][0]
-display(img)
-
-# That same image can be analyse as a multidimensional array where every pixel has 3 values in the RGB color space.
-#
-# To check the values we will first need to convert the PIL image to an array. We will do so using the numpy library:
-
-img = np.array(img)
-print(img.shape)
-
-# If we try to flatten out the array to one single dimension we would have a vector with size 46875
-
-125 * 125 * 3
-
-# This means that we have an image with a size of 125x125 and 3 channels (RGB channels). Let's have a look at the data inside.
-
-img
-
-# Because the images are actually gray-scale images (no colored) they will only need one channel instead of three.
-#
-# We can take only one channel instead of three, whichseems to be duplicated data  in these case. But first, let's convert the images into arrays and split it into the features `X` and target `y`
-
-X = np.array([np.array(img) for (img, target) in data_train])
-y = np.array(data_train.targets)
-
-X.shape
-
-# In this line of code we are selecting only the first channel and reshaping our features array
-X = X[:, :, :, 0]
-
-print(X.shape)
-len_before = 125 * 125 * 3
-len_after = 125 * 125
-print("No. fearures before:", len_before)
-print("No. features now:", len_after)
-print(
-    "So we just removed a 1/3 of the redundant data. That's about {} less than before".format(len_before - len_after)
-)
-
-# Let's check the first image
-
-print(X[0])
-print("Shape:", X[0].shape)
-
-# Let's check if remove the right channels. We can use `Image.fromarray` to convert back an array to a PIL Image. We will do this just to visually check if the new array is ok.
-
-display(Image.fromarray(X[0]))
-
-# # Final Project
-#
-# Complete the code and organise your code in a clear way. Add comments to your code the best as you can to explain your approach.
-
-# ## 1. Data preparation and visualisation
-#
-#   - Apply 3 different techniques of unsupervised learning for Dimensionality Reduction.
-#   - Select the appropiate number of features for each tecnique applied.
-#   - Visualise the 2d plots for the 3 different clusters (Each cluster representing one type of rock).
-
-
-
-# ## 2. Model Development
-#
-#   - Use 2 different techniques of clustering and create 2d plots to visualise those.
-#       <div class="alert alert-info" style="font-size:100%">
-# <b>HINT</b>: <br>
-#         Use the same reduced data you used for the 2d plots. You might find that some tecniques works better than other. So it is worth to explore and visualise different 2d clusters.
-#       </div>
-#     
-#   - Use 3 different supervised learning techniques to predict if an image corresponds to `carbonate`,`coal`, or `sandstone` and evaluate their performance.
-#   - Choose the best one based on the metrics below.
-
-
-
-# ## 3. Evaluation
-#
-#   - Evaluate the supervised learning models created using TP,TN, FP, FN, accuracy, recall, precision, confusion matrixc, F1-Score, AUC and ROC curves. Create visualisations when possible for those metrics (For example, AUC, Confusion Matrix and ROC). 
+# The purpose is to try things yourself with more help and less guidance.
 
 
