@@ -41,6 +41,7 @@ def memory_usage():
     return mem_bytes / 1024 / 1024
 
 
+
 memory_usage()
 
 # You should be able to see the amount of used memory.<br>
@@ -51,7 +52,7 @@ df1 = pd.read_csv(path)
 
 memory_usage()
 
-# The memory usage has gone up by about 250 MB.<br>
+# The memory usage has gone up by about ~250 MB.<br>
 # Now do the same with Dask.
 
 # %%time
@@ -59,7 +60,9 @@ df2=dd.read_csv(path)
 
 memory_usage()
 
-# Dask read the file in a raction of a second and used only about 3 MB of memory. How is that possible?<br> It's because Dask dosn't load the data into memory. The data is still on the disk. It only reads the data when it needs to perform calculations.
+# Dask read the file in a fraction of a second and used only about 3 MB of memory. How is that possible?
+#
+# It's because Dask doesn't load the data into memory. The data is still on the disk. It only reads the data when it needs to perform calculations.
 #
 
 # Now, let's calculate the mean for the first 100 columns.
@@ -93,19 +96,25 @@ avg.compute()
 #
 # ![](img/dask_graphviz.png)
 
-avg.visualize()
+# +
+# Try commenting this out
+# # avg.visualize()
+# -
 
 # You can also create a progress bar for each computation:
 
+from dask.diagnostics import ProgressBar
 avg = df2.iloc[:, 100:200].mean()
 task = avg.mean()
 
-from dask.diagnostics import ProgressBar
+
 
 with ProgressBar():
     task.compute()
 
-# Dask dataframe is very similar to pandas dataframe. Even though the functionalities are limited but you will find many methods from pandas dataframe in Dask as well.
+# [Dask dataframe](https://docs.dask.org/en/latest/dataframe-api.html) is very similar to pandas dataframe. It's mostly a subset of the pandas api. Even though the functionalities are limited but you will find many methods from pandas dataframe in Dask as well.
+#
+# A few operations are missing, and some are especially expensive: those that read the whole array. An example is sort.
 
 task = df2.rolling(window=10).mean().max()
 
@@ -121,26 +130,64 @@ with ProgressBar():
 
 result
 
-# ### Exercise
-# Use Dask dataframe of MNIST and follow these steps:
-# 1. Add a column to the dataframe which contains sum of all the pixels
-# 2. Use Groupby and find the average of __sum__ column for each number (label)
 
-# +
-# Code Here
-# -
 
-# <details><summary>Solution</summary>
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
 #
-# ```Python
-#     df2['sum']=df2.values[:,1:].sum(axis=1)
+# Use Dask dataframe of MNIST (df2) and follow these steps:
+#     
+# 1. Add a new column called `sum` to the dataframe which contains sum of all the pixels
+# 2. Use groupby to find the mean value for `sum` for each label
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * Columns 1 onwards are the pixels. You can access them with `pixels=df2.iloc[:, 1:]`
+#   * Instead of `df['sum']=pixels.sum()` try `df['sum']=pixels.sum(axis=1)` because we want to sum along columns, not rows
+#   * If the dask output is confusing, try with df1 first
+#   * to groupby use `df2.groupby('label').?`, where you replace the `?` with the aggregation operation
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
+#     # With pandas
+#     pixels = df1.loc[:, ['pixel' in c for c in df1.columns]]
+#     df1['sum']=pixels.sum(axis=1)
+#     task = df1[['label','sum']].groupby('label').mean()
+#     print(result)
+#
+#     # With dask
+#     pixels = df2.loc[:, ['pixel' in c for c in df2.columns]]
+#     df2['sum']=pixels.sum(axis=1)
 #     task = df2[['label','sum']].groupby('label').mean()
 #     with ProgressBar():
 #         result=task.compute() 
 #     print(result)
-# ```
-#     
-# </details>
+#   ```
+#
+#   </details>
+#
+#   </div>
+
+# ## When to use Dask DataFrame?
+#
+# Lets visit [the dask page](https://docs.dask.org/en/latest/dataframe.html#common-uses-and-anti-uses) to look at when we should use it
+#
+# It is harder so only if you dataset is larger than memory.
+#
+# If fact also consider:
+# - a database (if you have lots of structured queries)
+# - https://downloadmoreram.com/ ;p
+# - dask array
 
 # ## Dask Array
 # Dask is not just used to replace pandas. There are also multiple numpy functions which can be replaced by Dask. Dask array is Dask equivalent of a numpy array. By doing so, we can perform the computations in parallel and get the results faster.
@@ -172,20 +219,52 @@ task = np.sin(big_array).mean(axis=0)
 with ProgressBar():
     res = task.compute()
 
+task
+
 res
 
 # ### Exercise
-# Create two Dask random arrays of size 10,000,000-by-100. Find the difference between the two and pass it to `array.linalg.norm` using argument `axis=1`. Calculate the result and create a histogram of it.
+#
+# - Create two Dask random arrays of size 10,000,000-by-100. 
+# - Find the difference between the two `y = ..`
+# - and pass it to `array.linalg.norm` using argument `axis=1`. 
+# - Calculate the result and create a histogram of it.
 
 from matplotlib.pyplot import hist
 
-# +
-# Code Here
-# -
-
-# <details><summary>Solution</summary>
+#  <div class="alert alert-success">
+#   <h2>Exercise</h2>
 #
-# ```Python
+#   Description:
+#
+# - Create two Dask random arrays of size 10,000,000-by-100. 
+# - Find the difference between the two `y = ..`
+# - and pass it to `array.linalg.norm` using argument `axis=1`. 
+# - Calculate the result and create a histogram of it.
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#       
+#       Replace the question marks `?`
+#
+# ```python
+# a = array.random.normal(size=(10000000, 100), chunks=200000)
+# b = array.random.normal(size=(10000000, 100), chunks=200000)
+# r = array.linalg.norm(?, axis=1)
+# r.?
+# ```
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
 #     x1 = array.random.random(size=(10000000,100))
 #     x2 = array.random.random(size=(10000000,100))
 #     y = x2-x1
@@ -193,9 +272,11 @@ from matplotlib.pyplot import hist
 #     with ProgressBar():
 #         result = d.compute()
 #     hist(result,bins=100);
-# ```
-#     
-# </details>
+#   ```
+#
+#   </details>
+#
+#   </div>
 
 # ## Delayed
 # Dask delayed is a method for parallelising code where you can't write your code directly as dataframe or array operation. `Dask.delayed` is an easy-to-use tool to quickly parallelise these tasks.
@@ -230,7 +311,7 @@ y = task2(x1,x2)
 task1_delayed = dask.delayed(task1)
 task2_delayed = dask.delayed(task2)
 
-# And now insteam of the original function we use the delayed functions:
+# And now instead of the original function we use the delayed functions:
 
 # %%time
 x1 = task1_delayed(1)
