@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import torch
 from tqdm.auto import tqdm
 from torch import nn, optim
-from sklearn import metrics, preprocessing
+from sklearn import metrics, preprocessing, model_selection
 
 #
 # <h2>Different views of the data</h2>
@@ -553,34 +553,28 @@ from sklearn import metrics, preprocessing
 df = pd.read_parquet(
     "../../data/processed/geolink_norge_dataset/geolink_norge_well_logs_train.parquet"
 ).set_index(["Well", "DEPT"])
+# Add depth as a feature column
+df['Depths'] = df.index.get_level_values(1)
+df['Wells'] = df.index.get_level_values(0)
 df.iloc[::10]
-
-
-
-# Let's get a list of wells:
-
-# + colab={"base_uri": "https://localhost:8080/", "height": 343} colab_type="code" id="v4wy8aXrFkoK" outputId="7fa90839-9af9-4d7f-e427-e1b214740312"
-wells = np.unique(np.array([w for w, d in df.index]))
-# -
-
-# And add depth as a feature column:
-
-# + colab={} colab_type="code" id="Stb4LhYoFsOt"
-depths = np.array([d for w, d in df.index])
-df["Depths"] = depths
-# -
 
 # We need to create a training and test set.
 
-len(wells)
+df_train, df_test = model_selection.train_test_split(df, shuffle=True, random_state=2020)
 
 # We can specify how many wells are used for training and how many for test. we are splitting training and test set based on the wells since there is correlation between datapoints in each well which will result in higher accuracy. But this high accuracy is deceiving and not real. As soon as we start testing the model on a new well the accuracy will drop. Splitting data based on wells avoid this issue.
+#
+# However for the purposes of a demo, especially embedding by well we will split randomly. You can see another approach to splitting in the RNN notebook.
 
-np.random.seed(12)
-n_wells = 40
-selected_wells = np.random.choice(wells, n_wells * 2, replace=False)
-training_wells = selected_wells[:n_wells]
-test_wells = selected_wells[n_wells:]
+# +
+# np.random.seed(12)
+# n_wells = 40
+# selected_wells = np.random.choice(wells, n_wells * 2, replace=False)
+# training_wells = selected_wells[:n_wells]
+# test_wells = selected_wells[n_wells:]
+# df_test = df[test_wells]
+# df_train = df[training_wells]
+# -
 
 # We need to process the input and target data. The input data needs to be normalised with a standard scaler, and the output data needs to be converted from text to numbers. To convert text to numbers we use `LabelEncoder` from Scikit Learn. <br>
 #
@@ -616,10 +610,10 @@ plt.show()
 
 # Apply transformation to training and test set.
 
-x_train = scaler.fit_transform(df.loc[training_wells, feat_cols].values)
-y_train = encoder.transform(df.loc[training_wells, "LITHOLOGY_GEOLINK"])
-x_test = scaler.transform(df.loc[test_wells, feat_cols].values)
-y_test = encoder.transform(df.loc[test_wells, "LITHOLOGY_GEOLINK"])
+x_train = scaler.fit_transform(df_train[feat_cols].values)
+y_train = encoder.transform(df_train["LITHOLOGY_GEOLINK"])
+x_test = scaler.transform(df_test[feat_cols].values)
+y_test = encoder.transform(df_test["LITHOLOGY_GEOLINK"])
 
 # The output of a classification model is a value for each type. The type with the highest value is the one the model thinks is most likely to be associated with the input data. Therefore, the output size of the model should be the number of types.<br>
 # Input size will be the number of features (columns) in the data.
@@ -907,33 +901,34 @@ accuracy(model, x_test, y_test)
 #
 # The flexibility of neural networks allows us to use a technique much better that one hot encoding. This method is called feature embedding. In this method we create a table which assigns a number of features to each class. Then, when the data is passed through the network, instead of the categorical variables their features from the embedding table will be used. What is intersting about this method is that we do not know the values in the table when we start the training process. They will be learned during the training. 
 
-df = pd.read_parquet(
-    "../../data/processed/geolink_norge_dataset/geolink_norge_well_logs_train.parquet"
-).set_index(["Well"])
-df.iloc[::10]
 
-# +
+
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-
-scaler = StandardScaler()
-encoder = LabelEncoder()
-encoder.fit(df["LITHOLOGY_GEOLINK"])
 well_encoder = LabelEncoder()
-well_encoder.fit(df.index)
-# -
+well_encoder.fit(df['Wells'])
 
-feat_cols = ["CALI", "GR", "RHOB", "DTC", "RDEP", "RMED", "DEPT"]
+# We will just give it depth, so it has to really rely on the embedding, and learn a prior for each well
+feat_cols = ["Depths"] # "CALI", "GR", "RHOB", "DTC", "RDEP", "RMED", "Depths"]
 
 # Since we have one categorical variable, and the rest are numerical, we can separate the inputs into a categorical inputs and numerical inputs.
 
 # +
-xnum_train = scaler.fit_transform(df.loc[training_wells, feat_cols].values)
-xcat_train = well_encoder.transform(df.loc[training_wells].index.values)
-y_train = encoder.transform(df.loc[training_wells, "LITHOLOGY_GEOLINK"])
+xnum_train = scaler.fit_transform(df_train[feat_cols].values)
+xcat_train = well_encoder.transform(df_train['Wells'])
+y_train = encoder.transform(df_train["LITHOLOGY_GEOLINK"])
 
-xnum_test = scaler.transform(df.loc[test_wells, feat_cols].values)
-xcat_test = well_encoder.transform(df.loc[test_wells].index.values)
-y_test = encoder.transform(df.loc[test_wells, "LITHOLOGY_GEOLINK"])
+xnum_test = scaler.transform(df_test[feat_cols].values)
+xcat_test = well_encoder.transform(df_test['Wells'])
+y_test = encoder.transform(df_test["LITHOLOGY_GEOLINK"])
+
+# +
+xnum_train = torch.Tensor(xnum_train).to(device)
+xcat_train = torch.LongTensor(xcat_train).to(device)
+y_train = torch.LongTensor(y_train).to(device)
+
+xnum_test = torch.Tensor(xnum_test).to(device)
+xcat_test = torch.LongTensor(xcat_test).to(device)
+y_test = torch.LongTensor(y_test).to(device)
 # -
 
 # The we need to create a new model with embedding tables for categorical variables. We need to specify how many types there are in our categorical columns (num_classes), and how many values will be used to represent each type (emb_vec_size). Then, in the model we create a stacked linear layers with dropout (as defined before) using the right number of inputs (numerical inputs + embedding features).
@@ -942,12 +937,12 @@ help(nn.Embedding)
 
 
 class FeatureEmbed(nn.Module):
-    def __init__(self, hidden_size, num_classes, emb_vec_size):
+    def __init__(self, hidden_size, num_classes, emb_vec_size, output_size):
         super(FeatureEmbed, self).__init__()
         self.emb = nn.Embedding(num_classes, emb_vec_size)
         self.net = SimpleLinear(
             input_size=len(feat_cols) + emb_vec_size,
-            output_size=1,
+            output_size=output_size,
             hidden_size=hidden_size
         )
 
@@ -959,29 +954,17 @@ class FeatureEmbed(nn.Module):
 
 # Now, we can create an instance of the model.
 
-num_classes = len(well_encoder.classes_)
-
-vec_size = 2
-# dropout = 0.3
+num_classes=len(well_encoder.classes_)
 model = FeatureEmbed(
-    hidden_size=16,
+    hidden_size=6,
     num_classes=num_classes,
-    emb_vec_size=vec_size
+    emb_vec_size=2,
+    output_size=len(encoder.classes_)
 ).to(device)
-
-# +
-xnum_train = torch.Tensor(xnum_train).to(device)
-xcat_train = torch.LongTensor(xcat_train).to(device)
-y_train = torch.Tensor(y_train).to(device)
-
-xnum_test = torch.Tensor(xnum_test).to(device)
-xcat_test = torch.LongTensor(xcat_test).to(device)
-y_test = torch.Tensor(y_test).to(device)
-# -
 
 # Use Mean Square Error as loss function.
 
-loss_func = nn.MSELoss()
+loss_func = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
 
 
@@ -1005,51 +988,70 @@ def train_emb_model(model, epochs=10, bs=256):
         for i in tqdm(range(0, len(xnum_test), bs), leave=False, desc='test'):
             model.eval()
             preds = model(xnum_test[i : i + bs, :], xcat_test[i : i + bs])
-            loss = loss_func(preds, y_train[i : i + bs])
+            loss = loss_func(preds, y_test[i : i + bs])
             if torch.isfinite(loss):
                 test_loss.append(loss.item())
         test_loss = np.mean(test_loss)
         print('Epoch#{}, Test Loss = {:.3f}, Train Loss = {:.3f}'.format(epoch + 1, np.mean(training_loss), test_loss))
 
 
-# We can use $R^2$ as metric.
-
 train_emb_model(model, epochs=10, bs=256)
 
 
-# +
-# # %debug
-# -
+# We can use accuracy as metric.
 
-def Rsquare(model, xnum, xcat, y):
+def accuracy2(model, xnum, xcat, y):
     m = model.to("cpu")
     m.eval()
-    preds = m(xnum.to("cpu"), xcat.to("cpu"))
+    preds = m(xnum.to("cpu"), xcat.to("cpu")).argmax(-1)
     preds = preds.detach().numpy()
-    return metrics.r2_score(y.to("cpu").numpy(), preds)
+    return metrics.accuracy_score(y.to("cpu").numpy(), preds)
 
 
-Rsquare(model, xnum_train, xcat_train, y_train)
+accuracy2(model, xnum_train, xcat_train, y_train)
 
-Rsquare(model, xnum_test, xcat_test, y_test)
+accuracy2(model, xnum_test, xcat_test, y_test)
 
 # The model is trained, which means we should be able to have a look at embedding table and see the values in there.
 
 embed = model.emb.weight.detach().numpy()
 
 # +
-from matplotlib import cm
-from deep_ml_curriculum.visualization.well_log import color_dict
+x = embed[:, 0]
+y = embed[:, 1]
+well_names = well_encoder.inverse_transform(range(len(x)))
 
-cmap = cm.get_cmap("brg", num_classes)
 plt.figure(figsize=(8, 8))
-for i in range(num_classes):
-    x = embed[i, 0]
-    y = embed[i, 1]
-    color = cmap(i)
-    well_name = well_encoder.inverse_transform([i])
-    plt.scatter(x, y, color=color)
-    plt.text(x+0.03, y+0.03, well_name[0], color='k', ha='left', va='bottom')
+plt.scatter(x, y, c=range(len(x)), cmap='brg')
+
+# Labels for every Nth
+for i in range(0, num_classes, 5):
+    plt.text(x[i]+0.03, y[i]+0.03, well_names[i], color='k', ha='left', va='bottom')
+    
+plt.title('Embedded well "position"')
+plt.xlabel('embedding dimension A')
+plt.ylabel('embedding dimension B')
+
+# +
+import geopandas as gpd
+from pathlib import Path
+interim_locations = Path("../../data/processed/geolink_norge_dataset/")
+df_well_tops = gpd.read_file(interim_locations / "norge_well_tops.gpkg")[['wlbWellboreName_geolink', 'geometry']].sort_values('wlbWellboreName_geolink')
+
+x = df_well_tops['x'] = df_well_tops.geometry.x
+y = df_well_tops['y'] = -df_well_tops.geometry.y
+well_names = df_well_tops.wlbWellboreName_geolink
+
+plt.figure(figsize=(8, 8))
+plt.scatter(x, y, c=range(len(x)), cmap='brg')
+
+# Labels for every Nth
+for i in range(0, num_classes, 5):
+    plt.text(x[i]+0.03, y[i]+0.03, well_names[i], color='k', ha='left', va='bottom')
+
+plt.title('Real well position')
+plt.xlabel('x')
+plt.ylabel('y')
 # -
 
 # The plot above shows the two values we used for each type. If the model is trained well, we should be able to see types with closer characteristics should be placed closer to each other in the plot above. 
@@ -1061,10 +1063,6 @@ for i in range(num_classes):
 #
 # Of course we could just use the x and y position as embeddings, but this example helped illustrate learned embeddings.
 #
-
-# <img src="../../reports/figures/wells_context.png" />
-
-
 
 #
 # <div class="alert alert-success">
@@ -1084,10 +1082,9 @@ for i in range(num_classes):
 # vec_size = 5
 # dropout = 0.3
 # model = FeatureEmbed(
-#     hidden_sizes=[50, 50],
+#     hidden_sizes=64,
 #     num_classes=num_classes,
-#     emb_vec_size=vec_size,
-#     dropout=dropout,
+#     emb_vec_size=vec_size
 # ).to(device)
 # optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
 # train_emb_model(model, epochs=10, bs=256)
@@ -1107,5 +1104,7 @@ for i in range(num_classes):
 # # Further Reading
 # - [Why One-Hot Encode Data in Machine Learning?](https://machinelearningmastery.com/why-one-hot-encode-data-in-machine-learning/)
 # - [Neural Network Embeddings Explained](https://towardsdatascience.com/neural-network-embeddings-explained-4d028e6f0526)
+
+
 
 
