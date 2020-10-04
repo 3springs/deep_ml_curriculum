@@ -107,6 +107,10 @@ HTML(
 #     
 #     
 # **Activation Functions:** Activation functions are important to add non-linearity into the models. This will allow the model to represent more complex data.
+#
+# <img src='https://miro.medium.com/max/1400/1*ZafDv3VUm60Eh10OeJu1vw.png' width=800 heigh=800/>
+#
+# Source: [Image](https://medium.com/@shrutijadon10104776/survey-on-activation-functions-for-deep-learning-9689331ba092)
 #     
 # **Regularization** is the process of adding information in order to prevent overfitting.
 #
@@ -150,10 +154,11 @@ import matplotlib.pyplot as plt
 
 # Load the digits dataset
 digits = datasets.load_digits()
+idx = 200
 # Let's first see one of the images
 plt.figure(1, figsize=(3, 3))
-print('Target: {}'.format(digits.target[0]))
-plt.imshow(digits.images[0], cmap=plt.cm.gray_r)
+print('Target: {}'.format(digits.target[idx]))
+plt.imshow(digits.images[idx], cmap=plt.cm.gray_r)
 plt.show()
 
 print(digits.images[0])

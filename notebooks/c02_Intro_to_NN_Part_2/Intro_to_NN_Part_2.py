@@ -312,23 +312,16 @@ def test(model, x, y):
 optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=momentum)
 # Now let's train the model
 model = train(net, x_train, y_train, criterion, optimizer)
-test(model, x_test, y_test)
+print('Accuracy:',test(model, x_test, y_test))
 
 # Let's try again with 1 more epochs...
 
 net2 = Net()
 # Define Optimizer. In this case, we will use Stochastic Gradient Descent
 optimizer = optim.SGD(net2.parameters(), lr=learning_rate, momentum=momentum)
-model = train(net, x_train, y_train, criterion, optimizer, n_epochs=2)
-print("Testing accuracy on unseen data...")
-test(model, x_test, y_test)
-
-net2 = Net()
-# Define Optimizer. In this case, we will use Stochastic Gradient Descent
-optimizer = optim.SGD(net2.parameters(), lr=learning_rate, momentum=momentum)
 model = train(net, x_train, y_train, criterion, optimizer, n_epochs=5)
 print("Testing accuracy on unseen data...")
-test(model, x_test, y_test)
+print('Accuracy:',test(model, x_test, y_test))
 
 
 # We trained the same model using `SGD` for 1, 2, and 5 epochs. At some point, it seems like the model is not converging in it got stucked in a local minima. To improve the results we will tray a couple of things:
@@ -417,9 +410,11 @@ test(model, x_test, y_test)
 
 # Finally ! After changing the optimizer, creating a better CNN architecture and train for a couple of epochs we got an accuracy of over 99% on unseen data.
 
+# +
 # Now that we finished the training let's save our best model
-PATH = "./landmass_net.pth"
-torch.save(model.state_dict(), PATH)
+#PATH = "./landmass_net.pth"
+#torch.save(model.state_dict(), PATH)
+# -
 
 # Now let's load a new model to check that the performance of the saved model.
 #
