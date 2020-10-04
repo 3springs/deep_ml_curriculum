@@ -1017,20 +1017,23 @@ accuracy2(model, xnum_test, xcat_test, y_test)
 embed = model.emb.weight.detach().numpy()
 
 # +
-x = embed[:, 0]
-y = embed[:, 1]
-well_names = well_encoder.inverse_transform(range(len(x)))
+x_emb = embed[:, 0]
+y_emb = embed[:, 1]
+well_names_emb = well_encoder.inverse_transform(range(len(x_emb)))
 
 plt.figure(figsize=(8, 8))
-plt.scatter(x, y, c=range(len(x)), cmap='brg')
+plt.scatter(x_emb, y_emb, c=range(len(x_emb)), cmap='brg')
 
 # Labels for every Nth
 for i in range(0, num_classes, 5):
-    plt.text(x[i]+0.03, y[i]+0.03, well_names[i], color='k', ha='left', va='bottom')
+    plt.text(x_emb[i]+0.03, y_emb[i]+0.03, well_names_emb[i], color='k', ha='left', va='bottom')
     
 plt.title('Embedded well "position"')
 plt.xlabel('embedding dimension A')
 plt.ylabel('embedding dimension B')
+# -
+
+# Lets compare the embedding position to real well positions
 
 # +
 import geopandas as gpd
@@ -1038,16 +1041,32 @@ from pathlib import Path
 interim_locations = Path("../../data/processed/geolink_norge_dataset/")
 df_well_tops = gpd.read_file(interim_locations / "norge_well_tops.gpkg")[['wlbWellboreName_geolink', 'geometry']].sort_values('wlbWellboreName_geolink')
 
+plt.subplots(1, 2, figsize=(16, 12))
+
+plt.subplot(121)
+plt.scatter(x_emb, y_emb, c=range(len(x_emb)), cmap='brg')
+
+# Labels for every Nth
+named_wells = []
+for i in range(0, num_classes, 10):
+    named_wells.append(well_names_emb[i])
+    plt.text(x_emb[i]+0.03, y_emb[i]+0.03, well_names_emb[i], color='k', ha='left', va='bottom')
+    
+plt.title('Embedded well "position"')
+plt.xlabel('embedding dimension A')
+plt.ylabel('embedding dimension B')
+
+plt.subplot(122)
 x = df_well_tops['x'] = df_well_tops.geometry.x
 y = df_well_tops['y'] = -df_well_tops.geometry.y
 well_names = df_well_tops.wlbWellboreName_geolink
 
-plt.figure(figsize=(8, 8))
 plt.scatter(x, y, c=range(len(x)), cmap='brg')
 
 # Labels for every Nth
-for i in range(0, num_classes, 5):
-    plt.text(x[i]+0.03, y[i]+0.03, well_names[i], color='k', ha='left', va='bottom')
+for i in range(0, num_classes):
+    if well_names[i] in named_wells:
+        plt.text(x[i]+0.03, y[i]+0.03, well_names[i], color='k', ha='left', va='bottom')
 
 plt.title('Real well position')
 plt.xlabel('x')
@@ -1056,12 +1075,11 @@ plt.ylabel('y')
 
 # The plot above shows the two values we used for each type. If the model is trained well, we should be able to see types with closer characteristics should be placed closer to each other in the plot above. 
 #
-# In this case clusters of wells should have similar names. Below is a map of wells, showing how similar names are clustered in real life. 
-#
+# In this case we should see wells with similar names and colors clustered. Above we see that the colors form very rough clusters, but are not as good as the real life embeddings.
 #
 # This is another interesting feature of embedding tables. It allows us to not only to convert categorical variables to numericals, but also we can see the behaviour of each class and compare them together.
 #
-# Of course we could just use the x and y position as embeddings, but this example helped illustrate learned embeddings.
+# Why not just x and y as out embeddings? Of course we could but this example helped illustrate learned embeddings.
 #
 
 #
