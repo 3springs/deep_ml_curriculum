@@ -97,7 +97,7 @@ aws s3 sync s3://deep-ml-curriculum-data/data/processed/ data/processed/
 
 See [./requirements/readme.md](./requirements/readme.md)
 
-## Contributors ✨
+# Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
@@ -118,7 +118,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 
-Made by <img width="200" src="https://threespringstechnology.com/wp-content/uploads/2019/09/logo-2019.svg"/>
+Made by <a href="https://threespringstechnology.com/"><img width="200" src="https://threespringstechnology.com/wp-content/uploads/2019/09/logo-2019.svg"/></a>
 
 
 # Credits
