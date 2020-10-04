@@ -4,7 +4,7 @@ First run of Data science and Machine Learning training for Oil and Gas.
 
 Teaches DS&ML using some Oil and Gas specific datasets and examples. Some of these are well log facies prediction, seismic interpretation, geospatial plotting, production plotting, and more.
 
-[See the product page](https://threespringstechnology.com/products/ai-training-courses/) for more information or to schedule this course email [info@threespringscapital.com](mailto:info@threespringscapital.com?subject=deep_ml_curriculum).
+[See the Three Springs Technology product page](https://threespringstechnology.com/products/ai-training-courses/) for more information or to schedule this course email [info@threespringscapital.com](mailto:info@threespringscapital.com?subject=deep_ml_curriculum).
 
 <div>
 <img src="reports/figures/LSTM_facies_pred.png" alt="Facies prediction with LSTM" width="200"/>
@@ -13,6 +13,8 @@ Teaches DS&ML using some Oil and Gas specific datasets and examples. Some of the
 
 <img src="reports/figures/TSF.png" alt="Time series forecasting" width="200"/>
 </div>
+
+
 
 ## Project Organization
 ------------
@@ -115,9 +117,12 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
+
+Made by <img width="200" src="https://threespringstechnology.com/wp-content/uploads/2019/09/logo-2019.svg"/>
+
+
 # Credits
 
 Many of the datasets or notebooks are based on resources that were generously made open source by the authors. These are aknowledged either in a readme file associated with the data, in the notebook, or at the end of the notebook.
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
-
