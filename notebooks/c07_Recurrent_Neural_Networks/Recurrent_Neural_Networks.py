@@ -91,6 +91,7 @@ from torch.autograd import Variable
 import torch
 import torch.utils.data
 
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
@@ -631,11 +632,10 @@ def train_epoch(x_train, y_train, model, bs=128, max_epoch_iters=128*128):
 
     # Put data into a loader
     dset_train = NumpyDataset(x_train, y_train)
-    train_set_samplers=np.random.choice(list(range(len(dset_train))), max_epoch_iters)
     load_train = torch.utils.data.dataloader.DataLoader(
         dset_train, 
-        batch_size=bs, pin_memory=True,# shuffle=True,
-        sampler=train_set_samplers
+        batch_size=bs, pin_memory=True,
+        shuffle=True,
     )
 
     for x, y in tqdm(load_train, leave=False, desc='train'):
