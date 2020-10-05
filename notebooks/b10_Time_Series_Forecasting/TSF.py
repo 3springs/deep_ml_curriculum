@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       format_version: '1.5'
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: deep_ml_curriculum
 #     language: python
@@ -126,9 +126,9 @@ def adf_p_value(data):
         return 'stationary (p={:2.2g})'.format(p)
     else:
         return 'not stationary (p={:2.2g})'.format(p)
-
-
 # -
+
+
 
 adf_p_value(df["target"])
 
@@ -152,7 +152,9 @@ res.plot()
 # If we remove the seasonal and trend component what is left is the residuals.<br>
 # The residuals might have `NaN` in it. If so, we need to remove them before performing the test.
 
-adf_p_value(res.resid.dropna())
+
+
+adf_p_value(res.resid.dropna().values[:, 0])
 
 # The residual is stationary since the p value is lower than 0.05.
 
