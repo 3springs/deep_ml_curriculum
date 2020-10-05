@@ -29,29 +29,29 @@ Teaches DS&ML using some Oil and Gas specific datasets and examples. Some of the
     ├── models             <- Trained and serialized models, model predictions, or model summaries
     │
     ├── notebooks          <- Course notebooks. a is reserved for a python course. b is data science, c is machine learning
-    │   ├── b01_SQL        <- Start of DS
+    │   ├── b01_SQL        <- Start of Couese b
     │   ├── b02_Advanced_Pandas
     │   ├── b03_Data_Visualisation
-    │   ├── b04_Geopandas
-    │   ├── b05_Interactive_Plotting
-    │   ├── b06_Time_Series_Analysis
-    │   ├── b07_Time_Series_Forcasting
-    │   ├── b08_DS_Basics
-    │   ├── b09_Supervised_Learning_Part_1
-    │   ├── b10_Evaluation_Metrics
-    │   ├── b11_Unsupervised
+    │   ├── b04_DS_Basics
+    │   ├── b05_Supervised_Learning
+    │   ├── b06_Evaluation_Metrics
+    │   ├── b07_Selfsupervised
+    │   ├── b08_Interactive_Plotting
+    │   ├── b09_Time_Series_Analysis
+    │   ├── b10_Time_Series_Forecasting
+    │   ├── b11_Geopandas
     │   ├── b12_Final_Project
-    │   ├── c00_Introduction_to_Machine_Learning.pptx
     │   ├── c01_Intro_to_NN_Part_1
     │   ├── c02_Intro_to_NN_Part_2
     │   ├── c03_Finetuning
     │   ├── c04_Tabular_Data
     │   ├── c05_Big_Data
-    │   ├── c06_Recurrent_Neural_Networks
-    │   ├── c07_Hyperparameter_Optimization
-    │   ├── c08_Autoencoders
-    │   ├── c09_Object_Detection
+    │   ├── c06_Hyperparameter_Optimization
+    │   ├── c07_Recurrent_Neural_Networks
+    │   ├── c08_Object_Detection
+    │   ├── c09_Autoencoders
     │   ├── c10_GANs
+    │   ├── c11_Final_Project
     │   └── z00_Data_prep  <- Preperation of datasets
     │
     ├── requirements       <- The requirements files for reproducing the analysis environment, e.g.
