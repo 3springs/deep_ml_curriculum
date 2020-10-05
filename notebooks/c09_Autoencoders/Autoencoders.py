@@ -9,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: python3
+#     name: deep_ml_curriculum
 # ---
 
 # # Autoencoders
@@ -183,7 +183,7 @@ def loss_bce(recon_x, x):
 def train(epoch, loss_function, log_interval=50):
     model.train()
     train_loss = 0
-    for batch_idx, data in enumerate(train_loader):
+    for batch_idx, data in tqdm(enumerate(train_loader), leave=False):
         data = data.to(device)
         optimizer.zero_grad()
         recon_batch = model(data)
@@ -206,7 +206,7 @@ def test(epoch, loss_function, log_interval=50):
     model.eval()
     test_loss = 0
     with torch.no_grad():
-        for i, data in enumerate(test_loader):
+        for i, data in tqdm(enumerate(test_loader), leave=False):
             data = data.to(device)
             recon_batch = model(data)
             test_loss += loss_function(recon_batch, data).item()
@@ -226,10 +226,10 @@ for epoch in range(1, epochs + 1):
 
 
 # ## Results
-# Now let's chack out the model.
+# Now let's check out the model.
 
 def cvt2image(tensor):
-    return tensor.detach().numpy().reshape(28, 28)
+    return tensor.detach().cpu().numpy().reshape(28, 28)
 
 
 # +
@@ -237,7 +237,7 @@ idx = np.random.randint(0, len(ds_test))
 
 model.eval()
 original = ds_train[[idx]]
-result = model(original)
+result = model(original.to(device))
 img = cvt2image(result[0])
 plt.figure(figsize=(2, 2))
 plt.imshow(img, "gray")
@@ -250,8 +250,8 @@ plt.title("Actual")
 
 # There are certainly some similarities but the predicted (reconstructed) images are not always very clear. We will shortly discuss how we can improve the model. But before that, let's have look at the latent space. The model is converting every image which has 784 values (28x28 pixels) to only 2 values. We can plot these two values for a few numbers.
 
-res = model.encode(ds_train[:1000])
-res = res.detach().numpy()
+res = model.encode(ds_train[:1000].to(device))
+res = res.detach().cpu().numpy()
 
 for i in range(10):
     idx = ds_train.y[:1000] == i
@@ -360,7 +360,7 @@ def test(epoch, loss_function, log_interval=50):
 # -
 
 epochs = 10
-for epoch in range(1, epochs + 1):
+for epoch in tqdm(range(1, epochs + 1)):
     train(epoch, loss_bce_kld)
     test(epoch, loss_bce_kld)
 
@@ -624,7 +624,7 @@ from time import perf_counter
 # <div class='alert alert-warning'>Training can take a long time. Each epoch takes 4 seconds on RTX 2070. Depending on your GPU it might take shorter or longer. Feel free to adjust the number of epochs accordingly.</div>
 
 epochs = 30
-for epoch in range(1, epochs + 1):
+for epoch in tqdm(range(1, epochs + 1)):
     t = perf_counter()
     train(epoch, loss_bce_kld)
     test(epoch, loss_bce_kld)
@@ -687,13 +687,13 @@ import torchvision
 
 # We can simply look at [pytorch hub](https://pytorch.org/hub/) and download the model we need. The code below downloads [DEEPLABV3-RESNET101](https://pytorch.org/hub/pytorch_vision_deeplabv3_resnet101/) which suits the data we have.
 
-# +
-# model = torch.hub.load('pytorch/vision:v0.7.0', 'deeplabv3_resnet101', pretrained=True)
-# -
+try:
+    model = torch.hub.load('pytorch/vision:v0.7.0', 'deeplabv3_resnet101', pretrained=True)
+except Exception as e:
+    # The model is also saved in the following path (torch==1.4.0) and we can load it directly.
+    model = torch.load("../../data/processed/models/Deeplabv3.pth")
 
-# The model is also saved in the following path and we can load it directly.
 
-model = torch.load("../../data/processed/models/Deeplabv3.pth")
 
 # ### Inference
 # We can test the model on our data. While our data is selected for its human subjects, the model is trained on 20 different categories. Therefore, the output of the model may include subjects other than humans as well.
@@ -780,7 +780,7 @@ class HumanDataset(Dataset):
 
         image = Image.open(self.image_paths[idx]).resize((128, 128))
         if image.mode != "RGB":
-            image.convert("RGB")
+            image = image.convert("RGB")
         image = np.array(image) / 255
 
         mask = Image.open(self.mask_paths[idx]).resize((128, 128))
@@ -823,6 +823,13 @@ dl = DataLoader(ds, batch_size=16, shuffle=True)
 # ### Create the model
 
 # +
+## TODO mike put these offline
+# torchvision.models.segmentation.segmentation.model_urls = {'fcn_resnet50_coco': None,
+#  'fcn_resnet101_coco': 'https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth',
+#  'deeplabv3_resnet50_coco': None,
+#  'deeplabv3_resnet101_coco': 'https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth
+
+# +
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision import models
 
@@ -843,6 +850,8 @@ model.to(device)
 # ### Select the Optimiser
 
 optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+dl.dataset[40][0].shape
 
 # ### Train the Model
 
@@ -865,6 +874,8 @@ for epoch in range(epochs):
         print('loss: {:.2f}   '.format(loss.item()), end="\r", flush=True)
     print('Training Loss epoch#{}: {:.2f}'.format(epoch + 1, np.mean(train_loss)))
 # -
+
+
 
 # When the model is trained you can test it on the data similar to the [example](#Inference) we saw before.
 
