@@ -12,7 +12,7 @@ dependencies:
   - pandas>1.0.0
   - scikit-image
   - numpy
-  - scikit-learn
+  - scikit-learn=0.22.1
   - joblib
   - cython
   - tqdm
@@ -22,9 +22,9 @@ dependencies:
   - jupyter
   - nodejs
   - jupyterlab
-  - cudatoolkit=10.1
+  - cudatoolkit
   - torchvision
-  - pytorch>1.0.0
+  - pytorch=1.4.0
   - pandas-profiling
   - seaborn
   - beautifulsoup4
