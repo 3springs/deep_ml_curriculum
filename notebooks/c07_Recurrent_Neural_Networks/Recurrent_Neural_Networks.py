@@ -112,7 +112,7 @@ import xarray as xr
 from sklearn.preprocessing import LabelEncoder
 
 # Our input text
-text = list("""Machine Learning""")
+text = list("""Machine Learning. Deep""")
 e = LabelEncoder()
 input = e.fit_transform(text)
 input
@@ -217,7 +217,7 @@ class LSTM(nn.Module):
 # Params
 device = "cuda" if torch.cuda.is_available() else "cpu"
 shift_length = 100
-seq_length = 400
+seq_length = 600
 max_lithologies = 12
 max_wells = 20
 
@@ -746,14 +746,14 @@ loss_func = torch.nn.CrossEntropyLoss().to(device)
 
 # Let's train for 10 epochs
 
-training_loop(x_train, y_train, x_test, y_test, model, epochs=10, bs=128)
+training_loop(x_train, y_train, x_test, y_test, model, epochs=4, bs=128)
 
 # Did it overfit?
 
 # ## Test
 
 preds, true, loss, acc = test_epoch(x_test, y_test, model)
-acc
+print('final test acc', acc)
 
 
 
@@ -831,7 +831,7 @@ print(f'context length of {0.15*seq_length} m or {seq_length} intervals')
 print(f'model can see human labels up to {shift_length*0.15}m above. Or {shift_length} intervals')
 print(f'baseline accuracy {score_prev_base:2.2%} for prev {shift_length} facies values')
 
-plot_well(df, model, depth_min=5000, depth_max=6000)
+plot_well(df, model, depth_min=3500, depth_max=6000)
 
 # The model requires hyper parameter tuning and possibly training over 100s of epochs to reach the best results. However, in this example due to large size of dataset and the model we stopped after `10` epochs. 
 #
@@ -962,7 +962,7 @@ print(f'baseline accuracy {score_prev_base:2.2%} for prev {shift_length} facies 
 
 # Test
 preds, true, loss, acc = test_epoch(x_test, y_test, model)
-print('acc', acc)
+print('final test acc', acc)
 
 df_report = classification_report(true, preds, labels=range(len(encoder.classes_)), target_names=encoder.classes_)
 display(df_report[df_report.support>0])
