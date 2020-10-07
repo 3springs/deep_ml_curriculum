@@ -20,6 +20,11 @@ endif
 # COMMANDS                                                                      #
 #################################################################################
 
+sync:
+   aws s3 sync s3://$(BUCKET)/data/processed/ data/processed/  --region ap-southeast-2 --no-sign-request 
+   git stash
+   git pull
+
 ## Install Python Dependencies
 requirements: test_environment
 	$(PYTHON_INTERPRETER) -m pip install -U pip setuptools wheel
