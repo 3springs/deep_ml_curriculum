@@ -98,17 +98,21 @@ def plot_well(well_name:str, logs:pd.DataFrame, facies:pd.Categorical, figsize=(
     ax[1].plot(logs.CALI, logs.DEPT, '-')
     ax[1].set_xlabel("CALI")
 
-    ax[2].plot(logs.RSHA, logs.DEPT, '-b', alpha=0.7)
-    ax[2].plot(logs.RMED, logs.DEPT, '-g', alpha=0.6)
+    ax[2].plot(logs.RSHA, logs.DEPT, '-b', alpha=0.9)
+    ax[2].plot(logs.RMED, logs.DEPT, '-g', alpha=0.5)
     ax[2].plot(logs.RDEP, logs.DEPT, '-r', alpha=0.4)
 
     res = logs[['RDEP', 'RMED', 'RSHA']]
     std = np.std(res.values)
-    ax[2].set_xlim(0, np.min([res.values.max(), std*5]))
+    # ax[2].set_xlim(0, np.min([res.values.max(), std*15]))
     ax[2].set_xlabel("RDEP (r) & RMED (g)\n & RSHA (b)")
 
     ax[3].plot(logs.RHOB, logs.DEPT, '-')
-    ax[3].set_xlabel("RHOB")
+    ax3b = ax[3].twiny()
+    ax3b.plot(logs.NPHI, logs.DEPT, '-g')
+    ax[3].set_xlabel("RHOB (b)")
+    ax3b.set_xlabel("NPHI (g)")
+    # Note also NPHI
 
     [facies] = remove_unused_categories([facies])
     plot_facies(facies, ax[-1])
