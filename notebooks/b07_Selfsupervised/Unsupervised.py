@@ -627,7 +627,7 @@ ax.grid()
 import umap
 
 reducer = umap.UMAP(n_components=2, random_state=2020)
-umap_X = isomap.fit_transform(X)
+umap_X = reducer.fit_transform(X)
 
 # Isomap Dataframe
 umap_df = pd.DataFrame(data=umap_X, columns=["UMAP 1", "UMAP 2"])
