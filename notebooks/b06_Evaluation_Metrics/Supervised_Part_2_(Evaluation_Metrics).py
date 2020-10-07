@@ -340,8 +340,8 @@ def false_negatives(y, pred, th=0.5):
 
 # -
 
-print('True positives:',false_positives(y,y_pred))
-print('True negatives:',false_negatives(y,y_pred))
+print('False positives:',false_positives(y,y_pred))
+print('False negatives:',false_negatives(y,y_pred))
 
 
 # <a name='1-2-2'></a>
