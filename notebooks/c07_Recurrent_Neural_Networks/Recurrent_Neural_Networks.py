@@ -380,9 +380,9 @@ def get_depth_thresh(x, even_bottom=True):
     thresh = np.round(d.mean())
     x['thresh'] = thresh
     if even_bottom:
-        return x[d>thresh]
-    else:
         return x[d<thresh]
+    else:
+        return x[d>thresh]
 
 
 df_test = df.groupby(level=0).apply(partial(get_depth_thresh, even_bottom=False))
@@ -733,8 +733,8 @@ def training_loop(x_train, y_train, x_test, y_test, mode, epochs=1, bs=128, max_
 # Init the model
 model = LSTM(
     input_size=x_train[0].shape[-1],
-    hidden_size=64,
-    num_layers=3,
+    hidden_size=32,
+    num_layers=2,
     output_size=output_size,
 )
 model = model.to(device)
@@ -807,7 +807,7 @@ confusion_matrix(true, preds)
 # +
 from deep_ml_curriculum.visualization.well_log import plot_well_pred
 
-def plot_well(df, model, depth_min=0, depth_max=18000, well_name="30_4-1", device=device):
+def plot_well(df, model, depth_min=0, depth_max=18000, well_name="30_6-11", device=device):
     logs = df.loc[well_name].sort_index()
     x_test, y_test = get_sequences(logs)
     x_test = torch.Tensor(x_test)
@@ -831,7 +831,8 @@ print(f'context length of {0.15*seq_length} m or {seq_length} intervals')
 print(f'model can see human labels up to {shift_length*0.15}m above. Or {shift_length} intervals')
 print(f'baseline accuracy {score_prev_base:2.2%} for prev {shift_length} facies values')
 
-plot_well(df, model, depth_min=3500, depth_max=6000)
+# The bottom half was test
+plot_well(df, model)#, depth_min=3000, depth_max=6000)
 
 # The model requires hyper parameter tuning and possibly training over 100s of epochs to reach the best results. However, in this example due to large size of dataset and the model we stopped after `10` epochs. 
 #
@@ -973,6 +974,60 @@ confusion_matrix(true, preds)
 # -
 
 
+# +
+# Params
+seq_length = 400  # CHANGE ME
+
+# Prepare data
+x_train, y_train = get_sequences(df_train, seq_length=seq_length)
+x_test, y_test = get_sequences(df_test, seq_length=seq_length)
+
+# Init the model
+model = LSTM(
+    input_size=x_train[0].shape[-1],
+    hidden_size=64, # CHANGE ME
+    num_layers=3, # CHANGE ME
+    output_size=output_size,
+).to(device)
+
+# Init the optimiser, and loss function
+optimizer = optim.Adam(model.parameters(), lr=0.001) # CHANGE ME
+
+counts = pd.Series(y_train).value_counts().sort_index() + 1000
+weights = 1/counts.values
+weights /= weights.sum()
+loss_func = torch.nn.CrossEntropyLoss(weight=torch.from_numpy(weights).float()).to(device)
+
+plt.title('label weighting')
+plt.bar(range(weights.shape[0]), weights)
+plt.show()
+
+# Train
+training_loop(x_train, y_train, x_test, y_test, model, epochs=10, bs=128) # Change me
+
+# Measure baseline
+pred_baseline = np.roll(np.array(y_test), shift=shift_length)
+score_prev_base=score_fn(y_test, pred_baseline)
+print(f'baseline accuracy {score_prev_base:2.2%} for prev {shift_length} facies values')
+print(f'{n_wells} wells. {max_lithologies} lithologies')
+print(f'context length of {0.15*seq_length} m or {seq_length} intervals')
+print(f'model can see human labels up to {shift_length*0.15}m above. Or {shift_length} intervals')
+print(f'baseline accuracy {score_prev_base:2.2%} for prev {shift_length} facies values')
+
+# Test
+preds, true, loss, acc = test_epoch(x_test, y_test, model)
+print('final test acc', acc)
+
+df_report = classification_report(true, preds, labels=range(len(encoder.classes_)), target_names=encoder.classes_)
+display(df_report[df_report.support>0])
+
+plot_well(df, model)
+confusion_matrix(true, preds)
+1
+# -
+
+
+
 
 # ## Further Reading
 # - [Introduction to RNN](http://slazebni.cs.illinois.edu/spring17/lec02_rnn.pdf)
@@ -983,3 +1038,9 @@ confusion_matrix(true, preds)
 # - [Time Series Prediction with LSTM](https://stackabuse.com/time-series-prediction-using-lstm-with-pytorch-in-python/)
 # - [Building RNN from scratch](https://medium.com/dair-ai/building-rnns-is-fun-with-pytorch-and-google-colab-3903ea9a3a79)
 #
+
+
+
+
+
+

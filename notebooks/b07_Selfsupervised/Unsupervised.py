@@ -9,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: python3
+#     name: deep_ml_curriculum
 # ---
 
 # # Introduction

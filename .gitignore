@@ -5,6 +5,7 @@ final_table.csv
 *.pth
 *.pt
 *.pkl
+*.pk
 notebooks/*/MNIST/raw/
 notebooks/*/MNIST/processed/
 

@@ -24,6 +24,9 @@
 #
 # If you use their data please reference their dataset properly to give them credit for their contribution.
 
+# %reload_ext autoreload
+# %autoreload 2
+
 import lasio
 import matplotlib.pyplot as plt
 # %matplotlib inline
@@ -126,6 +129,7 @@ if not (interim_locations / "geolink_norge_well_logs_raw.parquet").exists():
     )
 
 df_all = pd.read_parquet(interim_locations / "geolink_norge_well_logs_raw.parquet")
+df_all
 # -
 
 # ## Clean las files
@@ -143,29 +147,54 @@ df_all_clean2 = df_all[
 # must have lithology
 df_all_clean2 = df_all_clean2.dropna(subset=["LITHOLOGY_GEOLINK"])
 print("nans", df_all_clean2.isna().mean().sort_values())
-# Remove logs which are present less than half the time
-df_all_clean1 = df_all_clean2.dropna(axis=1, thresh=0.9 * len(df_all_clean2))
+# Keep /cols logs that are present>thresh of the time
+df_all_clean1 = df_all_clean2.dropna(axis=1, thresh=0.6 * len(df_all_clean2))
 print('kept {:%} cols'.format(len(df_all_clean1.columns) / len(df_all_clean2.columns)))
-# Drop columns with Nan's
-df_all_clean = df_all_clean1.dropna(axis=0)
+# print("nans", df_all_clean1.isna().mean().sort_values())
+
+# Drop rows with any Nan's
+df_all_clean = df_all_clean1.dropna(axis=0, how='any')
 print('kept {:%} rows'.format(len(df_all_clean) / len(df_all_clean2)))
 df_all_clean
+# -
+
+df_all_clean.dropna().Well.value_counts()
+
+df_all_clean[df_all_clean['LITHOLOGY_GEOLINK']=='Marlstone'].Well.value_counts()
+
+15_9-12
+
+from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
+well_name="30_4-1"
+logs = df_all_clean[df_all_clean2.Well==well_name]
+facies = logs['LITHOLOGY_GEOLINK'].astype('category').values
+plot_well(well_name, 
+          logs, 
+          facies)
+
+from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
+well_name="30_6-11"
+logs = df_all_clean[df_all_clean2.Well==well_name]
+facies = logs['LITHOLOGY_GEOLINK'].astype('category').values
+plot_well(well_name, 
+          logs, 
+          facies)
 
 # +
 # Split by well name
-wells_val = [
-    "35_11-1",
-    "35_11-10",
-    "35_11-11",
-    "35_11-12",
-    "35_11-13",
-    "35_11-15 S",
-    "35_11-2",
-    "35_11-5",
-    "35_11-6",
-    "35_11-7",
-    "35_12-1",
-]
+# wells_val = [
+#     "35_11-1",
+#     "35_11-10",
+#     "35_11-11",
+#     "35_11-12",
+#     "35_11-13",
+#     "35_11-15 S",
+#     "35_11-2",
+#     "35_11-5",
+#     "35_11-6",
+#     "35_11-7",
+#     "35_12-1",
+# ]
 
 wells_test = [
     "34_10-12",
@@ -186,12 +215,12 @@ wells_test = [
 
 df_all_clean_test = df_all_clean[df_all_clean.Well.apply(lambda s: s in wells_test)]
 df_all_clean_train = df_all_clean[
-    df_all_clean.Well.apply(lambda s: (s not in wells_test) and (s not in wells_val))
+    df_all_clean.Well.apply(lambda s: (s not in wells_test))
 ]
-assert len(set(df_all_clean_val.Well).intersection(set(df_all_clean_train))) == 0
+# assert len(set(df_all_clean_val.Well).intersection(set(df_all_clean_train))) == 0
 assert len(set(df_all_clean_test.Well).intersection(set(df_all_clean_train))) == 0
-assert len(set(df_all_clean_test.Well).intersection(set(df_all_clean_val))) == 0
-len(df_all_clean_train), len(df_all_clean_val), len(df_all_clean_test)
+# assert len(set(df_all_clean_test.Well).intersection(set(df_all_clean_val))) == 0
+len(df_all_clean_train), len(df_all_clean_test)
 
 df_all_clean_train.to_parquet(
     interim_locations / "geolink_norge_well_logs_train.parquet", compression="gzip"
@@ -199,9 +228,9 @@ df_all_clean_train.to_parquet(
 df_all_clean_test.to_parquet(
     interim_locations / "geolink_norge_well_logs_test.parquet", compression="gzip"
 )
-df_all_clean_val.to_parquet(
-    interim_locations / "geolink_norge_well_logs_val.parquet", compression="gzip"
-)
+# df_all_clean_val.to_parquet(
+#     interim_locations / "geolink_norge_well_logs_val.parquet", compression="gzip"
+# )
 
 df_all_clean
 
@@ -281,6 +310,8 @@ df_all_clean = pd.read_parquet(
 df_all_clean['DEPT'] = df_all_clean.index.get_level_values(1)
 df_all_clean
 
+
+
 from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
 well_name="30_4-1"
 logs = df_all_clean.xs(well_name)
@@ -311,16 +342,18 @@ df_all_clean2 = pd.read_parquet(
 df_all_clean2['Depth'] = df_all_clean2.index.get_level_values(1)
 df_all_clean2['split'] = 'train'
 
-# Load some
-df_all_clean3 = pd.read_parquet(
-    interim_locations / "geolink_norge_well_logs_val.parquet"
-).set_index(['Well', 'DEPT'])
-df_all_clean3['Depth'] = df_all_clean3.index.get_level_values(1)
-df_all_clean3['split'] = 'val'
+# # Load some
+# df_all_clean3 = pd.read_parquet(
+#     interim_locations / "geolink_norge_well_logs_val.parquet"
+# ).set_index(['Well', 'DEPT'])
+# df_all_clean3['Depth'] = df_all_clean3.index.get_level_values(1)
+# df_all_clean3['split'] = 'val'
 
-df_all = pd.concat([df_all_clean1, df_all_clean2, df_all_clean3])
+df_all = pd.concat([df_all_clean1, df_all_clean2])
 df_all
 # -
+
+
 
 
 
@@ -339,12 +372,13 @@ df_well_tops_minimal['xc'] = df_well_tops_minimal.geometry.x
 df_well_tops_minimal['yc'] = df_well_tops_minimal.geometry.y
 df_well_tops_minimal
 
-nidx = np.arange(0, 6000, 0.15)
+nidx = np.arange(400, 5500, 0.15)
 
 
 # +
 def reindex(x):
     """Reindex each well to 15cm"""
+    if len(x)==0: return None
     x = x.reset_index().set_index('DEPT')
     x = x.reindex(nidx, method='nearest', limit=1).drop(columns=['Well']).sort_index()
     return x
@@ -353,6 +387,8 @@ def reindex(x):
 df_all3 = df_all.groupby(level=0).apply(reindex).dropna()
 df_all3
 # -
+
+
 
 import xarray as xr
 xr_all_clean2 = df_all3.to_xarray()
@@ -368,10 +404,6 @@ xr_all = xr.merge(
 
 xr_all2 = xr_all.sortby(['Well', 'DEPT'])
 xr_all2
-
-# %reload_ext autoreload
-# %autoreload 2
-from deep_ml_curriculum.visualization.well_log import plot_well
 
 
 
@@ -391,21 +423,24 @@ plot_well(well_name,
           facies)
 logs
 
-
-def dset_to_nc(dset, f, engine="netcdf4", compression={"zlib": True}):
-    if isinstance(dset, xr.DataArray):
-        dset = dset.to_dataset(name="data")
-    encoding = {k: {"zlib": True} for k in dset.data_vars}
-    print('saving to {}'.format(f))
-    dset.to_netcdf(f, engine=engine, encoding=encoding)
-    print('Wrote {}.nc size={} M'.format(f.stem, f.stat().st_size / 1000000.0))
-
-
-
+# +
+# def dset_to_nc(dset, f, engine="netcdf4", compression={"zlib": True}):
+#     if isinstance(dset, xr.DataArray):
+#         dset = dset.to_dataset(name="data")
+#     encoding = {k: {"zlib": True} for k in dset.data_vars}
+#     print('saving to {}'.format(f))
+#     dset.to_netcdf(f, engine=engine, encoding=encoding)
+#     print('Wrote {}.nc size={} M'.format(f.stem, f.stat().st_size / 1000000.0))
+# -
 
 
-dset_to_nc(dset=xr_all.drop(['geometry']),
-          f=interim_locations/'geolink_norge_well_logs.h5')
+
+
+
+# +
+# dset_to_nc(dset=xr_all.drop(['geometry']),
+#           f=interim_locations/'geolink_norge_well_logs.h5')
+# -
 
 
 
@@ -472,6 +507,8 @@ import numpy as np
 
 
 
+
+
 # # Plot contextily
 
 from pathlib import Path
@@ -484,7 +521,24 @@ df_well_tops = gpd.read_file(interim_locations / "norge_well_tops.gpkg").set_crs
 
 import contextily as ctx
 ax = df_well_tops.plot(figsize=(18, 18), edgecolor='k')
-ctx.add_basemap(ax, url=ctx.providers.Esri.OceanBasemap)
+ctx.add_basemap(ax, url=ctx.providers.Esri.OceanBasemap, zoom=8)
+
+# Plot every 5th
+df_well_tops[::5].apply(lambda x: 
+                   ax.annotate(
+                       s=x.wlbWellboreName, 
+                       xy=x.geometry.centroid.coords[0], 
+                       ha='left',
+                       c='white',
+                       
+                   ), axis=1);
+# +
+ax = df_well_tops.plot(figsize=(18, 18), edgecolor='k')
+# ctx.add_basemap(ax, url=ctx.providers.Esri.OceanBasemap)
+ctx.add_basemap(ax,
+                crs=df_well_tops.crs.to_string(),
+                source=ctx.providers.Stamen.Watercolor
+               )
 
 # Plot every 5th
 df_well_tops[::5].apply(lambda x: 
@@ -494,10 +548,38 @@ df_well_tops[::5].apply(lambda x:
                        ha='left',
                        c='white'
                    ), axis=1);
+
 # -
 
+west, south, east, north = bbox = df_well_tops.total_bounds
+img, ext = ctx.bounds2raster(west,
+                             south,
+                             east,
+                             north,
+                             "world_watercolor.tif",
+                             source=ctx.providers.Stamen.Watercolor,
+                             ll=True,
+                             zoom=8
+                            )
 
 
+
+
+west, south, east, north = bbox = df_well_tops.total_bounds
+img, ext = ctx.bounds2raster(west,
+                             south,
+                             east,
+                             north,
+                             "oceanesri.tif",
+                             source=ctx.providers.Esri.OceanBasemap,
+                             ll=True,
+                             zoom=8
+                            )
+
+
+# +
+# ctx.bounds2raster?
+# -
 
 
 

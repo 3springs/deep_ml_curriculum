@@ -9,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: python3
+#     name: deep_ml_curriculum
 # ---
 
 # # Introduction
@@ -132,19 +132,22 @@ geolink = pd.read_parquet(
 geolink['DEPT'] = geolink.index.get_level_values(1)
 
 # Work with one well
-geolink = geolink.xs("30_4-1")
+geolink = geolink.xs("30_6-11")
 geolink
 # -
 
+# We're going to use the pandas categorical type for our lithologies
 geolink['LITHOLOGY_GEOLINK'].astype('category')
 
+# View our well
 from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
-plot_well("30_4-1", geolink, facies=geolink['LITHOLOGY_GEOLINK'].astype('category').values)
+plot_well("30_6-11", geolink, facies=geolink['LITHOLOGY_GEOLINK'].astype('category').values)
 
-# we only take the data from CALI  onward for X.
-X = geolink.iloc[:, 1:]
+# we only take the data from CALI  onward for X. (Except DEPTH, to avoid biasing the model with depth)
+X = geolink.iloc[:, 1:-1]
 # LITHOLOGY_GEOLINK will be our class y.
 y = geolink["LITHOLOGY_GEOLINK"]
+X
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=2020
@@ -207,7 +210,7 @@ y_pred = knn_classifier.predict(X_test)
 y_true = le.transform(y_test.to_numpy())
 print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
-# We were able to predict the 11 different classes with 93.2% accuracy using new data. This is slightly better than random, however the accuracy is still very low. Let's train using the same algorithm and hyperparameters but this time we will normalise the data.
+# We were able to predict the 11 different classes with >90% accuracy using new data. This is slightly better than random, however the accuracy is still very low. Let's train using the same algorithm and hyperparameters but this time we will normalise the data.
 
 # ## Normalised Data
 #
@@ -261,7 +264,7 @@ y_pred = knn_classifier_norm.predict(X_test)
 y_true = le.transform(y_test)
 print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
-# So now we got an accuracy of 90%. Normalising will usually help in the training process. So it's a good practice to preprocess the data before the training phase. However, some machine learning algorithms such as KNN are robust enough to work well with different scales so normalization might not be necessary in some cases. 
+# So now we got an accuracy of >91%. Normalising will usually help in the training process. So it's a good practice to preprocess the data before the training phase. However, some machine learning algorithms such as KNN are robust enough to work well with different scales so normalization might not be necessary in some cases. 
 
 # #### So... What if we change the hyperparameters of a classifier such as the number of `neighbors`?
 #
@@ -269,9 +272,9 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 #
 # The accuracy for the same normalised model are:
 #
-# - n_neighbors = 10, accuracy: 90.9%
-# - n_neighbors = 5,  accuracy: 91.6%
-# - n_neighbors = 1,  accuracy: 92.2%
+# - n_neighbors = 10, accuracy: 93%
+# - n_neighbors = 5,  accuracy: 94%
+# - n_neighbors = 1,  accuracy: 96%
 # We could  manually try different values until we find the best hyperparameters. Of course, this approach could be very time consuming, in particular, when we have a big feature space and want to optimise many hyperparameters. One way to solve this problem is automating the search of hyperparameters. This is also called Hyperparameter Optimisation. We will get deeper into this concept in the next sessions.
 
 # Normalized knn
@@ -482,7 +485,7 @@ geolink = pd.read_parquet(
 geolink['DEPT'] = geolink.index.get_level_values(1)
 
 # Work with one well
-geolink = geolink.xs("30_4-1")
+geolink = geolink.xs("30_6-11")
 # -
 
 print("Total rows in Geolink dataset for the selected well:", len(geolink))
@@ -491,11 +494,13 @@ print("Total rows in Geolink dataset for the selected well:", len(geolink))
 #
 # Note: For the example below, we will sample the data to get only 10,000 data points from the original geolink dataset instead of 22,921. This reduction in datapoints may affect the accuracy of the model. But it will be done for demonstration purposes.
 
+
+
 # +
 # In our case, we will take a sample of 10,000 data points from one well
 sample_dataset = geolink.sample(n=10000, replace=False, random_state=2020)
 
-X_sample = sample_dataset.iloc[:, 1:]
+X_sample = sample_dataset.iloc[:, 1:-1]
 y_sample = sample_dataset["LITHOLOGY_GEOLINK"]
 # Normalise data
 scaler = StandardScaler()
@@ -533,7 +538,7 @@ print(sklearn.metrics.classification_report(y_true, y_pred))
 
 # +
 # Plot the results as well logs
-X_sample = geolink.iloc[:, 1:]
+X_sample = geolink.iloc[:, 1:-1]
 y_true = geolink["LITHOLOGY_GEOLINK"]
 X_scaled = scaler.fit_transform(X_sample)
 y_pred = clf.predict(X_scaled)
@@ -623,10 +628,10 @@ y_pred = clf.predict(X_test)
 print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 # -
 
-# We got an accuracy of 93%~ just with the default hyperparameters. Let's train the DT again with a different hyperparameter.
+# We now have an accuracy of >92% just with the default hyperparameters. Let's train the DT again with a different hyperparameter.
 
 # +
-clf2 = tree.DecisionTreeClassifier(random_state=2020, max_depth=10)
+clf2 = tree.DecisionTreeClassifier(random_state=2020, max_depth=20)
 clf2 = clf2.fit(X_train, y_train)
 
 # Evaluation Time
@@ -634,7 +639,7 @@ y_pred = clf2.predict(X_test)
 print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 # -
 
-# We got now an accuracy of 92%~ just with the hyperparameter max_depth=10. Let's train the DT again with a different hyperparameter. In appearance, the first model would be better, however, there are other metrics besides accuracy that should be taken into account. There are also other methods to avoid overfitting. We will go deeper into this topic in the next sessions.
+# We got a greater accuracy just with the hyperparameter max_depth=20. Let's train the DT again with a different hyperparameter. In appearance, the first model would be better, however, there are other metrics besides accuracy that should be taken into account. There are also other methods to avoid overfitting. We will go deeper into this topic in the next sessions.
 
 # # 6. Random Forest <a name="random-forest"></a>
 #

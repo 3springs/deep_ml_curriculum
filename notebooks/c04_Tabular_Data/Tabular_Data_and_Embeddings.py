@@ -566,16 +566,6 @@ df_train, df_test = model_selection.train_test_split(df, shuffle=True, random_st
 #
 # However for the purposes of a demo, especially embedding by well we will split randomly. You can see another approach to splitting in the RNN notebook.
 
-# +
-# np.random.seed(12)
-# n_wells = 40
-# selected_wells = np.random.choice(wells, n_wells * 2, replace=False)
-# training_wells = selected_wells[:n_wells]
-# test_wells = selected_wells[n_wells:]
-# df_test = df[test_wells]
-# df_train = df[training_wells]
-# -
-
 # We need to process the input and target data. The input data needs to be normalised with a standard scaler, and the output data needs to be converted from text to numbers. To convert text to numbers we use `LabelEncoder` from Scikit Learn. <br>
 #
 
@@ -599,7 +589,7 @@ encoder.transform(["Shaly Silt"])
 
 # Plot a well
 from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
-well_name="30_4-1"
+well_name="30_6-11"
 logs = df.xs(well_name).copy()
 logs['DEPT'] = logs.index.get_level_values(0)
 facies = logs['LITHOLOGY_GEOLINK'].astype('category').values
@@ -956,7 +946,7 @@ class FeatureEmbed(nn.Module):
 
 num_classes=len(well_encoder.classes_)
 model = FeatureEmbed(
-    hidden_size=6,
+    hidden_size=2,
     num_classes=num_classes,
     emb_vec_size=2,
     output_size=len(encoder.classes_)
