@@ -297,7 +297,7 @@ knn_classifier_knn1 = KNeighborsClassifier(n_neighbors=1)
 # Let's fit the data
 knn_classifier_knn1.fit(X_train, transformed_y_train)
 # Evaluation Time
-y_pred = knn_classifier_knn10.predict(X_test)
+y_pred = knn_classifier_knn1.predict(X_test)
 y_true = le.transform(y_test)
 print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
@@ -401,15 +401,15 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 #
 #     # Evaluation Time
 #     y_pred = cls_5nn.predict(X_test)
-#     print(f"Accuracy 5NN: {}".format(accuracy_score(y_test_true, y_pred)))
+#     print("Accuracy 5NN: {}".format(accuracy_score(y_test_true, y_pred)))
 #
 #     # Evaluation Time
 #     y_pred = cls_10nn.predict(X_test)
-#     print(f"Accuracy 10NN: {}".format(accuracy_score(y_test_true, y_pred)))
+#     print("Accuracy 10NN: {}".format(accuracy_score(y_test_true, y_pred)))
 #
 #     # Evaluation Time
 #     y_pred = cls_15nn.predict(X_test)
-#     print(f"Accuracy 15NN: {}".format(accuracy_score(y_test_true, y_pred)))     
+#     print("Accuracy 15NN: {}".format(accuracy_score(y_test_true, y_pred)))     
 #   ```
 #
 #   </details>
