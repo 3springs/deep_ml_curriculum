@@ -834,6 +834,12 @@ print(f'baseline accuracy {score_prev_base:2.2%} for prev {shift_length} facies 
 # The bottom half was test
 plot_well(df, model)#, depth_min=3000, depth_max=6000)
 
+# We can also zoom into a range
+plot_well(df, model, depth_min=3200, depth_max=3500)
+1
+
+
+
 # The model requires hyper parameter tuning and possibly training over 100s of epochs to reach the best results. However, in this example due to large size of dataset and the model we stopped after `10` epochs. 
 #
 # There are number ways we can improve it:
@@ -1039,7 +1045,9 @@ confusion_matrix(true, preds)
 # - [Building RNN from scratch](https://medium.com/dair-ai/building-rnns-is-fun-with-pytorch-and-google-colab-3903ea9a3a79)
 #
 
-
+# We can also zoom into a range
+plot_well(df, model, depth_min=3200, depth_max=3500)
+1
 
 
 
