@@ -46,6 +46,7 @@ data_locations = Path(
 )
 data_locations_wellheads = Path("../../data/raw/geolink_dataset/norge_well_heads")
 interim_locations = Path("../../data/processed/geolink_norge_dataset/")
+interim_locations2 = Path("../../data/interim/geolink_norge_dataset/")
 
 # # load and save as parquet
 
@@ -61,6 +62,7 @@ df_lithology
 
 
 # +
+# TODO rename well heads
 df_well_tops = pd.concat(
     [
         pd.read_csv(data_locations_wellheads / "wellbore_exploration_all.csv"),
@@ -101,7 +103,7 @@ df_well_tops
 # We can now proceed to import these files as las files and get their dataframes and hopefully put them into a data format that is more suited for ML tasks.
 
 # +
-if not (interim_locations / "geolink_norge_well_logs_raw.parquet").exists():
+if not (interim_locations2 / "geolink_norge_well_logs_raw.parquet").exists():
 
     # load las files
     well_dataframes = []
@@ -125,10 +127,10 @@ if not (interim_locations / "geolink_norge_well_logs_raw.parquet").exists():
     df_all = df_all.reset_index()  # .set_index(['Well', 'DEPT'])
 
     df_all.to_parquet(
-        interim_locations / "geolink_norge_well_logs_raw.parquet", compression="gzip"
+        interim_locations2 / "geolink_norge_well_logs_raw.parquet", compression="gzip"
     )
 
-df_all = pd.read_parquet(interim_locations / "geolink_norge_well_logs_raw.parquet")
+df_all = pd.read_parquet(interim_locations2 / "geolink_norge_well_logs_raw.parquet")
 df_all
 # -
 
@@ -310,7 +312,9 @@ df_all_clean = pd.read_parquet(
 df_all_clean['DEPT'] = df_all_clean.index.get_level_values(1)
 df_all_clean
 
-
+# +
+# logs
+# -
 
 from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
 well_name="30_4-1"
@@ -509,6 +513,11 @@ import numpy as np
 
 
 
+
+
+
+
+
 # # Plot contextily
 
 from pathlib import Path
@@ -580,6 +589,10 @@ img, ext = ctx.bounds2raster(west,
 # +
 # ctx.bounds2raster?
 # -
+
+
+
+
 
 
 
