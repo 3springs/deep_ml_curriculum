@@ -52,6 +52,8 @@
 #
 # Source: https://thispersondoesnotexist.com/
 #
+# Also see: https://thisxdoesnotexist.com/
+#
 
 # ## How does a GAN work?
 #
@@ -123,7 +125,6 @@ def get_generator_block(input_dim, output_dim):
         nn.ReLU(inplace=True),
     )
 
-
 # - Generator Class Values:
 #     - z_dim: the dimension of the noise vector
 #     - im_dim: the dimension of the output image. MNIST images are 28 x 28 = 784.
@@ -132,6 +133,10 @@ def get_generator_block(input_dim, output_dim):
 # - Forward Function: Function for completing a forward pass of the generator: Given a noise vector, returns a generated image.
 #     - noise: a noise tensor with dimensions (n_samples, z_dim)
 #         
+
+
+
+
 
 class Generator(nn.Module):
     def __init__(self, z_dim=10, im_dim=784, hidden_dim=128):
@@ -143,7 +148,7 @@ class Generator(nn.Module):
             get_generator_block(hidden_dim * 2, hidden_dim * 4),
             get_generator_block(hidden_dim * 4, hidden_dim * 8),
             nn.Linear(hidden_dim * 8, im_dim),
-            # Scale data from
+            # Scale data from 0-1
             nn.Sigmoid(),
         )
 
@@ -180,6 +185,8 @@ def get_noise(n_samples, z_dim, device="cpu"):
 # ```python
 # def get_noise(n_samples, z_dim, device='cpu'):
 #     return torch.randn((n_samples, z_dim)).to(device)
+#     
+# get_noise(4, 128).shape
 # ```
 #
 # </details>
@@ -229,31 +236,35 @@ class Discriminator(nn.Module):
 #
 # Next, you will load the MNIST dataset as tensors using a dataloader.
 
+# +
 # Set your parameters
 criterion = nn.BCEWithLogitsLoss()
 n_epochs = 200
 z_dim = 64
 display_step = 500
 batch_size = 128
-lr = 0.00001
-device = "cuda"
+lr = 1e-5
+device = "cuda" if torch.cuda.is_available() else 'cpu'
+print(device)
+
 # Load MNIST dataset as tensors
 dataloader = DataLoader(
     MNIST("../../data/processed/MNIST", download=False, transform=transforms.ToTensor()),
     batch_size=batch_size,
     shuffle=True,
 )
+# -
 
 # Let's initialize our generator, discriminator, and optimizers.
 
-device = "cpu"
 gen = Generator(z_dim).to(device)
 gen_opt = torch.optim.Adam(gen.parameters(), lr=lr)
 disc = Discriminator().to(device)
 disc_opt = torch.optim.Adam(disc.parameters(), lr=lr)
 
-
 # Before we start training our GAN, we will need to create some functions to calculate the discriminator's loss and the generator's loss. This is how the discriminator and generator will know how they are doing and improve themselves. Since the generator is needed when calculating the discriminator's loss, you will need to call `.detach()` on the generator result to ensure that only the discriminator is updated!
+
+
 
 # `get_disc_loss` will return the loss of a discriminator given a generator and real images
 # - Parameters:
@@ -266,19 +277,30 @@ disc_opt = torch.optim.Adam(disc.parameters(), lr=lr)
 #     - z_dim: the dimension of the noise tensor
 #     - device: the device type
 
+# +
+def get_noise(n_samples, z_dim, device='cpu'):
+    return torch.randn((n_samples, z_dim)).to(device)
+
 def get_disc_loss(gen, disc, criterion, real, num_images, z_dim, device):
-    # Create noise vectors and generate a batch of num_images fake images.
+    """Train the discriminator on a batch of real and fake images"""
+    
+    # 1. Create noise vectors and generate a batch of num_images fake images.
     # Make sure to pass the device argument to the noise.
-    images = get_noise(num_images, z_dim, device)
+    noise = get_noise(num_images, z_dim, device)
+    
     # Don't forget to detach the generator!
-    fake_images = gen(images).detach()  # detach to avoid training G on these labels
-    # Train Fake Images
+    fake_images = gen(noise).detach()  # detach to avoid training G on these labels
+    
+    # 2. Train Fake Images
     # Get the discriminator's prediction of the fake image and calculate the loss.
     pred_fake = disc(fake_images)
+    
     # Remember the loss function you set earlier? You need a 'ground truth' tensor in order to calculate the loss.
+    # All of these are fake, so the label is 0
     ground_truth_fake = torch.zeros_like(pred_fake)
     loss_fake = criterion(pred_fake, ground_truth_fake)
     loss_fake.backward(retain_graph=True)
+    
     # Repeat the process with `ground_truth_real`
     # Train Real Images
     pred_real = disc(real)
@@ -288,6 +310,8 @@ def get_disc_loss(gen, disc, criterion, real, num_images, z_dim, device):
     disc_loss = (loss_real + loss_fake) / 2
     return disc_loss
 
+
+# -
 
 # `get_gen_loss` will return the loss of a generator given a discriminator
 # - Parameters:
@@ -302,14 +326,20 @@ def get_disc_loss(gen, disc, criterion, real, num_images, z_dim, device):
 #     - device: the device type
 
 def get_gen_loss(gen, disc, criterion, num_images, z_dim, device):
+    """Train the generator to fool the discriminator."""
     # Create noise vectors and generate a batch of fake images.
-    images = get_noise(num_images, z_dim, device)
+    noise = get_noise(num_images, z_dim, device)
+    
     # Get the discriminator's prediction of the fake image.
-    fake_images = gen(images)
+    fake_images = gen(noise)
+    
     # Get the discriminator's prediction of the fake image.
     pred_fake = disc(fake_images)
+    
     # Target vectors with 1`s. In this case, 1 represents real
+    # From the perspective of the generator, "true" or 1 is the answer it wants
     target = torch.ones_like(pred_fake)
+    
     # Calculate the generator's loss.
     gen_loss = criterion(pred_fake, target)
     gen_loss.backward(retain_graph=True)
@@ -317,10 +347,6 @@ def get_gen_loss(gen, disc, criterion, num_images, z_dim, device):
 
 
 # # Training Time !
-
-def get_noise(n_samples, z_dim, device="cpu"):
-    return torch.randn((n_samples, z_dim)).to(device)
-
 
 # For each epoch, we will process the entire dataset in batches. For every batch, we will need to update the discriminator and generator using their loss.
 #
@@ -398,5 +424,15 @@ for epoch in tqdm(range(n_epochs), unit='epoch'):
             mean_generator_loss = 0
             mean_discriminator_loss = 0
         cur_step += 1
+
+# # Applications:
+#
+# - Anomaly Detection: e.g. MagGan https://arxiv.org/abs/1901.04997
+# - Synthetic Data: Use the generator to help in the training, when you don't have enougth data. This is used a lot in medical data where you have few data points. In the end the discrimator
+# - Adversarial Examples: Are something we may have to harden our models again
+# - Privacy Preserving: Instead of handing over real patient data
+# - Super Resolution: Deep Rocks SR
+
+
 
 
