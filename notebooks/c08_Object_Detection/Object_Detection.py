@@ -8,14 +8,23 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: python3
+#     name: deep_ml_curriculum
 # ---
 
 # # Introduction
 #
-# This notebook provides examples on to use pre-trained deep neural networks for the object recognition task the notebook. All images used for testing were downloaded from unplash.com under license [free-usable images](https://unsplash.com/license).
+# This notebook provides examples on to use pre-trained deep neural networks for the object recognition task the notebook. 
+#
+# Learning objectives:
+# - You can classify
+# - You can do bounding boxes and object detection
+# - Mask-RCNN combines all of them and does instance segmentation
+# - TODO Camillo fill here
+#
+#
+# All images used for testing were downloaded from unplash.com under license [free-usable images](https://unsplash.com/license).
 #
 # ## Table of Content
 # 0. [Libraries](#libraries)
@@ -26,6 +35,7 @@
 # 5. [Summary](#summary)
 
 import cv2
+import os
 import random
 import torch
 import torchvision
@@ -35,9 +45,15 @@ import urllib.request
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
 
+# monkey-patch torchvision to work offline
+torchvision.models.detection.mask_rcnn.model_urls['maskrcnn_resnet50_fpn_coco']='../../data/processed/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth'
+torchvision.models.detection.faster_rcnn.model_urls['fasterrcnn_resnet50_fpn_coco']=' ../../data/processed/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth'
+
 # # Object Recognition
 #
-# A more complex problem than the classic image recognition problem is the object recognition task. In image classification we predict the category of an image, however, in object recognition not only we classify multiple object in an image but we can also predict the location of those objects. 
+# A more complex problem than the classic image classification problem is the object recognition task. In an image classification we predict the category of an image, however, in object detection not only we classify multiple objects in an image but we can also predict the location of those objects. 
+#
+#
 # In this notebook we will discuss **Faster RCNN** model for object recognition and **Mask RCNN** for instance segmentation.
 #
 # **Object Recognition:**
@@ -204,7 +220,12 @@ COCO_PERSON_KEYPOINT_NAMES = [
 # **Fast R-CNN architecture:**
 #  An input image and multiple regions of interest (RoIs) are input into a fully convolutional network. Each RoI is pooled into a fixed-size feature map and then mapped to a feature vector by fully connected layers (FCs).
 # The network has two output vectors per RoI: softmax probabilities and per-class bounding-box regression offsets. The architecture is trained end-to-end with a multi-task loss. <br/><br/>
+#
+# This was the first region based mode for object detection. It has two outputs:
+#
 # <img width=400 heigh=400 src='fastrcnn.png'/>
+#
+#
 #
 # Source: [Ross Girshick](https://arxiv.org/pdf/1504.08083.pdf)
 
@@ -216,11 +237,15 @@ COCO_PERSON_KEYPOINT_NAMES = [
 #
 # Source: [Ren et al.](https://arxiv.org/pdf/1506.01497.pdf)
 #
-#
+# This seperated out the tasks, running bounding box detection first. This was much more accurate.
 
 # In the original implementation of Faster RCNN, the backbone used was VGG19. However, Pytorch offers a pretrained version (COCO Dataset) using ResNet50 as the backbone.
 
 FRCNN = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True).eval()
+
+
+
+
 
 # Let's try with an example image:
 
@@ -234,30 +259,48 @@ trans = T.ToTensor()
 
 
 def get_prediction(img, threshold=0.5):
-    # Defing PyTorch Transform
+    """
+    Return predictions above a threshold.
+    
+    You need to understand this right now, we are getting the predictions out as boxes, class names, and scores
+    """
+    # Prepare image array
     transform = T.Compose([T.ToTensor()])  # Convert PIL Image to tensor
     img = transform(img)  # Apply the transform to the image
-    pred = FRCNN([img])  # Pass the image to the model
+    
+    
+    # Pass the image to the model
+    pred = FRCNN([img])  
     pred_class = [
         COCO_INSTANCE_CATEGORY_NAMES[i] for i in list(pred[0]["labels"].numpy())
-    ]  # Get the Prediction Score
+    ] # Convert to class
+    
+    # Bounding boxes
     pred_boxes = [
         [(i[0], i[1]), (i[2], i[3])] for i in list(pred[0]["boxes"].detach().numpy())
-    ]  # Bounding boxes
-    pred_score = list(pred[0]["scores"].detach().numpy())
+    ]  
+    
+    # Get the Prediction Score
+    pred_score = list(pred[0]["scores"].cpu().detach().numpy())
     pred_t = [pred_score.index(x) for x in pred_score if x > threshold][
         -1
-    ]  # Get list of index with score greater than threshold.
+    ]  
+    
+    # Get list of index with score greater than threshold.
     pred_boxes = pred_boxes[: pred_t + 1]
     pred_class = pred_class[: pred_t + 1]
     return pred_boxes, pred_class, pred_score
 
 
 def object_detection_api(img_path, threshold=0.5):
+    """
+    A function that takes in an image, predicts, and shows
+    """
     # Open Image
     im = Image.open(img_path).convert("RGB")
 
     boxes, pred_cls, pred_score = get_prediction(im, threshold)  # Get predictions
+    
     # Print predictions
     print(dict(zip(pred_cls, pred_score)))
 
@@ -306,11 +349,15 @@ object_detection_api(filename, threshold=0.9)
 # images = os.listdir('./exercise1')
 # ```
 #     
-# 2. Write a code that allows you take `images` as a parameter and a `threshold`. Then, show the `images` with the bounding box predictions.
+# 2. Loop through the images with a threshold=0.5
 #
 # </div>
 #
 #
+
+
+
+
 
 # You can click in the button below the reveal the solution for exercise 1.
 #
@@ -336,6 +383,8 @@ object_detection_api(filename, threshold=0.9)
 #
 # Mask R-CNN is a modification to the Faster R-CNN model. Mask R-CNN models replace the RoI pooling layer with an RoI alignment layer. This allows the use of bilinear interpolation to retain spatial information on feature maps, making Mask R-CNN better suited for pixel-level predictions. The RoI alignment layer outputs feature maps of the same shape for all RoIs. This not only predicts the categories and bounding boxes of RoIs, but allows us to use an additional fully convolutional network to predict the pixel-level positions of objects. We will describe how to use fully convolutional networks to predict pixel-level semantics in images later in this chapter.
 #
+# Find the regions first. Extract the regions. Then do the classifications
+#
 # Source: [R-CNN](https://d2l.ai/chapter_computer-vision/rcnn.html)
 #
 # Architecture:
@@ -346,7 +395,7 @@ object_detection_api(filename, threshold=0.9)
 MRCNN = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).eval()
 
 
-# +
+# + code_folding=[]
 def get_prediction_mask(img_path, threshold):
     transform = T.Compose([T.ToTensor()])
     img = transform(Image.open(img_path))
@@ -390,6 +439,7 @@ def random_colour_masks(image):
 
 def instance_segmentation_api(img_path, threshold=0.5, rect_th=1, text_size=1):
     masks, boxes, pred_cls = get_prediction_mask(img_path, threshold)
+    print(pred_cls)
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     for i in range(len(masks)):
@@ -454,6 +504,8 @@ instance_segmentation_api('./exercise2/mask1.jpg'.format(), threshold=0.5)
 #
 # </details>
 
+
+
 # # Summary
 #
 # Source: [RCNN](https://d2l.ai/chapter_computer-vision/rcnn.html)
@@ -465,3 +517,34 @@ instance_segmentation_api('./exercise2/mask1.jpg'.format(), threshold=0.5)
 # - Faster R-CNN replaces the selective search used in Fast R-CNN with a region proposal network. This reduces the number of proposed regions generated, while ensuring precise object detection.
 #
 # - Mask R-CNN uses the same basic structure as Faster R-CNN, but adds a fully convolution layer to help locate objects at the pixel level and further improve the precision of object detection.
+
+
+
+# # Auto:test
+
+# +
+import os
+DIR = './exercise1'
+images = os.listdir(DIR)
+
+for image in images:
+    object_detection_api(f'{DIR}/{image}', threshold=0.5)
+
+# +
+import os
+DIR = './exercise1'
+images = os.listdir(DIR)
+
+for image in images:
+    instance_segmentation_api(f'{DIR}/{image}', threshold=0.5)
+
+# +
+import os
+DIR = './exercise2'
+images = os.listdir(DIR)
+
+for image in images:
+    instance_segmentation_api(f'{DIR}/{image}', threshold=0.5)
+# -
+
+
