@@ -1029,7 +1029,7 @@ plt.ylabel('embedding dimension B')
 import geopandas as gpd
 from pathlib import Path
 interim_locations = Path("../../data/processed/geolink_norge_dataset/")
-df_well_tops = gpd.read_file(interim_locations / "norge_well_tops.gpkg")[['wlbWellboreName_geolink', 'geometry']].sort_values('wlbWellboreName_geolink')
+df_well_tops = gpd.read_file(str(interim_locations / "norge_well_tops.gpkg"))[['wlbWellboreName_geolink', 'geometry']].sort_values('wlbWellboreName_geolink')
 
 plt.subplots(1, 2, figsize=(16, 12))
 
