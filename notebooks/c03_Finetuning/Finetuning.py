@@ -18,18 +18,23 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
+from torch.utils.data import DataLoader
+
 import numpy as np
 import torchvision
 from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
+
 import time
 from pathlib import Path
 import os
+from tqdm.auto import tqdm
 import copy
-from torch.utils.data import DataLoader
+
 
 # Magic Function
 # %matplotlib inline
+
 # Hide all warnings
 import warnings
 warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
@@ -161,7 +166,7 @@ num_classes = len(classes)
 print(classes)
 
 # Parameters
-params = {"batch_size": 64, "shuffle": True, "num_workers": 8}
+params = {"batch_size": 64, "shuffle": True, "num_workers": 0}
 
 dataloaders = {
     "train": DataLoader(landmassf3_train, **params),
@@ -175,7 +180,7 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
-    for epoch in range(num_epochs):
+    for epoch in tqdm(range(num_epochs), unit='epoch'):
         print("Epoch {}/{}".format(epoch, num_epochs - 1))
         print("-" * 10)
 
@@ -190,7 +195,7 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
             running_corrects = 0
 
             # Iterate over data.
-            for inputs, labels in dataloaders[phase]:
+            for inputs, labels in tqdm(dataloaders[phase], desc=phase, leave=False):
 
                 # print(inputs.shape, labels.shape)
                 inputs = inputs.to(device)
