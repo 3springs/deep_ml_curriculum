@@ -687,11 +687,12 @@ import torchvision
 
 # We can simply look at [pytorch hub](https://pytorch.org/hub/) and download the model we need. The code below downloads [DEEPLABV3-RESNET101](https://pytorch.org/hub/pytorch_vision_deeplabv3_resnet101/) which suits the data we have.
 
-try:
-    model = torch.hub.load('pytorch/vision:v0.7.0', 'deeplabv3_resnet101', pretrained=True)
-except Exception as e:
-    # The model is also saved in the following path (torch==1.4.0) and we can load it directly.
-    model = torch.load("../../data/processed/models/Deeplabv3.pth")
+model = torch.load("../../data/processed/models/Deeplabv3.pth")
+# try:
+#     model = torch.hub.load('pytorch/vision:v0.7.0', 'deeplabv3_resnet101', pretrained=True)
+# except Exception as e:
+#     # The model is also saved in the following path (torch==1.4.0) and we can load it directly.
+#     model = torch.load("../../data/processed/models/Deeplabv3.pth")
 
 
 
@@ -828,24 +829,42 @@ dl = DataLoader(ds, batch_size=16, shuffle=True)
 #  'fcn_resnet101_coco': 'https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth',
 #  'deeplabv3_resnet50_coco': None,
 #  'deeplabv3_resnet101_coco': 'https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth
+# -
+
+
 
 # +
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision import models
 
-
 def DeepLabv3(outputchannels=1):
     model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True)
     model.classifier = nn.Sequential(DeepLabHead(2048, outputchannels), nn.Sigmoid())
     return model
-
-
 # -
+
+
+
+
 
 # <div class='alert alert-danger'><b>When creating an instance of model access to internet is required for downloading the pretrained model. If you don't have access to internet you won't be able to run the rest of the code.</b></div>
 
+# +
+# monkey patch to work offline
+model_path = Path('../../data/processed/models/deeplabv3_resnet101_coco-586e9e4e.pth').absolute().resolve()
+torchvision.models.segmentation.segmentation.model_urls['deeplabv3_resnet101_coco'] = 'file://{}'.format(model_path)
+model_path = Path('../../data/processed/models/resnet101-5d3b4d8f.pth').absolute().resolve()
+torchvision.models.resnet.model_urls['resnet101'] = 'file://{}'.format(model_path)
+
 model = DeepLabv3()
 model.to(device)
+# -
+
+
+
+
+
+
 
 # ### Select the Optimiser
 

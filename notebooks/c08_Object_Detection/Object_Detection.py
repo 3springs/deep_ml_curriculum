@@ -34,20 +34,27 @@
 # 4. [Mask R-CNN in Pytorch](#frcnn)
 # 5. [Summary](#summary)
 
+# +
 import cv2
-import os
-import random
 import torch
 import torchvision
+
 import numpy as np
 from PIL import Image, ImageDraw
-import urllib.request
-import torchvision.transforms as T
 import matplotlib.pyplot as plt
 
+import os
+import random
+from pathlib import Path
+import urllib.request
+import torchvision.transforms as T
+# -
+
 # monkey-patch torchvision to work offline
-torchvision.models.detection.mask_rcnn.model_urls['maskrcnn_resnet50_fpn_coco']='../../data/processed/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth'
-torchvision.models.detection.faster_rcnn.model_urls['fasterrcnn_resnet50_fpn_coco']=' ../../data/processed/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth'
+model_path = Path('../../data/processed/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth').absolute().resolve()
+torchvision.models.detection.mask_rcnn.model_urls['maskrcnn_resnet50_fpn_coco']=  'file://{}'.format(model_path)
+model_path = Path('../../data/processed/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth').absolute().resolve()
+torchvision.models.detection.faster_rcnn.model_urls['fasterrcnn_resnet50_fpn_coco']=  'file://{}'.format(model_path)
 
 # # Object Recognition
 #
@@ -242,10 +249,6 @@ COCO_PERSON_KEYPOINT_NAMES = [
 # In the original implementation of Faster RCNN, the backbone used was VGG19. However, Pytorch offers a pretrained version (COCO Dataset) using ResNet50 as the backbone.
 
 FRCNN = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True).eval()
-
-
-
-
 
 # Let's try with an example image:
 
