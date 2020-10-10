@@ -15,7 +15,7 @@
 
 # # Sequence to Sequence Models for Timeseries Regression
 #
-# <img src="./images/Seq2Seq for regression.png" />
+# <img src="./images/Seq2Seq_simple.png" />
 
 # +
 # Imports

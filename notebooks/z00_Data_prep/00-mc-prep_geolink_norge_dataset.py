@@ -164,7 +164,9 @@ df_all_clean.dropna().Well.value_counts()
 
 df_all_clean[df_all_clean['LITHOLOGY_GEOLINK']=='Marlstone'].Well.value_counts()
 
-15_9-12
+# +
+# 15_9-12
+# -
 
 from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
 well_name="30_4-1"
@@ -409,8 +411,6 @@ xr_all = xr.merge(
 xr_all2 = xr_all.sortby(['Well', 'DEPT'])
 xr_all2
 
-
-
 well_name="30_4-1"
 logs = xr_all2.sel(Well=well_name).to_dataframe().dropna()
 logs['DEPT'] = logs['Depth']
@@ -427,27 +427,16 @@ plot_well(well_name,
           facies)
 logs
 
-# +
-# def dset_to_nc(dset, f, engine="netcdf4", compression={"zlib": True}):
-#     if isinstance(dset, xr.DataArray):
-#         dset = dset.to_dataset(name="data")
-#     encoding = {k: {"zlib": True} for k in dset.data_vars}
-#     print('saving to {}'.format(f))
-#     dset.to_netcdf(f, engine=engine, encoding=encoding)
-#     print('Wrote {}.nc size={} M'.format(f.stem, f.stat().st_size / 1000000.0))
-# -
 
-
-
-
-
-# +
-# dset_to_nc(dset=xr_all.drop(['geometry']),
-#           f=interim_locations/'geolink_norge_well_logs.h5')
-# -
-
-
-
+def dset_to_nc(dset, f, engine="netcdf4", compression={"zlib": True}):
+    if isinstance(dset, xr.DataArray):
+        dset = dset.to_dataset(name="data")
+    encoding = {k: {"zlib": True} for k in dset.data_vars}
+    print('saving to {}'.format(f))
+    dset.to_netcdf(f, engine=engine, encoding=encoding)
+    print('Wrote {}.nc size={} M'.format(f.stem, f.stat().st_size / 1000000.0))
+dset_to_nc(dset=xr_all.drop(['geometry']),
+          f=interim_locations/'geolink_norge_well_logs.h5')
 # +
 import os, shutil
 
@@ -503,6 +492,14 @@ import numpy as np
 # gdf = gdf.set_crs(epsg=4326).to_crs(epsg=3857)
 # gdf.plot()
 # -
+
+
+
+
+
+
+
+
 
 
 
@@ -589,6 +586,10 @@ img, ext = ctx.bounds2raster(west,
 # +
 # ctx.bounds2raster?
 # -
+
+
+
+
 
 
 
