@@ -62,6 +62,7 @@ def run_notebook(notebook_path):
 
 
 notebooks = [
+    # For now we will not test the ones that run for a long time.
     "notebooks/b01_SQL/SQLITE_Basics.ipynb",
     "notebooks/b02_Advanced_Pandas/Pandas.ipynb",
     "notebooks/b03_Data_Visualisation/DataVisualisation.ipynb",
