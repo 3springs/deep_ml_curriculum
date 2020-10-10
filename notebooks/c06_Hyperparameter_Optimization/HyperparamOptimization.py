@@ -320,27 +320,6 @@ def GridSearch(train_data, test_data, hyperparameters):
 # ```
 # </details>
 
-# +
-hyperparameters = {
-    'epochs': [1],
-    'activations': ['selu','tanh','relu'],
-    'optimizers': ['adagrad','sgd','adam'],
-    'learning_rate': [1e-2, 1e-3]
-}
-
-import time
-# This line of code is to measure the executation time
-start_time = time.time()
-######################################################
-# YOU CODE GOES HERE
-best_params = GridSearch(train_loader, test_loader, hyperparameters)
-print(best_params)
-######################################################
-print(f'--- {(time.time() - start_time)/60.0} minutes ---')
-
-
-# -
-
 # # Randomized Grid Search
 #
 # As you can notice, GridSearch evaluates the model in combining every parameter. This of course, can be very inneficient. By contrast, Random Search sets up a grid of hyperparameter values and selects random combinations to train the model and evaluate. In random search you can control the number of hyperparameter combinations that attempted. It is possible that Random search does not find the best possible answer but in cases where the search space and computational time is limited it will work the best.
