@@ -32,6 +32,9 @@ from torch import optim
 import matplotlib.pyplot as plt
 from torchvision import transforms as T
 
+import itertools
+from tqdm.auto import tqdm
+
 torch.backends.cudnn.enabled = False
 torch.manual_seed(2020)
 
@@ -66,7 +69,7 @@ data_transforms = {
 # +
 train_loader = torch.utils.data.DataLoader(
     torchvision.datasets.MNIST(
-        ".", train=True, download=True, transform=data_transforms["train"]
+        "../../data/processed/MNIST", train=True, download=False, transform=data_transforms["train"]
     ),
     batch_size=batch_size,
     shuffle=True,
@@ -74,7 +77,7 @@ train_loader = torch.utils.data.DataLoader(
 
 test_loader = torch.utils.data.DataLoader(
     torchvision.datasets.MNIST(
-        ".", train=False, download=True, transform=data_transforms["val"]
+        "../../data/processed/MNIST", train=False, download=False, transform=data_transforms["val"]
     ),
     batch_size=batch_size + 64,
     shuffle=True,
@@ -144,8 +147,10 @@ def train(model, dataloader, criterion, optimizer, n_epochs=1, bs=64, device="cp
     # Set model in train mode
     model.train().to(device)
     running_loss = 0.0
-    for epoch in range(n_epochs):
-        for (x, y) in dataloader:
+    for epoch in tqdm(range(n_epochs), desc='train', unit='epoch'):
+        for (x, y) in tqdm(dataloader, leave=False, desc='training'):
+            y = y.to(device)
+            x = x.to(device)
             # zero the parameter gradients
             optimizer.zero_grad()
             # forward + backward + optimize
@@ -168,7 +173,7 @@ def evaluation(model, dataloader, device="cpu"):
     correct = 0
     model = model.eval().to(device)
 
-    for (x, y) in dataloader:
+    for (x, y) in tqdm(dataloader, desc='testing', leave=False):
 
         y = y.to(device)
         x = x.to(device)
@@ -216,40 +221,45 @@ def GridSearch(train_data, test_data, hyperparameters):
         "optimizer": None,
         "learning_rate": 0.0,
     }
-    # Try all possible combinations
-    for activation in hyperparameters["activations"]:
-        # Create model with corresponding activation
+    
+    possible_values = list(itertools.product(*hyperparameters.values()))
+    
+    for values in tqdm(possible_values, desc='gridsearch'):
+        hparams = dict(zip(hyperparameters.keys(), values))
+        
+        activation = hparams['activations']
+        epochs = hparams['epochs']
+        epochs = hparams['epochs']
+        opt = hparams['optimizers']
+        learning_rate = hparams['learning_rate']
+
         model = MNISTCNN(activation).to(device)
+        criterion = get_criterion("cross_entropy")
+        optimizer = get_optimizer(opt, model, learning_rate)
+        print(
+            'Training NN...optimizer:{}, activation:{}, epochs:{}, learning rate:{}'.format(opt, activation, epochs, learning_rate)
+        )
+        # Let's train the model using our custom hyperparameters
+        clf = train(
+            model,
+            train_data,
+            criterion,
+            optimizer,
+            n_epochs=epochs,
+            bs=64,
+            device=device,
+        )
+        accuracy = evaluation(clf, test_data, device)
 
-        for epochs in hyperparameters["epochs"]:
-            for opt in hyperparameters["optimizers"]:
-                for learning_rate in hyperparameters["learning_rate"]:
-                    criterion = get_criterion("cross_entropy")
-                    optimizer = get_optimizer(opt, model, learning_rate)
-                    print(
-                        'Training NN...optimizer:{}, activation:{}, epochs:{}, learning rate:{}'.format(opt, activation, epochs, learning_rate)
-                    )
-                    # Let's train the model using our custom hyperparameters
-                    clf = train(
-                        model,
-                        train_data,
-                        criterion,
-                        optimizer,
-                        n_epochs=epochs,
-                        bs=64,
-                        device=device,
-                    )
-                    accuracy = evaluation(clf, test_data, device)
+        if accuracy > best_accuracy:
+            # Update parameters
+            best_accuracy = accuracy
+            best_parameters["epoch"] = epochs
+            best_parameters["activation"] = activation
+            best_parameters["optimizer"] = opt
+            best_parameters["learning_rate"] = learning_rate
 
-                    if accuracy > best_accuracy:
-                        # Update parameters
-                        best_accuracy = accuracy
-                        best_parameters["epoch"] = epochs
-                        best_parameters["activation"] = activation
-                        best_parameters["optimizer"] = opt
-                        best_parameters["learning_rate"] = learning_rate
-
-                    print('Accuracy Testing: {}'.format(accuracy))
+        print('Accuracy Testing: {}'.format(accuracy))
     return best_parameters
 
 
@@ -310,6 +320,27 @@ def GridSearch(train_data, test_data, hyperparameters):
 # ```
 # </details>
 
+# +
+hyperparameters = {
+    'epochs': [1],
+    'activations': ['selu','tanh','relu'],
+    'optimizers': ['adagrad','sgd','adam'],
+    'learning_rate': [1e-2, 1e-3]
+}
+
+import time
+# This line of code is to measure the executation time
+start_time = time.time()
+######################################################
+# YOU CODE GOES HERE
+best_params = GridSearch(train_loader, test_loader, hyperparameters)
+print(best_params)
+######################################################
+print(f'--- {(time.time() - start_time)/60.0} minutes ---')
+
+
+# -
+
 # # Randomized Grid Search
 #
 # As you can notice, GridSearch evaluates the model in combining every parameter. This of course, can be very inneficient. By contrast, Random Search sets up a grid of hyperparameter values and selects random combinations to train the model and evaluate. In random search you can control the number of hyperparameter combinations that attempted. It is possible that Random search does not find the best possible answer but in cases where the search space and computational time is limited it will work the best.
@@ -324,7 +355,7 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
     }
 
     # Try different combinations
-    for i in num_combinations:
+    for i in tqdm(range(num_combinations), desc='RandomizedGridSearch'):
         # Pick random hyperparameters
         activation = np.random.choice(hyperparameters["activations"])
         model = MNISTCNN(activation).to(device)
@@ -337,7 +368,7 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
         optimizer = get_optimizer(opt, model, l_rate)
 
         print(
-            'Training NN...optimizer:{}, activation:{}, epochs:{}, learning rate:{}'.format(opt, activation, epochs, learning_rate)
+            'Training NN...optimizer:{}, activation:{}, epochs:{}, learning rate:{}'.format(opt, activation, epochs, l_rate)
         )
         # Let's train the model using our custom hyperparameters
         clf = train(
@@ -416,3 +447,47 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
 #     
 # Given the stochastic nature of the approach you might get different results everytime you execute this.
 # </details>
+
+
+
+
+
+# +
+hyperparameters = {
+    'epochs': [1],
+    'activations': ['selu','tanh','relu'],
+    'optimizers': ['adagrad','sgd','adam'],
+    'learning_rate': [1e-2, 1e-3]
+}
+
+import time
+# This line of code is to measure the executation time
+start_time = time.time()
+######################################################
+# YOU CODE GOES HERE
+best_params = GridSearch(train_loader, test_loader, hyperparameters)
+print(best_params)
+######################################################
+print(f'--- {(time.time() - start_time)/60.0} minutes ---')
+
+# +
+hyperparameters = {
+    'epochs': [1],
+    'activations': ['sigmoid','selu','tanh','relu'],
+    'optimizers': ['adagrad','sgd','adam'],
+    'learning_rate': [1e-2, 1e-3, 1e-4]
+}
+
+# This line of code is to measure the executation time
+start_time = time.time()
+######################################################
+# YOU CODE GOES HERE
+best_params = RandomizedGridSearch(train_loader, test_loader, hyperparameters, num_combinations=5)
+print(best_params)
+######################################################
+print(f'--- {(time.time() - start_time)/60.0} minutes ---')
+# -
+
+
+
+

@@ -8,6 +8,7 @@ final_table.csv
 *.pk
 notebooks/*/MNIST/raw/
 notebooks/*/MNIST/processed/
+*_all_output.ipynb
 
 # exclude data from source control by default
 /data/
