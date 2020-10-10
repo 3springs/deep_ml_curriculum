@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -15,7 +16,18 @@
 
 # # Sequence to Sequence Models for Timeseries Regression
 #
+#
+# In this notebook we are going to tackle a harder problem: 
+# - predicting the future on a timeseries
+# - using an LSTM
+# - with rough uncertainty (uncalibrated)
+# - outputing sequence of predictions
+#
+# This gets you close to real world applications
+#
 # <img src="./images/Seq2Seq_simple.png" />
+
+#
 
 # +
 # Imports
@@ -227,6 +239,37 @@ print(len(ds_train))
 ds_train[0][0].shape
 
 
+# ## LSTMS: A minute of Theory
+#
+# This is a hand on course, not theory so we will look at a high level view of one type of RNN, the LSTM. But lets look at the theory for a moment, to get some broad idea of how they work
+#
+# The figure below is from d2l.ai and shows how an RNN can operate on a text sequence to predict the next charector.
+#
+# ![](images/rnn-train.svg)
+#
+# How does the model itself work? Let look at an excerpt from the open source machine learning book [d2l.ai](d2l.ai):
+#
+# ![](images/rnn.svg)
+#
+# > The figure below illustrates the computational logic of an RNN at three adjacent time steps. At any time step `t`, the computation of the hidden state can be treated as: 
+#
+# > i) concatenating the input `Xt` at the current time step `t` and the hidden state `Ht−1` at the previous time step  `t−1` ; 
+#
+# > ii) feeding the concatenation result into a fully-connected layer with the activation function `ϕ`. 
+#
+# > The output of such a fully-connected layer is the hidden state  `Ht`  of the current time step  t . In this case, the model parameters are the concatenation of  `Wxh`  and  `Whh` , and a bias of  `bh`. The hidden state of the current time step  `t` , `Ht` , will participate in computing the hidden state  `Ht+1`  of the next time step  t+1 . What is more,  `Ht`  will also be fed into the fully-connected output layer to compute the output  `Ot`  of the current time step  `t` .
+#
+# To understand more see these visualisations:
+#
+# - [distill.pub memorization in rnns](memorization-in-rnns)
+# - [Chris Olah Understanding LSTMs](https://colah.github.io/posts/2015-08-Understanding-LSTMs/)
+#
+# And see these chapters:
+#
+# - [d2l.ai RNN's](http://d2l.ai/chapter_recurrent-neural-networks/rnn.html)
+# - [d2l.ai LSTM's](http://d2l.ai/chapter_recurrent-modern/lstm.html)
+#
+
 # ## Model
 
 # +
@@ -414,7 +457,7 @@ def training_loop(ds_train, ds_test, model, epochs=1, bs=128):
 training_loop(ds_train, ds_test, model, epochs=14, bs=batch_size)
 1
 
-# # Predict
+# ## Predict
 #
 # When we generate prediction in a sequence to sequence model we start at a time, then predict N steps into the future. So we have 2 dimensions: source time, target time.
 #
@@ -514,11 +557,11 @@ plt.xticks(rotation=45)
 plt.show()
 # -
 
+# Final metric
+test_NLL = -ds_preds.log_prob.mean().item()
+test_NLL
 
-
-# # Error vs time ahead
-
-
+# ## Error vs time ahead
 
 # plot error vs time
 d = ds_preds.mean('t_source') # Mean over all predictions
@@ -529,16 +572,6 @@ plt.plot(x, y)
 plt.ylabel('Negative Log Likelihood (lower is better)')
 plt.xlabel('Hours ahead')
 plt.title(f'NLL vs time (no. samples={n})')
-
-# plot likelihod vs time
-d = ds_preds.mean('t_source') # Mean over all predictions
-x = d.t_ahead.dt.seconds/60/60
-y =  np.exp(d.log_prob)
-n = len(ds_preds.t_source)
-plt.plot(x, y)
-plt.ylabel('Likelihood (higher is better)')
-plt.xlabel('Hours ahead')
-plt.title(f'Prob vs time (no. samples={n})')
 
 # plot likelihod vs time
 d = ds_preds.mean('t_source') # Mean over all predictions
