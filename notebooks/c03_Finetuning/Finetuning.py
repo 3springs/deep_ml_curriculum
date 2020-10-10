@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: python3
+#     name: deep_ml_curriculum
 # ---
 
 # +
@@ -33,7 +33,16 @@ from torch.utils.data import DataLoader
 # Hide all warnings
 import warnings
 warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
+
+# monkey-patch torchvision to work offline or behind a firewall
+from pathlib import Path
+model_path = Path('../../data/processed/models/resnet18-5c106cde.pth').absolute().resolve()
+models.resnet.model_urls['resnet18'] = 'file://{}'.format(model_path)
+model_path = Path('../../data/processed/models/resnet34-333f7ec4.pth').absolute().resolve()
+models.resnet.model_urls['resnet34'] = 'file://{}'.format(model_path)
 # -
+
+
 
 # # Finetuning / Transfer Learning
 #
@@ -51,9 +60,9 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # Now let's create a ResNet model using pretrained weights of the [ImageNet dataset](http://www.image-net.org/).
 
-model_path = Path('../../data/processed/models/resnet18-5c106cde.pth').absolute().resolve()
-models.resnet.model_urls['resnet18'] = 'file://{}'.format(model_path)
 model_ft = models.resnet18(pretrained=True)
+
+
 
 # Now let's check the architecture of the ResNet model
 
@@ -322,5 +331,9 @@ visualize_model(model_ft, num_images=6)
 # # Sources
 #
 # [Finetuning Pytorch tutorial](https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html)
+
+
+
+
 
 

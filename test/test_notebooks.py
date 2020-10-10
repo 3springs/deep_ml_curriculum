@@ -74,7 +74,7 @@ notebooks = [
     # "notebooks/b10_Time_Series_Forecasting/TSF.ipynb",
     "notebooks/b11_Geopandas/Geospatial_plotting.ipynb",
     "notebooks/b12_Final_Project/FinalProject.ipynb",
-    # "notebooks/c01_Intro_to_NN_Part_1/Intro_to_NN_Part_1.ipynb",
+    "notebooks/c01_Intro_to_NN_Part_1/Intro_to_NN_Part_1.ipynb",
     # "notebooks/c02_Intro_to_NN_Part_2/Intro_to_NN_Part_2.ipynb",
     # "notebooks/c03_Finetuning/Finetuning.ipynb",
     # "notebooks/c04_Tabular_Data/Tabular_Data_and_Embeddings.ipynb",
