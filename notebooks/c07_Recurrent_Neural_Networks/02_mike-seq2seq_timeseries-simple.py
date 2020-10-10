@@ -290,7 +290,6 @@ model
 
 # Init the optimiser, and loss function
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
-loss_func = torch.nn.MSELoss().to(device)
 
 # ## Concept: Likelihood
 #
