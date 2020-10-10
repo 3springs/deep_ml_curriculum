@@ -281,6 +281,8 @@ def GridSearch(train_data, test_data, hyperparameters):
 # }
 # ```
 # 2. Execute the function and find the best hyperparameter for training.
+#     
+# Note it may take 15 minutes on a GPU
 # </div>
 
 # You can click in the button below the reveal the solution for exercise 1
@@ -368,7 +370,7 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
             best_parameters["epoch"] = epochs
             best_parameters["activation"] = activation
             best_parameters["optimizer"] = opt
-            best_parameters["learning_rate"] = learning_rate
+            best_parameters["learning_rate"] = l_rate
 
         print('Accuracy Testing: {}'.format(accuracy))
 
@@ -396,6 +398,8 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
 #     
 # 2. Execute the function and find the best hyperparameter for training. Limit the random searches to 5.
 # 3. Measure the executation time of the code in minutes. **Hint:** Check solution for exercise 1.
+#     
+# Note it may take 5 minutes on a GPU
 # </div>
 
 # You can click in the button below the reveal the solution for exercise 2
@@ -429,16 +433,16 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
 
 
 
-# # Auto Testing
+# # Auto:Test
 #
 # Ignore the below, it's for automatic testing
 
 # +
 hyperparameters = {
     'epochs': [1],
-    'activations': ['selu','tanh','relu'],
-    'optimizers': ['adagrad','sgd','adam'],
-    'learning_rate': [1e-2, 1e-3]
+    'activations': ['selu'],
+    'optimizers': ['adagrad'],
+    'learning_rate': [1e-2]
 }
 
 import time
@@ -447,7 +451,7 @@ start_time = time.time()
 ######################################################
 # YOU CODE GOES HERE
 best_params = GridSearch(train_loader, test_loader, hyperparameters)
-print(best_params)
+print('best_params', best_params)
 ######################################################
 print(f'--- {(time.time() - start_time)/60.0} minutes ---')
 
@@ -463,7 +467,7 @@ hyperparameters = {
 start_time = time.time()
 ######################################################
 # YOU CODE GOES HERE
-best_params = RandomizedGridSearch(train_loader, test_loader, hyperparameters, num_combinations=5)
+best_params = RandomizedGridSearch(train_loader, test_loader, hyperparameters, num_combinations=1)
 print(best_params)
 ######################################################
 print(f'--- {(time.time() - start_time)/60.0} minutes ---')
