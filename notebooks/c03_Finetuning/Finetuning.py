@@ -200,7 +200,7 @@ for n in [0, 10, 230, -1]:
 # # Train
 
 # Parameters
-params = {"batch_size": 64, "num_workers": 0}
+params = {"batch_size": 64, "num_workers": 0, 'pin_memory':False}
 
 dataloaders = {
     "train": DataLoader(landmassf3_train, shuffle=True, **params),
