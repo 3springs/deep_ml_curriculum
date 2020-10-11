@@ -31,7 +31,7 @@
 # - Understand likelihood and outputting a distribution
 # - Evalute a timeseries solution
 #
-# <img src="./images/Seq2Seq_simple.png" />
+# <img src="./images/Seq2Seq for regression.png" />
 
 # +
 # Imports
