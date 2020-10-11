@@ -142,17 +142,21 @@ data_transforms = {
     ),
 }
 
+
+
 # +
 # Let's import the Patches
-from deep_ml_curriculum.data.landmass_f3 import LandmassF3PatchesMini
+from deep_ml_curriculum.data.landmass_f3 import LandmassF3PatchesMini, LandmassF3Patches
 from deep_ml_curriculum.config import project_dir
 
-landmassf3_train = LandmassF3PatchesMini(
+
+# Note you can use LandmassF3Patches here instead, to use full sized images
+landmassf3_train = LandmassF3Patches(
     project_dir / "data/processed/landmass-f3",
     train=True,
     transform=data_transforms["train"],
 )
-landmassf3_test = LandmassF3PatchesMini(
+landmassf3_test = LandmassF3Patches(
     project_dir / "data/processed/landmass-f3",
     train=False,
     transform=data_transforms["val"],
@@ -165,11 +169,41 @@ classes = landmassf3_train.classes
 num_classes = len(classes)
 print(classes)
 
+# lets look at how the data augmentation works
+# The shows the same image along the row, the difference comes from data augmentation
+for n in [0, 10, 230, -1]:
+    # Make a figure
+    plt.figure(figsize=(12,3))
+    
+    # on the first plot of 5
+    plt.subplot(1, 5, 1)
+    # show the original image
+    orig_im = landmassf3_train.train_data[n].numpy()
+    plt.imshow(orig_im, cmap='seismic', interpolation="bicubic")
+    plt.xticks([])
+    plt.yticks([])
+    plt.title('orig')
+    
+    # On the next 4 images, show random transforms of the image
+    for i in range(4):
+        plt.subplot(1, 5, i+2)
+        img, label = landmassf3_train[n]
+        plt.title('transformed')
+        plt.imshow(img.numpy()[0], cmap='seismic', interpolation="bicubic")
+        plt.xticks([])
+        plt.yticks([])
+        
+    # A title above all subplots
+    plt.suptitle(f'i={n} {classes[label]}')
+    plt.show()
+
+# # Train
+
 # Parameters
-params = {"batch_size": 64, "shuffle": True, "num_workers": 0}
+params = {"batch_size": 64, "num_workers": 0}
 
 dataloaders = {
-    "train": DataLoader(landmassf3_train, **params),
+    "train": DataLoader(landmassf3_train, shuffle=True, **params),
     "val": DataLoader(landmassf3_test, **params),
 }
 
@@ -179,60 +213,77 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
     dataloader = None
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
+    
+    def run_phase(model, phase, dataloader):
+        """Run an epoch - through all the data once"""
+        if phase == "train":
+            model.train()  # Set model to training mode
+        else:
+            model.eval()  # Set model to evaluate mode
 
-    for epoch in tqdm(range(num_epochs), unit='epoch'):
-        print("Epoch {}/{}".format(epoch, num_epochs - 1))
-        print("-" * 10)
+        running_loss = 0.0
+        running_corrects = 0
 
-        # Each epoch has a training and validation phase
-        for phase in ["train", "val"]:
-            if phase == "train":
-                model.train()  # Set model to training mode
-            else:
-                model.eval()  # Set model to evaluate mode
+        # Iterate over data.
+        for inputs, labels in tqdm(dataloader, desc=phase, leave=False):
 
-            running_loss = 0.0
-            running_corrects = 0
+            # print(inputs.shape, labels.shape)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
 
-            # Iterate over data.
-            for inputs, labels in tqdm(dataloaders[phase], desc=phase, leave=False):
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-                # print(inputs.shape, labels.shape)
-                inputs = inputs.to(device)
-                labels = labels.to(device)
+            # forward
+            # track history if only in train
+            with torch.set_grad_enabled(phase == "train"):
+                outputs = model(inputs)
+                _, preds = torch.max(outputs, 1)
+                loss = criterion(outputs, labels)
 
-                # zero the parameter gradients
-                optimizer.zero_grad()
+                # backward + optimize only if in training phase
+                if phase == "train":
+                    loss.backward()
+                    optimizer.step()
 
-                # forward
-                # track history if only in train
-                with torch.set_grad_enabled(phase == "train"):
-                    outputs = model(inputs)
-                    _, preds = torch.max(outputs, 1)
-                    loss = criterion(outputs, labels)
+            # statistics
+            running_loss += loss.item() * inputs.size(0)
+            running_corrects += torch.sum(preds == labels.data)
+        if phase == "train":
+            scheduler.step()
 
-                    # backward + optimize only if in training phase
-                    if phase == "train":
-                        loss.backward()
-                        optimizer.step()
+        epoch_loss = running_loss / len(dataloader)
+        epoch_acc = running_corrects.double() / len(dataloader)
+            
+        return epoch_loss, epoch_acc
 
-                # statistics
-                running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
-            if phase == "train":
-                scheduler.step()
 
-            epoch_loss = running_loss / len(dataloaders[phase])
-            epoch_acc = running_corrects.double() / len(dataloaders[phase])
+    try:
+        # Test the initial accuracy before fine tuning
+        epoch_loss, epoch_acc = run_phase(model, "val", dataloaders["val"])
 
-            print("{} Loss: {:.4f} Acc: {:.4f}".format(phase, epoch_loss, epoch_acc))
+        print('Original performance without finetuning')
+        print("{} Loss: {:.4f} Acc: {:.4f}".format("Start", epoch_loss, epoch_acc))
+        
+        for epoch in tqdm(range(num_epochs), unit='epoch'):
+            print("Epoch {}/{}".format(epoch, num_epochs - 1))
+            print("-" * 10)
 
-            # deep copy the model
-            if phase == "val" and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
 
-        print()
+
+            # Each epoch has a training and validation phase
+            for phase in ["train", "val"]:
+                epoch_loss, epoch_acc = run_phase(model, phase, dataloaders[phase])
+                print("{} Loss: {:.4f} Acc: {:.4f}".format(phase, epoch_loss, epoch_acc))
+
+                # deep copy the model, this way we save the at the point with the best generalisation
+                if phase == "val" and epoch_acc > best_acc:
+                    best_acc = epoch_acc
+                    best_model_wts = copy.deepcopy(model.state_dict())
+
+            print()
+    except KeyboardInterrupt:
+        print(f"Stopped manually at epoch={epoch} phase={phase}")
 
     time_elapsed = time.time() - since
     print(
@@ -247,10 +298,11 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
     return model
 
 
+
 # <div class="alert alert-info" style="font-size:100%">
 #     
 # **WARNING** <br/>
-# The code below might take around 10 to 15 minutes to train.
+# The code below might take around 10 to 15 minutes to train on a cpu.
 # </div>
 
 model_ft = train_model(
@@ -258,11 +310,13 @@ model_ft = train_model(
 )
 
 
-def visualize_model(model, num_images=6):
+
+def visualize_model(model, num_images=8, figsize=(5,15)):
+    """Show a grid of predictions"""
     was_training = model.training
     model.eval()
     images_so_far = 0
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
     dataloader_val = dataloaders['val']
     
 
@@ -279,11 +333,12 @@ def visualize_model(model, num_images=6):
                 ax = plt.subplot(num_images // 2, 2, images_so_far)
                 ax.axis("off")
                 ax.set_title(
-                    "predicted: {}".format(dataloader_val.dataset.classes[preds[j]])
+                    "predicted: {}\nTrue {}".format(dataloader_val.dataset.classes[preds[j]], dataloader_val.dataset.classes[labels[j]])
                 )
                 plt.imshow(
-                    transforms.ToPILImage()(inputs.cpu().data[j]),
+                    inputs.cpu().data[j].numpy()[0],
                     interpolation="bicubic",
+                    cmap='seismic'
                 )
 
                 if images_so_far == num_images:
@@ -291,7 +346,7 @@ def visualize_model(model, num_images=6):
                     return
         model.train(mode=was_training)
 
-visualize_model(model_ft, num_images=6)
+visualize_model(model_ft, num_images=8)
 
 # <div class="alert alert-success" style="font-size:100%">
 #
@@ -333,6 +388,7 @@ visualize_model(model_ft, num_images=6)
 #
 # </details>
 
+#
 # # Sources
 #
 # [Finetuning Pytorch tutorial](https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html)
