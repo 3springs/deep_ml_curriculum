@@ -523,6 +523,37 @@ can_compile(("a", "b", "c"))
 #     
 # </details>
 
+# # Xarray
+#
+# Xarray is pandas for N-dimensional data. It also has a [dask backend](http://xarray.pydata.org/en/stable/dask.html)
+
+# +
+# %matplotlib inline
+import numpy as np
+import pandas as pd
+import xarray as xr
+import matplotlib.pyplot as plt
+
+ds = xr.tutorial.open_dataset('rasm').load().chunk(dict(time=10))
+ds
+
+# +
+# You can use isel instead of iloc. You always need to specify the dimension
+ds.isel(time=10)['Tair'].plot.pcolormesh(
+        vmin=-30, vmax=30, cmap='Spectral_r',
+        add_colorbar=True, extend='both')
+
+ds.isel(time=10)
+# -
+
+# You can also resample by date
+res = ds.resample(time='A').mean().isel(x=200, y=200)['Tair']
+# The result is a dask array
+res
+
+# But you can use .compute
+res.compute()
+
 # # References
 # The following sources where used for creation of this notebook:
 # - https://github.com/NCAR/ncar-python-tutorial
