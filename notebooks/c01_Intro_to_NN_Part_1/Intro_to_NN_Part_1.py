@@ -89,6 +89,8 @@ HTML(
 # ## 1.1 Backpropagation
 #
 # The backpropagation algorithm works by computing the gradient of the loss function with respect to each weight by the chain rule, computing the gradient one layer at a time, iterating backward from the last layer to avoid redundant calculations of intermediate terms in the chain rule.
+#
+#
 #     
 # <a name="1-2"></a>    
 # ## 1.2 Important Concepts
@@ -105,6 +107,11 @@ HTML(
 #     
 # The methods mentioned before are iterative processes that take steps to advance towards a solution. The step size at each iteration towards the minimum of loss is the **learning rate**.
 #     
+# There are visualisation of many of these optimisers here: https://github.com/3springs/viz_torch_optim
+#
+# Notice that they sometimes get caught in local minima. Also not that this is a 3d space, but most backprop is in a higher dimensional space that has less change to get stuck.
+#
+# <img src="https://github.com/3springs/viz_torch_optim/raw/master/docs/videos/six_humped_camel_back_20171115_09-38-57_3d.gif"/>
 #     
 # **Activation Functions:** Activation functions are important to add non-linearity into the models. This will allow the model to represent more complex data.
 #
