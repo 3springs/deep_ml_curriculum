@@ -44,7 +44,7 @@ def run_notebook(notebook_path):
             nb = nbformat.read(f, as_version=4)
 
         proc = ExecutePreprocessor(timeout=60, kernel_name="deep_ml_curriculum")
-        proc.allow_errors = True
+        proc.allow_errors = False
 
         proc.preprocess(nb, {"metadata": {"path": "/"}})
         output_path = os.path.join(dirname, "{}_all_output.ipynb".format(nb_name))
@@ -90,10 +90,10 @@ notebooks = [
 ]
 
 
-@pytest.mark.parametrize("notebook", notebooks)
-def test_notebooks(notebook):
-    print(notebook)
-    nb, errors = run_notebook(notebook)
-    # print('errors', errors)
-    assert len(errors) == 0
+# @pytest.mark.parametrize("notebook", notebooks)
+# def test_notebooks(notebook):
+#     print(notebook)
+#     nb, errors = run_notebook(notebook)
+#     # print('errors', errors)
+#     assert len(errors) == 0
 
