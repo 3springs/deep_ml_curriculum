@@ -239,7 +239,7 @@ class Discriminator(nn.Module):
 # +
 # Set your parameters
 criterion = nn.BCEWithLogitsLoss()
-n_epochs = 200
+n_epochs = 20
 z_dim = 64
 display_step = 500
 batch_size = 128
