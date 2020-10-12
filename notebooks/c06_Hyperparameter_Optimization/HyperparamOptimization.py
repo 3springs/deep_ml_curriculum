@@ -160,7 +160,6 @@ def train(model, dataloader, criterion, optimizer, n_epochs=1, bs=64, device="cp
             optimizer.step()  # Update weights
             # print statistics
             running_loss += loss.item()
-        print(running_loss)
         running_loss = 0.0
 
     print("Finished Training")
