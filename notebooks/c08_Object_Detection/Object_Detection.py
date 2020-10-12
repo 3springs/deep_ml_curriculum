@@ -18,11 +18,9 @@
 # This notebook provides examples on to use pre-trained deep neural networks for the object recognition task the notebook. 
 #
 # Learning objectives:
-# - You can classify
-# - You can do bounding boxes and object detection
-# - Mask-RCNN combines all of them and does instance segmentation
-# - TODO Camillo fill here
-#
+# - Show the difference between detection, and instance segementations
+# - Show bounding boxes and object detection
+# - Try Mask-RCNN and observe weaknesses
 #
 # All images used for testing were downloaded from unplash.com under license [free-usable images](https://unsplash.com/license).
 #
@@ -507,7 +505,18 @@ instance_segmentation_api('./exercise2/mask1.jpg'.format(), threshold=0.5)
 #
 # </details>
 
-
+# <div class="alert alert-success" style="font-size:100%">
+#
+# **Exercise 3:** <br>
+#     
+# Download you own image to try and break Mask-RCNN. This way you can find the limits of this pre-trained model
+#     
+# - Find an image
+# - Upload it to the notebook folder using jupyter
+# - pass the image path into instance_segmentation_api 
+# </div>
+#
+#
 
 # # Summary
 #
