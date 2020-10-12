@@ -563,17 +563,17 @@ for epoch in tqdm(range(1, epochs + 1)):
     show_prediction(10, title=f"epoch={epoch}")
 
 # ## Saving and Loading Model
+#
+# You can save and load as a pickle, but it's better to use torch.save (which uses pickle)
 
 import pickle
 
 with open("VAE.pk", "wb") as fp:
-    pickle.dump(model.state_dict(), fp)
-
-model.load_state_dict
+    torch.save(model.state_dict(), fp)
 
 model = VAE().to(device)
 with open("VAE.pk", "rb") as fp:
-    model.load_state_dict(pickle.load(fp))
+    model.load_state_dict(torch.load(fp))
 
 # ## Results
 
