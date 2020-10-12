@@ -21,9 +21,19 @@
 # - Reversibility: Unlike methods such as t-SNE and UMAP you can convert data back to the initial space.
 # - Non-linearity: Unlike linear methods such as PCA, it is capable of using non-linear transformation.
 #
+# <div class="alert alert-success">
+# Learning Objectives:
+#     
+# - How AutoEncoders compress
+# - How Variation Auto Encoder's use a latent space
+# - What is a latent Space
+# - using `Kullback–Leibler divergence` as a loss to measure the difference in two distributions
+# - Applications of Auto Encoders
+# </div>  
 #
 # ## Structure
 # Autoencoders have two main components:
+#
 # 1. Encoder: Converts data to latent space.
 # 2. Decoder: Converts the data back from latent space to its initial space.
 #
@@ -38,10 +48,12 @@
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
+from torch.distributions import Normal
 from torch.utils.data import Dataset, DataLoader
 
 from torchvision import datasets, transforms
 
+import seaborn as sns
 from PIL import Image
 from pathlib import Path
 import numpy as np
@@ -49,6 +61,8 @@ import os
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 import pandas as pd
+
+from deep_ml_curriculum.torchsummaryX import summary
 # -
 
 # ## Problem Description
@@ -185,30 +199,32 @@ def loss_bce(recon_x, x):
 def train(epoch, loss_function, log_interval=50):
     model.train()
     train_loss = 0
-    for batch_idx, data in enumerate(tqdm(train_loader, leave=False)):
+    for batch_idx, data in enumerate(tqdm(train_loader, leave=False, desc='train')):
         data = data.to(device)
+        
         optimizer.zero_grad()
         recon_batch = model(data)
         loss = loss_function(recon_batch, data)
         loss.backward()
-        train_loss += loss.item()
         optimizer.step()
+        
+        train_loss += loss.item()
         if batch_idx % log_interval == 0:
             pct = 100.0 * batch_idx / len(train_loader)
             l = loss.item() / len(data)
             print(
-                '#{} [{}/{} ({:.0f}%)]\tLoss: {:.6f}  '.format(epoch, batch_idx * len(data), len(train_loader.dataset), pct, l),
+                '#{} [{}/{} ({:.0f}%)]\t Batch Loss: {:.6f}  '.format(epoch, batch_idx * len(data), len(train_loader.dataset), pct, l),
                 end="\r",
                 flush=True,
             )
-    print('#{} Train loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
+    print('#{} Train loss: {:.4f}\t'.format(epoch, train_loss / len(train_loader.dataset)))
 
 
 def test(epoch, loss_function, log_interval=50):
     model.eval()
     test_loss = 0
     with torch.no_grad():
-        for i, data in enumerate(tqdm(test_loader, leave=False)):
+        for i, data in enumerate(tqdm(test_loader, leave=False, desc='test')):
             data = data.to(device)
             recon_batch = model(data)
             test_loss += loss_function(recon_batch, data).item()
@@ -254,6 +270,9 @@ plt.title("Actual")
 
 res = model.encode(ds_train[:1000].to(device))
 res = res.detach().cpu().numpy()
+res.shape
+
+
 
 for i in range(10):
     idx = ds_train.y[:1000] == i
@@ -264,7 +283,11 @@ plt.legend()
 # Each color represents a number. Despite most numbers overlapping, we can still see some distictions, for instance between $1$ and other numbers. 
 
 # ## Improving the model
-# Obviously the model that we trained needs improvement as it is not recreating the images well enough. There are a few ways we can improve the model. One way is to create a deeper encoder and decoder. In the example above we ued only two layers for encoder and layers for decoder. This doesn't allow the model to comprehend complex relationships, especially in this scenario since we are working with images. By adding more layers we can give the model the opportunity to better differentiate between digits.
+#
+# Obviously the model that we trained needs improvement as it is not recreating the images well enough. 
+#
+# There are a few ways we can improve the model. One way is to create a deeper encoder and decoder. In the example above we used only two layers for encoder and layers for decoder. This doesn't allow the model to comprehend complex relationships, especially in this scenario since we are working with images. By adding more layers we can give the model the opportunity to better differentiate between digits.
+#
 # Another way of making the model is using more dimensions in latent space. For instance, if instead of compressing each image into two values we could use ten values. This will allow the model to extract more features from the input which will make reconstructing the image easier. However, it must be noted that whole point of using autoencoder is to force the model to compress the information into as few dimensions as possible.
 
 # # Variational Autoencoders
@@ -275,10 +298,13 @@ plt.legend()
 
 # Let's create a VAE model. We will use layers with the same size as the previous model. Notice for the second layer we have two linear layers, one to generate the mean and one to generate the log of variance which will be converted into standard deviation.
 
+# +
 class VAE(nn.Module):
+    """Variational Autoencoder"""
     def __init__(self):
         super(VAE, self).__init__()
 
+        # Typically we would use convolutions here, but to keep it simple we use linear layers
         self.fc1 = nn.Linear(784, 400)
         self.fc21 = nn.Linear(400, 2)
         self.fc22 = nn.Linear(400, 2)
@@ -286,35 +312,116 @@ class VAE(nn.Module):
         self.fc4 = nn.Linear(400, 784)
 
     def encode(self, x):
+        """Takes in image, output distribution"""
         h1 = F.relu(self.fc1(x))
-        return self.fc21(h1), self.fc22(h1)
+        loc, log_scale = self.fc21(h1), self.fc22(h1)
+        return Normal(loc, torch.exp(log_scale))
 
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return mu + eps * std
+#     def reparameterize(self, mu, logvar):
+#         """
+#         The reparameterization trick.
+        
+#         Commonly used way to sample from a normal distribution to allow differentiaton with less noise.
+        
+#         See https://stats.stackexchange.com/a/205336
+#         """
+#         std = torch.exp(0.5 * logvar)
+#         eps = torch.randn_like(std)
+#         return mu + eps * std
 
     def decode(self, z):
+        """Takes in latent vector and produces image."""
         h3 = F.relu(self.fc3(z))
         return torch.sigmoid(self.fc4(h3))
 
     def forward(self, x):
-        mu, logvar = self.encode(x.view(-1, 784))
-        z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar
+        """Combine the above methods"""
+        dist = self.encode(x.view(-1, 784))
+        z = dist.rsample()
+        return self.decode(z), dist
+# -
+
 
 
 model = VAE().to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
+# We can view the shape of our model and number of params
+summary(model, torch.rand((1, 784)).to(device))
+1
 
-# The loss function is similar to what we used before, except we have an extra part. the extra equation is Kullback–Leibler divergence which measures difference between probability distributions.
+
+# ## Concept: KLD
+
+# The loss function is similar to what we used before, except we have an extra part. the extra equation is [Kullback–Leibler divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence) which measures difference between probability distributions.
+#
+# <img width="600" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/KL-Gauss-Example.png/800px-KL-Gauss-Example.png"/>
+#
+# Image source: wikipedia
 
 def loss_bce_kld(recon_x, x, mu, logvar):
     BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction="sum")
+    
+    # KL-divergence between a diagonal multivariate normal,
+    # and a standard normal distribution (with zero mean and unit variance)
+    # In other words, we are punishing it if it's distribution moves away from a standard normal dist
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return BCE + KLD
 
+
+# +
+def loss_bce_kld(recon_x, x, dist):
+    BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction="sum")
+    
+    # KL-divergence between a diagonal multivariate normal,
+    # and a standard normal distribution (with zero mean and unit variance)
+    # In other words, we are punishing it if it's distribution moves away from a standard normal dist
+    KLD = -0.5 * torch.sum(1 + p.scale.log() - p.loc.pow(2) - p.scale)
+    
+#     KLD = torch.distributions.kl.kl_divergence(dist, q = Normal(0, 1))
+    return BCE + KLD
+
+
+# +
+# # You can try the KLD here with differen't distribution
+# p = Normal(-1, 2.5)
+# q = Normal(0, 1)
+
+# KLD = -0.5 * torch.sum(1 + p.scale.log() - p.loc.pow(2) - p.scale)
+# print(KLD)
+# kld = torch.distributions.kl.kl_divergence(p, q)
+# print(kld)
+# kld = torch.distributions.kl.kl_divergence(q, p).log()
+# print(kld)
+
+# +
+# You can try the KLD here with differen't distribution
+p = Normal(1, 2)
+q = Normal(-1, 3)
+kld = torch.distributions.kl.kl_divergence(p, q)
+
+ps=p.sample_n(10000).numpy()
+qs=q.sample_n(10000).numpy()
+
+sns.kdeplot(x=ps, label='p')
+sns.kdeplot(x=qs, label='q')
+plt.title(f"KLD(p|q) = {kld:2.2f}\nKLD({p}|{q})")
+plt.legend()
+plt.show()
+
+
+# -
+
+# ## Exercise 1: KLD
+#
+# Run the above cell with while changing Q. Test if:
+#
+# - KLD is higher for distributions that overlap more
+#
+# Now
+# - plot the KLD as you vary the mean of q
+
+# ## Train
 
 # We also need to slightly adjust the training loop since the loss function now takes four inputs.
 
@@ -322,11 +429,11 @@ def loss_bce_kld(recon_x, x, mu, logvar):
 def train(epoch, loss_function, log_interval=50):
     model.train()
     train_loss = 0
-    for batch_idx, data in enumerate(train_loader):
+    for batch_idx, data in enumerate(tqdm(train_loader, leave=False)):
         data = data.to(device)
         optimizer.zero_grad()
-        recon_batch, mu, logvar = model(data)
-        loss = loss_function(recon_batch, data, mu, logvar)
+        recon_batch, dist = model(data)
+        loss = loss_function(recon_batch, data, dist)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -347,14 +454,18 @@ def test(epoch, loss_function, log_interval=50):
     with torch.no_grad():
         for i, data in enumerate(test_loader):
             data = data.to(device)
-            recon_batch, mu, logvar = model(data)
-            test_loss += loss_function(recon_batch, data, mu, logvar).item()
+            recon_batch, dist = model(data)
+            test_loss += loss_function(recon_batch, data, dist).item()
 
     test_loss /= len(test_loader.dataset)
     print('#{} Test loss: {:.4f}'.format(epoch, test_loss))
 
 
 # -
+
+# We can view the shape of our model and number of params
+summary(model, torch.rand((1, 784)).to(device))
+1
 
 epochs = 10
 for epoch in tqdm(range(1, epochs + 1)):
@@ -397,18 +508,20 @@ plt.title("Actual")
 
 # Now let's plot the predicted mean of both parameters.
 
-mu, logvar = model.encode(ds_train[:1000])
-
-mu = mu.detach().numpy()
-
+dist = model.encode(ds_train[:1000])
+mu = dist.loc.detach().numpy()
 for i in range(10):
     idx = ds_train.y[:1000] == i
     plt.scatter(mu[idx, 0], mu[idx, 1], label=i)
 plt.legend()
 
+
+
+
+
 # If we compare this plot with the similar plot for normal autoencoder, we can see that VAE did a better job at creating clusters. The points for each digits are closer together compared to previous model. However, there is still room for improvement. 
 
-# ## Exercise 1
+# ## Exercise 2: Deeper
 # Create a new VAE but this time use a deeper network. Note, everything else (loss function, dataloaders, training loops, etc.) will stay the same only the model will change. The example above was using these sizes: 784 --> 400 --> 2 --> 400 --> 784
 # <br>Try a new model which uses these size: 784 --> 400 --> 80 --> 2 --> 80 --> 400 --> 784 
 
@@ -422,7 +535,31 @@ plt.legend()
 # Visualise the results
 # -
 
-# ## Application
+# ## Exercise 3: Wider
+# Create a new VAE but this time use a more than two parameters for the latent space. This will reduce the loss
+
+# # Traversing the latent space
+#
+# One property of a latent space is that you can travese it, and get meaningful varations of outputs./
+
+xi, yi
+
+# TODO
+plt.figure(figsize=(12, 12))
+for xi in range(10):
+    for yi in range(10):
+        plt.subplot(5, 5, xi*5+yi+1)
+        x = (xi-5)/5.
+        y = (yi-5)/5.
+        z = torch.tensor([x, y])[None :].float()
+        img = model.decode(z).detach().numpy()
+        img = (img.reshape((28, 28)) * 255).astype(np.uint8)
+        plt.imshow(img, cmap='gray')
+        plt.title(f'{z.numpy()}')
+#         plt.show()
+
+# ## Applications
+#
 # Autoencoders are not only useful for dimensionality reduction. They are often used for other purposes as well, including:
 # 1. __Denoising:__ We could add noise to the input and then feed it to the model and then compare the output with the original image (without noise). This approach will create a model which is capable of removing noise from the input.
 # 2. __Anomaly Detection:__ When we train a model on specific set of data, the model learns how to recreate the dataset. As a result when there are uncommon instances in the data the model will not be able to recrate them very well. This behaviour is sometimes used as a technique to find anomalous data points. 
@@ -431,6 +568,36 @@ plt.legend()
 # # Solution to Exercises
 
 # ## Exercise 1
+# <details><summary>Solution</summary>
+#
+# ```Python
+# p = Normal(0, 1)
+# kld_close = torch.distributions.kl.kl_divergence(p, Normal(0, 1))
+# kld_far = torch.distributions.kl.kl_divergence(p, Normal(10, 1))
+# print(kld_close, kld_far)
+# print('close is lower?', kld_close<kld_far)
+#     
+# # Plot the KLD as you vary the mean of q
+# p = Normal(0, 1)
+# means = np.arange(-10, 11)
+#
+# klds=[]
+# for mean in means:
+#     q = Normal(mean, 1)
+#     kld = torch.distributions.kl.kl_divergence(p, q)
+#     klds.append(kld)
+#
+# plt.plot(means, klds)
+# plt.ylabel('KLD(p|q)')
+# plt.xlabel('mean of Q')
+# plt.show()
+# ```
+#
+# </details>
+
+
+
+# ## Exercise 2
 # <details><summary>Solution</summary>
 #
 # ```Python
@@ -466,19 +633,18 @@ plt.legend()
 #         z = self.reparameterize(mu, logvar)
 #         return self.decode(z), mu, logvar
 #
-#     
+#
 # model = VAE2().to(device)
 # optimizer = optim.Adam(model.parameters(), lr=1e-3)
 # epochs = 10
-# for epoch in range(1, epochs + 1):
+# for epoch in tqdm(range(1, epochs + 1)):
 #     train(epoch,loss_bce_kld)
 #     test(epoch,loss_bce_kld)
 #
 # # visualisations
-#
 # model.eval()
-# mu , logvar = model.encode(ds_train[:1000])
-# mu = mu.detach().numpy()
+# mu , logvar = model.encode(ds_train[:1000].to(device))
+# mu = mu.cpu().detach().numpy()
 # for i in range(10):
 #     idx = ds_train.y[:1000]==i
 #     plt.scatter(mu[idx,0],mu[idx,1],label = i)
@@ -487,6 +653,57 @@ plt.legend()
 # ```
 #
 # </details>
+
+# ## Exercise 3
+#
+# <details><summary>Solution</summary>
+#
+# ```Python
+# class VAE2(nn.Module):
+#     def __init__(self):
+#         super(VAE2, self).__init__()
+#
+#         self.fc1 = nn.Linear(784, 400)
+#         self.fc2 = nn.Linear(400, 80)
+#         self.fc31 = nn.Linear(80, 4) # We changed 2->4
+#         self.fc32 = nn.Linear(80, 4) # We changed 2->4
+#         self.fc4 = nn.Linear(4, 80) # We changed 2->4
+#         self.fc5 = nn.Linear(80, 400)
+#         self.fc6 = nn.Linear(400, 784)
+#
+#     def encode(self, x):
+#         h1 = F.relu(self.fc1(x))
+#         h2 = F.relu(self.fc2(h1))
+#         return self.fc31(h2), self.fc32(h2)
+#
+#     def reparameterize(self, mu, logvar):
+#         std = torch.exp(0.5*logvar)
+#         eps = torch.randn_like(std)
+#         return mu + eps*std
+#
+#     def decode(self, z):
+#         h3 = F.relu(self.fc4(z))
+#         h4 = F.relu(self.fc5(h3))
+#         return torch.sigmoid(self.fc6(h4))
+#
+#     def forward(self, x):
+#         mu, logvar = self.encode(x.view(-1, 784))
+#         z = self.reparameterize(mu, logvar)
+#         return self.decode(z), mu, logvar
+#
+#
+# model = VAE2().to(device)
+# optimizer = optim.Adam(model.parameters(), lr=1e-3)
+# epochs = 10
+# for epoch in tqdm(range(1, epochs + 1)):
+#     train(epoch,loss_bce_kld)
+#     test(epoch,loss_bce_kld)
+#
+# ```
+#
+# </details>
+
+
 
 # # References
 # - [Pytorch examples for VAE](https://github.com/pytorch/examples/tree/master/vae)
