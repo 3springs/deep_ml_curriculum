@@ -422,20 +422,22 @@ visualize_model(model_ft, num_images=8)
 # landmassf3_train = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=True, transform=data_transforms['train'])
 # landmassf3_test = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=False, transform=data_transforms['val'])
 # # Modify Resnet34 for finetuning
-# model_ft = models.resnet34(pretrained=False)
+# model_ft = models.resnet18(pretrained=False)
 # model_ft.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 # model_ft.fc = nn.Linear(num_ftrs, 4)
 # model_ft = model_ft.to(device)
+#
 # # Create Dataloader
-# dataloaders = {'train': DataLoader(landmassf3_train, **params),
+# dataloaders = {'train': DataLoader(landmassf3_train, shuffle=True, **params),
 #                'val': DataLoader(landmassf3_test, **params)}
 #
-# learning_rate = 1e-3
-# optimizer = torch.optim.Adam(model_ft.parameters(), lr=learning_rate)
+# learning_rate = 1e-4
+# optimizer = optim.SGD(model_ft.parameters(), lr=learning_rate, momentum=0.9)
 #
 # # Train model
 # model_ft = train_model(model_ft, dataloaders, criterion, optimizer, exp_lr_scheduler,
-#                        num_epochs=25)
+#                        num_epochs=2)
+#
 # ```
 #
 # </details>
@@ -445,30 +447,6 @@ visualize_model(model_ft, num_images=8)
 #
 # [Finetuning Pytorch tutorial](https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html)
 
-# +
-from deep_ml_curriculum.data.landmass_f3 import LandmassF3Patches
-from deep_ml_curriculum.config import project_dir
 
-# Landmass 
-landmassf3_train = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=True, transform=data_transforms['train'])
-landmassf3_test = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=False, transform=data_transforms['val'])
-# Modify Resnet34 for finetuning
-model_ft = models.resnet18(pretrained=False)
-model_ft.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-model_ft.fc = nn.Linear(num_ftrs, 4)
-model_ft = model_ft.to(device)
-
-# Create Dataloader
-dataloaders = {'train': DataLoader(landmassf3_train, shuffle=True, **params),
-               'val': DataLoader(landmassf3_test, **params)}
-
-learning_rate = 1e-4
-optimizer = optim.SGD(model_ft.parameters(), lr=learning_rate, momentum=0.9)
-
-# Train model
-model_ft = train_model(model_ft, dataloaders, criterion, optimizer, exp_lr_scheduler,
-                       num_epochs=2)
-
-# -
 
 
