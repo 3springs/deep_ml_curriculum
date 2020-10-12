@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -52,6 +53,10 @@ models.resnet.model_urls['resnet34'] = 'file://{}'.format(model_path)
 # # Finetuning / Transfer Learning
 #
 # Finetuning or Transfer Learning in DNNs is done by taking a pretrained model and repurposed to a new dataset. The idea behind this approach is that pretrained datasets usually provide a better starting point for training than randomly initializing a network. Therefore, it is expected that the network can converge faster when doing finetuning.
+#
+# It's also usefull when you don't have enougth data. Your networks can learn basic features like "edges" from a similar task that is rich with data. Then it can fine tune on your data.
+#
+# Since real world commercial use cases often lack sufficient data, this is a common and valuable technique.
 
 # <div class="alert alert-info" style="font-size:100%">
 #     
@@ -100,24 +105,29 @@ optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 
 # # Dataset
-#
-# Data source: https://dataunderground.org/dataset/landmass-f3
-#
-# Credits to researchers at Georgia Tech, Agile Geoscience
-# License CCbySA
+#  
+# LANDMASS is a set of classified 2d subimages extracted from the F3 seismic volume by researchers at Georgia Tech. LANDMASS-1, contains 17667 small “patches” of size 99×99 pixels. It includes 9385 Horizon patches, 5140 chaotic patches, 1251 Fault patches, and 1891 Salt Dome patches. The images in this database have values 0-255
 #
 # In this notebook, we will be using the landmass dataset, which have been preprocessed already. In this dataset, we have images of 4 different types of landmass: 'Chaotic Horizon', 'Fault', 'Horizon', 'Salt Dome'.
 #
 # We will finetuned a pretrained CNN to learn how to classify images of landmass into those 4 classes.
+#
+# Credits to researchers at Georgia Tech, Agile Geoscience
+# Source https://dataunderground.org/dataset/landmass-f3
+# License: Creative Commons Attribution Share-Alike
 
 # #  Data Augmentation
 # It is a well-known fact that current Deep Neural Networks (DNNs) are data hungry. The more examples we have for our model the better it will generalise. However, in some cases, getting more images is not a viable option. Fortunately, we can use data augmentation or image transformations to generate more images.
 #
 # In Pytorch, we can use `transforms` to achieve this. Given that we are using pretrained models on ImageNet, it is important to normalize the data using the same `mean` and `std` than the one used on ImageNet. [More Information](https://pytorch.org/docs/stable/torchvision/models.html). However, in our particular case, the images used will be gray scale so we will change the normalization to work accordingly.
 #
+# Which transforms do we want to choose? The ones that we want the model to be robust to, and the ones that represent real shifts in the data.
+#
 # `transforms.Compose` will allow us to apply a sequential pipeline of transformations to your Pytorch Tensors.
 #
 # In the example below, `transforms.RandomResizedCrop(224)` will resize (224x224 pixels) and crop randomly an image. `transforms.RandomHorizontalFlip()` will flip horizontally some images at random. Finally, after those two transformations the image is converted to Pytorch Tensor and the normalized.
+#
+# A gallery of many possible image augmentations can be found on the [imgaug](https://github.com/aleju/imgaug) website, and there are also techniques for timeseries.
 
 data_transforms = {
     # For the data training dataset
@@ -151,12 +161,12 @@ from deep_ml_curriculum.config import project_dir
 
 
 # Note you can use LandmassF3Patches here instead, to use full sized images
-landmassf3_train = LandmassF3Patches(
+landmassf3_train = LandmassF3PatchesMini(
     project_dir / "data/processed/landmass-f3",
     train=True,
     transform=data_transforms["train"],
 )
-landmassf3_test = LandmassF3Patches(
+landmassf3_test = LandmassF3PatchesMini(
     project_dir / "data/processed/landmass-f3",
     train=False,
     transform=data_transforms["val"],
@@ -373,7 +383,48 @@ visualize_model(model_ft, num_images=8)
 # model_ft = models.resnet34(pretrained=True)
 # model_ft.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 # model_ft.fc = nn.Linear(num_ftrs, 4)
-# model_ft = model_ft.cuda()
+# model_ft = model_ft.to(device)
+# # Create Dataloader
+# dataloaders = {'train': DataLoader(landmassf3_train, **params),
+#                'val': DataLoader(landmassf3_test, **params)}
+#
+# learning_rate = 1e-3
+# optimizer = torch.optim.Adam(model_ft.parameters(), lr=learning_rate)
+#
+# # Train model
+# model_ft = train_model(model_ft, dataloaders, criterion, optimizer, exp_lr_scheduler,
+#                        num_epochs=25)
+# ```
+#
+# </details>
+
+# <div class="alert alert-success" style="font-size:100%">
+#
+# **Exercise 2:** <br>
+# Repeat the above but this time train it from scratch, without the pretraine=True option. Without finetuning it should have poorer results.
+#
+# </div>
+#
+
+# You can click in the button below the reveal the solution for exercise 2
+#
+# <details>    
+# <summary>
+#     <font size="4" color="darkblue"><b>See the solution for Exercise 2</b></font>
+# </summary>
+#     
+# ```python
+# from deep_ml_curriculum.data.landmass_f3 import LandmassF3Patches
+# from deep_ml_curriculum.config import project_dir
+#
+# # Landmass 
+# landmassf3_train = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=True, transform=data_transforms['train'])
+# landmassf3_test = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=False, transform=data_transforms['val'])
+# # Modify Resnet34 for finetuning
+# model_ft = models.resnet34(pretrained=False)
+# model_ft.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+# model_ft.fc = nn.Linear(num_ftrs, 4)
+# model_ft = model_ft.to(device)
 # # Create Dataloader
 # dataloaders = {'train': DataLoader(landmassf3_train, **params),
 #                'val': DataLoader(landmassf3_test, **params)}
@@ -393,7 +444,30 @@ visualize_model(model_ft, num_images=8)
 #
 # [Finetuning Pytorch tutorial](https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html)
 
+# +
+from deep_ml_curriculum.data.landmass_f3 import LandmassF3Patches
+from deep_ml_curriculum.config import project_dir
 
+# Landmass 
+landmassf3_train = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=True, transform=data_transforms['train'])
+landmassf3_test = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=False, transform=data_transforms['val'])
+# Modify Resnet34 for finetuning
+model_ft = models.resnet18(pretrained=False)
+model_ft.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+model_ft.fc = nn.Linear(num_ftrs, 4)
+model_ft = model_ft.to(device)
+# Create Dataloader
+dataloaders = {'train': DataLoader(landmassf3_train, **params),
+               'val': DataLoader(landmassf3_test, **params)}
+
+learning_rate = 1e-3
+optimizer = torch.optim.Adam(model_ft.parameters(), lr=learning_rate)
+
+# Train model
+model_ft = train_model(model_ft, dataloaders, criterion, optimizer, exp_lr_scheduler,
+                       num_epochs=25)
+
+# -
 
 
 
