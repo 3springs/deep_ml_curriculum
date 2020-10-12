@@ -554,7 +554,7 @@ df.index = df["DATE_"]
 wells = df["WELLID"].unique()
 x = df.loc[df["WELLID"] == wells[0], "DATE_"]
 y = df.loc[df["WELLID"] == wells[0], "DAILY_WELL_DRY_OIL_BBL"]
-plt.plot(x, y)
+plt.plot(x.values, y.values)
 
 df.describe()
 
