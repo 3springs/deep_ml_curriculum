@@ -100,7 +100,7 @@ model_ft = model_ft.to(device)
 # Declare Loss Function
 criterion = nn.CrossEntropyLoss()
 # Observe that all parameters are being optimized
-optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
+optimizer_ft = optim.SGD(model_ft.parameters(), lr=1e-4, momentum=0.9)
 # Decay learning rate by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 
@@ -129,14 +129,17 @@ exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 #
 # A gallery of many possible image augmentations can be found on the [imgaug](https://github.com/aleju/imgaug) website, and there are also techniques for timeseries.
 
+
+
 data_transforms = {
     # For the data training dataset
     "train": transforms.Compose(
         [
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
+            transforms.ColorJitter(brightness=1, contrast=1),
             transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,))
+            transforms.Normalize((0.5,), (0.5,)),
             # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]
     ),
@@ -151,8 +154,6 @@ data_transforms = {
         ]
     ),
 }
-
-
 
 # +
 # Let's import the Patches
@@ -316,7 +317,7 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
 # </div>
 
 model_ft = train_model(
-    model_ft, dataloaders, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=5
+    model_ft, dataloaders, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=2
 )
 
 
@@ -401,7 +402,7 @@ visualize_model(model_ft, num_images=8)
 # <div class="alert alert-success" style="font-size:100%">
 #
 # **Exercise 2:** <br>
-# Repeat the above but this time train it from scratch, without the pretraine=True option. Without finetuning it should have poorer results.
+# Repeat the above but this time train it from scratch, without the pretrain=True option. Without finetuning it should have poorer results.
 #
 # </div>
 #
@@ -456,19 +457,18 @@ model_ft = models.resnet18(pretrained=False)
 model_ft.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 model_ft.fc = nn.Linear(num_ftrs, 4)
 model_ft = model_ft.to(device)
+
 # Create Dataloader
-dataloaders = {'train': DataLoader(landmassf3_train, **params),
+dataloaders = {'train': DataLoader(landmassf3_train, shuffle=True, **params),
                'val': DataLoader(landmassf3_test, **params)}
 
-learning_rate = 1e-3
-optimizer = torch.optim.Adam(model_ft.parameters(), lr=learning_rate)
+learning_rate = 1e-4
+optimizer = optim.SGD(model_ft.parameters(), lr=learning_rate, momentum=0.9)
 
 # Train model
 model_ft = train_model(model_ft, dataloaders, criterion, optimizer, exp_lr_scheduler,
-                       num_epochs=25)
+                       num_epochs=2)
 
 # -
-
-
 
 
