@@ -126,6 +126,8 @@ from tqdm.auto import tqdm
 #
 # We will train a CNN to learn how to classify images into those 4 groups.
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 # +
 # Let's import the Patches
 from deep_ml_curriculum.data.landmass_f3 import LandmassF3Patches
@@ -213,12 +215,12 @@ class Net(nn.Module):
 
 
 # Create an instance of your network
-net = Net()
+net = Net().to(device)
 print(net)
 
 from deep_ml_curriculum.torchsummaryX import summary
 # We can also summarise the number of parameters in each layer
-summary(net, torch.rand((1, 1, 99, 99)))
+summary(net, torch.rand((1, 1, 99, 99)).to(device))
 1
 
 # Let's try a random 99x99 input. The input image to follow this convention:
@@ -231,7 +233,7 @@ summary(net, torch.rand((1, 1, 99, 99)))
 #
 
 # +
-input = torch.rand(1, 1, 99, 99)
+input = torch.rand(1, 1, 99, 99).to(device)
 out = net(input)
 
 # An array with 4 output, each one corresponding to
@@ -287,8 +289,8 @@ def train(model, x, y, criterion, optimizer, n_epochs=1, bs=64):
             # Let's divide the data in batches
             start_i = i * bs
             end_i = start_i + bs
-            inputs = x_train[start_i:end_i].unsqueeze(1).float()
-            labels = y_train[start_i:end_i].long()
+            inputs = x_train[start_i:end_i].unsqueeze(1).float().to(device)
+            labels = y_train[start_i:end_i].long().to(device)
             
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -316,7 +318,7 @@ def test(model, x, y):
     total = 0
 
     for idx, image in enumerate(x):
-        pred = model(image.unsqueeze(0).unsqueeze(0)).argmax()
+        pred = model(image.unsqueeze(0).unsqueeze(0).cuda()).argmax()
         if int(pred) == int(y[idx]):
             correct += 1
         total += 1
@@ -334,7 +336,7 @@ print('Accuracy:',test(model, x_test, y_test))
 
 # Let's try again with 1 more epochs...
 
-net2 = Net()
+net2 = Net().to(device)
 # Define Optimizer. In this case, we will use Stochastic Gradient Descent
 optimizer = optim.SGD(net2.parameters(), lr=learning_rate, momentum=momentum)
 model = train(net, x_train, y_train, criterion, optimizer, n_epochs=5)
@@ -396,14 +398,14 @@ class BetterCNN(nn.Module):
 
 # Let's see first the results training the new model using only 1 epoch.
 
-convnet = BetterCNN()
+convnet = BetterCNN().to(device)
 optimizer = torch.optim.Adam(convnet.parameters(), lr=learning_rate)
 model = train(convnet, x_train, y_train, criterion, optimizer)
 test(model, x_test, y_test)
 
 from deep_ml_curriculum.torchsummaryX import summary
 # We can also summarise the number of parameters in each layer
-summary(net, torch.rand((1, 1, 99, 99)))
+summary(convnet, torch.rand((1, 1, 99, 99)).to(device))
 1
 
 # <div class="alert alert-success" style="font-size:100%">
@@ -423,13 +425,19 @@ summary(net, torch.rand((1, 1, 99, 99)))
 #     
 # ```python
 # learning_rate = 1e-3
-# convnet2 = BetterCNN()
+# convnet2 = BetterCNN().to(device)
 # optimizer = torch.optim.Adam(convnet2.parameters(), lr=learning_rate)
 # model = train(convnet2, x_train, y_train, criterion, optimizer, n_epochs=10)
 # test(model, x_test, y_test)
 # ```
 #
 # </details>
+
+learning_rate = 1e-3
+convnet2 = BetterCNN().to(device)
+optimizer = torch.optim.Adam(convnet2.parameters(), lr=learning_rate)
+model = train(convnet2, x_train, y_train, criterion, optimizer, n_epochs=10)
+test(model, x_test, y_test)
 
 # Finally ! After changing the optimizer, creating a better CNN architecture and train for a couple of epochs we got an accuracy of over 99% on unseen data.
 
