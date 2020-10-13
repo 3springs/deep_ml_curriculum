@@ -115,7 +115,7 @@ summary(model_ft, torch.rand((1, 1, 224, 224)).to(device))
 #  
 # LANDMASS is a set of classified 2d subimages extracted from the F3 seismic volume by researchers at Georgia Tech. LANDMASS-1, contains 17667 small “patches” of size 99×99 pixels. It includes 9385 Horizon patches, 5140 chaotic patches, 1251 Fault patches, and 1891 Salt Dome patches. The images in this database have values 0-255
 #
-# In this notebook, we will be using the landmass dataset, which have been preprocessed already. In this dataset, we have images of 4 different types of landmass: 'Chaotic Horizon', 'Fault', 'Horizon', 'Salt Dome'.
+# In this notebook, we will be using the landmass dataset, which have been preprocessed already. In this dataset, we have images of 4 different types of landmass: ['Discontinuous', 'Faulted', 'Continuous', 'Salt'].
 #
 # We will finetuned a pretrained CNN to learn how to classify images of landmass into those 4 classes.
 #
@@ -147,17 +147,14 @@ data_transforms = {
             transforms.ColorJitter(brightness=1, contrast=1),
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,)),
-            # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]
     ),
     # For the validation dataset
     "val": transforms.Compose(
         [
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.Resize(224),
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
-            # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]
     ),
 }
@@ -183,8 +180,9 @@ print(landmassf3_train)
 print(landmassf3_test)
 # -
 
-# Note that this is an unbalanced dataset, so we use f1
-pd.Series(landmassf3_train.train_labels).value_counts() / len(landmassf3_train)
+# Note that this is an unbalanced dataset, so we use f1 score as a metric instead of accuracy
+labels = pd.Series(landmassf3_train.train_labels).replace(dict(enumerate(landmassf3_train.classes)))
+labels.value_counts() / len(landmassf3_train)
 
 # +
 # Our baseline f1
@@ -192,9 +190,10 @@ from sklearn.metrics import f1_score
 def score_fn(y_true, y_pred):
     return f1_score(y_true, y_pred, average='macro')
 
-score_fn(
+baseline_score = score_fn(
     y_true=landmassf3_train.train_labels, 
     y_pred=[2]*len(landmassf3_train))
+baseline_score
 # -
 
 classes = landmassf3_train.classes
@@ -245,62 +244,61 @@ dataloaders = {
 def to_numpy(x):
     return x.cpu().detach().numpy()
 
+def run_phase(model, phase, dataloader, optimizer, scheduler):
+    """Run an epoch - through all the data once"""
+    if phase == "train":
+        model.train()  # Set model to training mode
+    else:
+        model.eval()  # Set model to evaluate mode
+
+    running_loss = 0.0
+    running_score = 0
+
+    # Iterate over data.
+    for inputs, labels in tqdm(dataloader, desc=phase, leave=False):
+
+        # print(inputs.shape, labels.shape)
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward
+        # track history if only in train
+        with torch.set_grad_enabled(phase == "train"):
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            loss = criterion(outputs, labels)
+
+            # backward + optimize only if in training phase
+            if phase == "train":
+                loss.backward()
+                optimizer.step()
+
+        # statistics
+        running_loss += loss.item() * inputs.size(0)
+        running_score += score_fn(to_numpy(labels), to_numpy(preds))
+    if phase == "train":
+        scheduler.step()
+
+    epoch_loss = running_loss / len(dataloader)
+    epoch_score = running_score / len(dataloader)
+
+    return epoch_loss, epoch_score
+
 def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
     dataloader = None
     best_model_wts = copy.deepcopy(model.state_dict())
-    best_f1 = 0.0
-    
-    def run_phase(model, phase, dataloader):
-        """Run an epoch - through all the data once"""
-        if phase == "train":
-            model.train()  # Set model to training mode
-        else:
-            model.eval()  # Set model to evaluate mode
-
-        running_loss = 0.0
-        running_f1 = 0
-
-        # Iterate over data.
-        for inputs, labels in tqdm(dataloader, desc=phase, leave=False):
-
-            # print(inputs.shape, labels.shape)
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-
-            # zero the parameter gradients
-            optimizer.zero_grad()
-
-            # forward
-            # track history if only in train
-            with torch.set_grad_enabled(phase == "train"):
-                outputs = model(inputs)
-                _, preds = torch.max(outputs, 1)
-                loss = criterion(outputs, labels)
-
-                # backward + optimize only if in training phase
-                if phase == "train":
-                    loss.backward()
-                    optimizer.step()
-
-            # statistics
-            running_loss += loss.item() * inputs.size(0)
-            running_f1 += score_fn(to_numpy(labels), to_numpy(preds))
-        if phase == "train":
-            scheduler.step()
-
-        epoch_loss = running_loss / len(dataloader)
-        epoch_f1 = running_f1 / len(dataloader)
-            
-        return epoch_loss, epoch_f1
-
+    best_score = 0.0
 
     try:
         # Test the initial accuracy before fine tuning
-        epoch_loss, epoch_f1 = run_phase(model, "val", dataloaders["val"])
+        epoch_loss, epoch_score = run_phase(model, "val", dataloaders["val"], optimizer, scheduler)
 
         print('Original performance without finetuning')
-        print("{} Loss: {:.4f} F1: {:.4f}".format("Start", epoch_loss, epoch_f1))
+        print("{} Loss: {:.4g} score: {:.4g}".format("Start", epoch_loss, epoch_score))
         
         for epoch in tqdm(range(num_epochs), unit='epoch'):
             print("Epoch {}/{}".format(epoch, num_epochs - 1))
@@ -308,12 +306,12 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
 
             # Each epoch has a training and validation phase
             for phase in ["train", "val"]:
-                epoch_loss, epoch_f1 = run_phase(model, phase, dataloaders[phase])
-                print("{} Loss: {:.4f} F1: {:.4f}".format(phase, epoch_loss, epoch_f1))
+                epoch_loss, epoch_score = run_phase(model, phase, dataloaders[phase], optimizer, scheduler)
+                print("{} Loss: {:.4g} score: {:.4g}".format(phase, epoch_loss, epoch_score))
 
                 # deep copy the model, this way we save the at the point with the best generalisation
-                if phase == "val" and epoch_acc > best_acc:
-                    best_F1 = epoch_f1
+                if phase == "val" and epoch_score > best_score:
+                    best_score = epoch_score
                     best_model_wts = copy.deepcopy(model.state_dict())
 
             print()
@@ -326,15 +324,14 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
             time_elapsed // 60, time_elapsed % 60
         )
     )
-    print("Best val F1: {:4f}".format(best_F1))
+    print("Best val score: {:4g}".format(best_score))
 
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
+
+
 # -
-
-
-
 # <div class="alert alert-info" style="font-size:100%">
 #     
 # **WARNING** <br/>
@@ -380,13 +377,14 @@ def visualize_model(model, num_images=8, figsize=(15,15)):
                     return
         model.train(mode=was_training)
 
+print('Results before training')
 visualize_model(model_ft, num_images=24)
+
+# Initially the model is used to imagenet, so the intial score is very low and it gets many patches wrong. But it knows a lot about images and textures so it quickly learns.
 
 model_ft = train_model(
     model_ft, dataloaders, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=2
 )
-
-
 
 visualize_model(model_ft, num_images=24)
 
@@ -473,35 +471,12 @@ visualize_model(model_ft, num_images=24)
 #
 # </details>
 
-# +
-from deep_ml_curriculum.data.landmass_f3 import LandmassF3Patches
-from deep_ml_curriculum.config import project_dir
-
-# Landmass 
-landmassf3_train = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=True, transform=data_transforms['train'])
-landmassf3_test = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=False, transform=data_transforms['val'])
-# Modify Resnet34 for finetuning
-model_ft = models.resnet18(pretrained=False)
-model_ft.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-model_ft.fc = nn.Linear(num_ftrs, 4)
-model_ft = model_ft.to(device)
-
-# Create Dataloader
-dataloaders = {'train': DataLoader(landmassf3_train, shuffle=True, **params),
-               'val': DataLoader(landmassf3_test, **params)}
-
-learning_rate = 1e-4
-optimizer = optim.SGD(model_ft.parameters(), lr=learning_rate, momentum=0.9)
-
-# Train model
-model_ft = train_model(model_ft, dataloaders, criterion, optimizer, exp_lr_scheduler,
-                       num_epochs=2)
-# -
-
 #
 # # Sources
 #
 # [Finetuning Pytorch tutorial](https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html)
+
+
 
 
 
