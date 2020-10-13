@@ -433,11 +433,7 @@ summary(convnet, torch.rand((1, 1, 99, 99)).to(device))
 #
 # </details>
 
-learning_rate = 1e-3
-convnet2 = BetterCNN().to(device)
-optimizer = torch.optim.Adam(convnet2.parameters(), lr=learning_rate)
-model = train(convnet2, x_train, y_train, criterion, optimizer, n_epochs=10)
-test(model, x_test, y_test)
+
 
 # Finally ! After changing the optimizer, creating a better CNN architecture and train for a couple of epochs we got an accuracy of over 99% on unseen data.
 
