@@ -40,7 +40,9 @@ dependencies:
   - descartes
   - umap-learn>0.4.0
   - mapclassify
-  - dask>0.2.0.0
+  - dask[dataframe]>0.2.0.0
+  - cftime
+  - geopy
   - h5py
   - zarr
   - xarray>0.11.0
