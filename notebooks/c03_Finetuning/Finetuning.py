@@ -31,6 +31,7 @@ from pathlib import Path
 import os
 from tqdm.auto import tqdm
 import copy
+import pandas as pd
 
 
 # Magic Function
@@ -67,16 +68,17 @@ models.resnet.model_urls['resnet34'] = 'file://{}'.format(model_path)
 # Let's setup a device variable. This will allow us to automatically use a `gpu` if it is available. Otherwise, it will use `cpu`.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device
 
 # Now let's create a ResNet model using pretrained weights of the [ImageNet dataset](http://www.image-net.org/).
 
 model_ft = models.resnet18(pretrained=True)
 
-
-
 # Now let's check the architecture of the ResNet model
 
 model_ft
+
+
 
 # As can be seen in the architecture, the last layer (fc) has an input size of 512. We can also get this information programatically using the code below:
 
@@ -103,6 +105,11 @@ criterion = nn.CrossEntropyLoss()
 optimizer_ft = optim.SGD(model_ft.parameters(), lr=1e-4, momentum=0.9)
 # Decay learning rate by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
+
+from deep_ml_curriculum.torchsummaryX import summary
+# We can also summarise the number of parameters in each layer
+summary(model_ft, torch.rand((1, 1, 224, 224)).to(device))
+1
 
 # # Dataset
 #  
@@ -162,18 +169,32 @@ from deep_ml_curriculum.config import project_dir
 
 
 # Note you can use LandmassF3Patches here instead, to use full sized images
-landmassf3_train = LandmassF3PatchesMini(
+landmassf3_train = LandmassF3Patches(
     project_dir / "data/processed/landmass-f3",
     train=True,
     transform=data_transforms["train"],
 )
-landmassf3_test = LandmassF3PatchesMini(
+landmassf3_test = LandmassF3Patches(
     project_dir / "data/processed/landmass-f3",
     train=False,
     transform=data_transforms["val"],
 )
 print(landmassf3_train)
 print(landmassf3_test)
+# -
+
+# Note that this is an unbalanced dataset, so we use f1
+pd.Series(landmassf3_train.train_labels).value_counts() / len(landmassf3_train)
+
+# +
+# Our baseline f1
+from sklearn.metrics import f1_score
+def score_fn(y_true, y_pred):
+    return f1_score(y_true, y_pred, average='macro')
+
+score_fn(
+    y_true=landmassf3_train.train_labels, 
+    y_pred=[2]*len(landmassf3_train))
 # -
 
 classes = landmassf3_train.classes
@@ -211,7 +232,7 @@ for n in [0, 10, 230, -1]:
 # # Train
 
 # Parameters
-params = {"batch_size": 64, "num_workers": 0, 'pin_memory':False}
+params = {"batch_size": 256, "num_workers": 0, 'pin_memory':False}
 
 dataloaders = {
     "train": DataLoader(landmassf3_train, shuffle=True, **params),
@@ -219,11 +240,16 @@ dataloaders = {
 }
 
 
+
+# +
+def to_numpy(x):
+    return x.cpu().detach().numpy()
+
 def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
     dataloader = None
     best_model_wts = copy.deepcopy(model.state_dict())
-    best_acc = 0.0
+    best_f1 = 0.0
     
     def run_phase(model, phase, dataloader):
         """Run an epoch - through all the data once"""
@@ -233,7 +259,7 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
             model.eval()  # Set model to evaluate mode
 
         running_loss = 0.0
-        running_corrects = 0
+        running_f1 = 0
 
         # Iterate over data.
         for inputs, labels in tqdm(dataloader, desc=phase, leave=False):
@@ -259,37 +285,35 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
 
             # statistics
             running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(preds == labels.data)
+            running_f1 += score_fn(to_numpy(labels), to_numpy(preds))
         if phase == "train":
             scheduler.step()
 
         epoch_loss = running_loss / len(dataloader)
-        epoch_acc = running_corrects.double() / len(dataloader)
+        epoch_f1 = running_f1 / len(dataloader)
             
-        return epoch_loss, epoch_acc
+        return epoch_loss, epoch_f1
 
 
     try:
         # Test the initial accuracy before fine tuning
-        epoch_loss, epoch_acc = run_phase(model, "val", dataloaders["val"])
+        epoch_loss, epoch_f1 = run_phase(model, "val", dataloaders["val"])
 
         print('Original performance without finetuning')
-        print("{} Loss: {:.4f} Acc: {:.4f}".format("Start", epoch_loss, epoch_acc))
+        print("{} Loss: {:.4f} F1: {:.4f}".format("Start", epoch_loss, epoch_F1))
         
         for epoch in tqdm(range(num_epochs), unit='epoch'):
             print("Epoch {}/{}".format(epoch, num_epochs - 1))
             print("-" * 10)
 
-
-
             # Each epoch has a training and validation phase
             for phase in ["train", "val"]:
-                epoch_loss, epoch_acc = run_phase(model, phase, dataloaders[phase])
-                print("{} Loss: {:.4f} Acc: {:.4f}".format(phase, epoch_loss, epoch_acc))
+                epoch_loss, epoch_F1 = run_phase(model, phase, dataloaders[phase])
+                print("{} Loss: {:.4f} F1: {:.4f}".format(phase, epoch_loss, epoch_F1))
 
                 # deep copy the model, this way we save the at the point with the best generalisation
                 if phase == "val" and epoch_acc > best_acc:
-                    best_acc = epoch_acc
+                    best_F1 = epoch_F1
                     best_model_wts = copy.deepcopy(model.state_dict())
 
             print()
@@ -302,11 +326,12 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
             time_elapsed // 60, time_elapsed % 60
         )
     )
-    print("Best val Acc: {:4f}".format(best_acc))
+    print("Best val F1: {:4f}".format(best_F1))
 
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
+# -
 
 
 
@@ -346,6 +371,10 @@ def visualize_model(model, num_images=8, figsize=(5,15)):
                 ax.set_title(
                     "predicted: {}\nTrue {}".format(dataloader_val.dataset.classes[preds[j]], dataloader_val.dataset.classes[labels[j]])
                 )
+                if dataloader_val.dataset.classes[preds[j]] != dataloader_val.dataset.classes[labels[j]]:
+                    ax.set_title(dataloader_val.dataset.classes[preds[j]],color='red')
+                else:
+                    ax.set_title(dataloader_val.dataset.classes[preds[j]],color='green')
                 plt.imshow(
                     inputs.cpu().data[j].numpy()[0],
                     interpolation="bicubic",
@@ -441,6 +470,31 @@ visualize_model(model_ft, num_images=8)
 # ```
 #
 # </details>
+
+# +
+from deep_ml_curriculum.data.landmass_f3 import LandmassF3Patches
+from deep_ml_curriculum.config import project_dir
+
+# Landmass 
+landmassf3_train = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=True, transform=data_transforms['train'])
+landmassf3_test = LandmassF3Patches(project_dir / 'data/processed/landmass-f3', train=False, transform=data_transforms['val'])
+# Modify Resnet34 for finetuning
+model_ft = models.resnet18(pretrained=False)
+model_ft.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+model_ft.fc = nn.Linear(num_ftrs, 4)
+model_ft = model_ft.to(device)
+
+# Create Dataloader
+dataloaders = {'train': DataLoader(landmassf3_train, shuffle=True, **params),
+               'val': DataLoader(landmassf3_test, **params)}
+
+learning_rate = 1e-4
+optimizer = optim.SGD(model_ft.parameters(), lr=learning_rate, momentum=0.9)
+
+# Train model
+model_ft = train_model(model_ft, dataloaders, criterion, optimizer, exp_lr_scheduler,
+                       num_epochs=2)
+# -
 
 #
 # # Sources

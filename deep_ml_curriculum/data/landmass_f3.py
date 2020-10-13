@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from torchvision.datasets import MNIST
 
 class LandmassF3Patches(MNIST):
@@ -24,7 +25,7 @@ class LandmassF3Patches(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    classes = ['Chaotic Horizon', 'Fault', 'Horizon', 'Salt Dome']
+    classes = ['Discontinuous', 'Faulted', 'Continuous', 'Salt']
 
 
 class LandmassF3PatchesMini(MNIST):
@@ -53,4 +54,6 @@ class LandmassF3PatchesMini(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    classes = ['Chaotic Horizon', 'Fault', 'Horizon', 'Salt Dome']
+    classes = ['Discontinuous', 'Faulted', 'Continuous', 'Salt']
+
+
