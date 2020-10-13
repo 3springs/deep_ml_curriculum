@@ -9,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: python3
+#     name: deep_ml_curriculum
 # ---
 
 # # Introduction to Dask
@@ -553,6 +553,45 @@ res
 
 # But you can use .compute
 res.compute()
+
+
+
+# <div class="alert alert-success">
+#   <h2>Exercise</h2>
+#
+#   1. Look at the output of `ds.time.dt.season`
+#   2. Try grouping by season and getting the mean
+#   3. Plot each season (use the plotting code from above)
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * You do a for loop over groups `for season, ds_season in ds.groupby(ds.time.dt.season):`
+#   * You need to remove the time dimension, with `.mean('time')`
+#   * Use  `mean['Tair'].plot.pcolormesh()` to plot
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
+#     for season, ds_season in ds.groupby(ds.time.dt.season):    
+#         mean = ds_season.mean('time')
+#         mean['Tair'].plot.pcolormesh(
+#             vmin=-30, vmax=30)
+#         plt.title(season)
+#         plt.show()
+#   ```
+#
+#   </details>
+#
+#   </div>
 
 # # References
 # The following sources where used for creation of this notebook:

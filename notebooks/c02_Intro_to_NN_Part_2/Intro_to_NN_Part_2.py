@@ -120,13 +120,14 @@ from tqdm.auto import tqdm
 # Credits to researchers at Georgia Tech, Agile Geoscience
 # License CCbySA
 #
-# In this notebook, we will be using the landmass dataset, which have been preprocessed already. In this dataset, we have images of 4 different types of landmass: 'Chaotic Horizon', 'Fault', 'Horizon', 'Salt Dome'.
+# In this notebook, we will be using the landmass dataset, which have been preprocessed already. In this dataset, we have images of 4 different types of landmass: ['Discontinuous', 'Faulted', 'Continuous', 'Salt'].
 #
 # This is an example of [seismic data](https://en.wikipedia.org/wiki/Reflection_seismology) which is a way of using seismic to image the structure of the Earth, below the surface. These waves are similar to sounds waves in air. The lines represent changes in density below the surface.
 #
 # We will train a CNN to learn how to classify images into those 4 groups.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device
 
 # +
 # Let's import the Patches
@@ -156,6 +157,10 @@ LandmassF3Patches
 x, y = landmassf3_train[4]
 print("Class:", landmassf3_train.classes[y])
 x
+
+# Note that this is an unbalanced dataset, so we expect an accuracy of at least 52%, this is out baseline
+labels = pd.Series(landmassf3_train.train_labels).replace(dict(enumerate(landmassf3_train.classes)))
+labels.value_counts() / len(landmassf3_train)
 
 landmassf3_train.classes
 
@@ -400,8 +405,8 @@ class BetterCNN(nn.Module):
 
 convnet = BetterCNN().to(device)
 optimizer = torch.optim.Adam(convnet.parameters(), lr=learning_rate)
-model = train(convnet, x_train, y_train, criterion, optimizer)
-test(model, x_test, y_test)
+convnet = train(convnet, x_train, y_train, criterion, optimizer)
+test(convnet, x_test, y_test)
 
 from deep_ml_curriculum.torchsummaryX import summary
 # We can also summarise the number of parameters in each layer
