@@ -9,16 +9,21 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: py37_pytorch
 #     language: python
-#     name: python3
+#     name: conda-env-py37_pytorch-py
 # ---
 
+# +
 # Let's import some libraries first
 import torch
 from torch import optim
 from torch import nn
 import torch.nn.functional as F
+
+import numpy as np
+from tqdm.auto import tqdm
+# -
 
 # # 0. Introduction to Pytorch 
 # There are different architectures for Neural Networks (NNs). Those architectures are defined by blocks called layers. In this notebook we will learn how to use common layers to build a neural networks from scratch. We will also learn how to train the neural network using the `Pytorch` library and evaluate its performance.
@@ -100,7 +105,7 @@ import torch.nn.functional as F
 # <div class="alert alert-info" style="font-size:100%">
 #
 # **NOTE:** <br>
-# Use `nn.maxpoo2d` in Pytorch for 2d Max Pooling.
+# Use `nn.maxpool2d` in Pytorch for 2d Max Pooling.
 # </div>
 #
 # Another important concept of CNNs is pooling, which is a form of non-linear down-sampling. The example below, shows Max pooling with a 2x2 filter and stride = 2. In every sub-region, the max value obtained.
@@ -116,6 +121,8 @@ import torch.nn.functional as F
 # License CCbySA
 #
 # In this notebook, we will be using the landmass dataset, which have been preprocessed already. In this dataset, we have images of 4 different types of landmass: 'Chaotic Horizon', 'Fault', 'Horizon', 'Salt Dome'.
+#
+# This is an example of [seismic data](https://en.wikipedia.org/wiki/Reflection_seismology) which is a way of using seismic to image the structure of the Earth, below the surface. These waves are similar to sounds waves in air. The lines represent changes in density below the surface.
 #
 # We will train a CNN to learn how to classify images into those 4 groups.
 
@@ -150,7 +157,6 @@ x
 
 landmassf3_train.classes
 
-
 # Source: [Neural Networks](https://pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html#sphx-glr-beginner-blitz-neural-networks-tutorial-py)
 #
 # Now let's implement our first NN from scratch using Pytorch. A typical training procedure for a neural network is as follows:
@@ -171,6 +177,9 @@ landmassf3_train.classes
 #    
 #    
 # <h3> Define the network</h3>
+
+help(nn.Conv2d)
+
 
 class Net(nn.Module):
     def __init__(self):
@@ -206,6 +215,11 @@ class Net(nn.Module):
 # Create an instance of your network
 net = Net()
 print(net)
+
+from deep_ml_curriculum.torchsummaryX import summary
+# We can also summarise the number of parameters in each layer
+summary(net, torch.rand((1, 1, 99, 99)))
+1
 
 # Let's try a random 99x99 input. The input image to follow this convention:
 #
@@ -266,25 +280,29 @@ n = x_train.shape[0]
 def train(model, x, y, criterion, optimizer, n_epochs=1, bs=64):
     # Set model in train mode
     model.train()
-    running_loss = 0.0
-    for epoch in range(n_epochs):
+    for epoch in tqdm(range(n_epochs)):
+        running_loss = 0.0
         for i in range((x_train.shape[0] - 1) // bs + 1):
+            
             # Let's divide the data in batches
             start_i = i * bs
             end_i = start_i + bs
             inputs = x_train[start_i:end_i].unsqueeze(1).float()
             labels = y_train[start_i:end_i].long()
+            
             # zero the parameter gradients
             optimizer.zero_grad()
+            
             # forward + backward + optimize
             outputs = model(inputs)  # Get the prediction here
             loss = criterion(outputs, labels)  # Calculate loss
             loss.backward()  # Do backpropagation
             optimizer.step()  # Update weights
+            
             # print statistics
             running_loss += loss.item()
             if i % 10 == 9:
-                print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2000))
+                print("[%d, %5d] loss: %.3g" % (epoch + 1, i + 1, running_loss / 2000))
                 running_loss = 0.0
 
     print("Finished Training")
@@ -324,7 +342,7 @@ print("Testing accuracy on unseen data...")
 print('Accuracy:',test(model, x_test, y_test))
 
 
-# We trained the same model using `SGD` for 1, 2, and 5 epochs. At some point, it seems like the model is not converging in it got stucked in a local minima. To improve the results we will tray a couple of things:
+# We trained the same model using `SGD` for 1, 2, and 5 epochs. At some point, it seems like the model is not converging in it got stuck in a local minima. To improve the results we will tray a couple of things:
 #
 # 1. Create a new model with `Batch Normalization`, it is often used in modern CNN architectures because it helps to create more general models (regularization) preventing overfitting.
 # 2. Change `SGD` for `Adam` optimizer. `Adam` is known to converge faster than `SGD`.
@@ -382,6 +400,11 @@ convnet = BetterCNN()
 optimizer = torch.optim.Adam(convnet.parameters(), lr=learning_rate)
 model = train(convnet, x_train, y_train, criterion, optimizer)
 test(model, x_test, y_test)
+
+from deep_ml_curriculum.torchsummaryX import summary
+# We can also summarise the number of parameters in each layer
+summary(net, torch.rand((1, 1, 99, 99)))
+1
 
 # <div class="alert alert-success" style="font-size:100%">
 # <b>Exercise 1</b>: <br>
