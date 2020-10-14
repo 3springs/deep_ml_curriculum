@@ -87,6 +87,8 @@ torchvision.models.detection.faster_rcnn.model_urls['fasterrcnn_resnet50_fpn_coc
 #
 # [Oficial Website](https://cocodataset.org/#home)
 #
+# [Progress with time](https://paperswithcode.com/sota/instance-segmentation-on-coco0
+#
 # COCO is one of the most popular datasets for object detection. Currently, the COCO dataset offers a dataset for object detection, keypoints in faces, and even segmentation. Below, we will be using a list with the category names corresponding to the COCO dataset for object recognition and keypoint.
 
 # +
@@ -314,11 +316,11 @@ def object_detection_api(img_path, threshold=0.5):
     # Loop over bounding boxes
     for i in range(len(boxes)):
         # Change color according to prediction score
-        color = (0, 255, 0)
+        color = (0, 255, 0) # green
         if pred_score[i] < 0.4:
-            color = (255, 0, 0)
+            color = (255, 0, 0) # red
         if pred_score[i] > 0.4 and pred_score[i] < 0.7:
-            color = (255, 100, 0)
+            color = (255, 100, 0) # orange
 
         draw = ImageDraw.Draw(im)
         # Add Rectangle
@@ -422,7 +424,7 @@ def get_prediction_mask(img_path, threshold):
     masks = masks[: pred_t + 1]
     pred_boxes = pred_boxes[: pred_t + 1]
     pred_class = pred_class[: pred_t + 1]
-    return masks, pred_boxes, pred_class
+    return masks, pred_boxes, pred_class, pred_score
 
 
 def random_colour_masks(image):
@@ -448,8 +450,8 @@ def random_colour_masks(image):
 
 
 def instance_segmentation_api(img_path, threshold=0.5, rect_th=1, text_size=1):
-    masks, boxes, pred_cls = get_prediction_mask(img_path, threshold)
-    print(pred_cls)
+    masks, boxes, pred_cls, pred_score = get_prediction_mask(img_path, threshold)
+    print(dict(zip(pred_cls, pred_score)))
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     for i in range(len(masks)):
@@ -464,7 +466,7 @@ def instance_segmentation_api(img_path, threshold=0.5, rect_th=1, text_size=1):
         fontScale = min(imageWidth, imageHeight) / (25 / scale)
         cv2.putText(
             img,
-            pred_cls[i],
+            f'{pred_cls[i]}_{pred_score[i]:2.2f}',
             boxes[i][0],
             cv2.FONT_HERSHEY_SIMPLEX,
             text_size,
@@ -544,28 +546,28 @@ instance_segmentation_api('./exercise2/mask1.jpg'.format(), threshold=0.5)
 # # Auto:test
 
 # +
-import os
-DIR = './exercise1'
-images = os.listdir(DIR)
+# import os
+# DIR = './exercise1'
+# images = os.listdir(DIR)
 
-for image in images:
-    object_detection_api(f'{DIR}/{image}', threshold=0.5)
-
-# +
-import os
-DIR = './exercise1'
-images = os.listdir(DIR)
-
-for image in images:
-    instance_segmentation_api(f'{DIR}/{image}', threshold=0.5)
+# for image in images:
+#     object_detection_api(f'{DIR}/{image}', threshold=0.5)
 
 # +
-import os
-DIR = './exercise2'
-images = os.listdir(DIR)
+# import os
+# DIR = './exercise1'
+# images = os.listdir(DIR)
 
-for image in images:
-    instance_segmentation_api(f'{DIR}/{image}', threshold=0.5)
+# for image in images:
+#     instance_segmentation_api(f'{DIR}/{image}', threshold=0.5)
+
+# +
+# import os
+# DIR = './exercise2'
+# images = os.listdir(DIR)
+
+# for image in images:
+#     instance_segmentation_api(f'{DIR}/{image}', threshold=0.5)
 # -
 
 
