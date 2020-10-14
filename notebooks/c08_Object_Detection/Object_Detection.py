@@ -58,6 +58,8 @@ torchvision.models.detection.faster_rcnn.model_urls['fasterrcnn_resnet50_fpn_coc
 #
 # A more complex problem than the classic image classification problem is the object recognition task. In an image classification we predict the category of an image, however, in object detection not only we classify multiple objects in an image but we can also predict the location of those objects. 
 #
+# <img src="./segmentation.png" width="800"/>
+#
 #
 # In this notebook we will discuss **Faster RCNN** model for object recognition and **Mask RCNN** for instance segmentation.
 #
@@ -70,11 +72,14 @@ torchvision.models.detection.faster_rcnn.model_urls['fasterrcnn_resnet50_fpn_coc
 # Image Credits: [MTheiler](https://en.wikipedia.org/wiki/Object_detection#/media/File:Detected-with-YOLO--Schreibtisch-mit-Objekten.jpg) License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 #
 #
+#
+#
+#
 # # Instance Segmentation
 #
 # In instance segmentation we will combine object recognition and semantic segmentation.
 #
-# <img width=800 heigh=500 src='maskrcnn.png'>
+# <img width=800 height=500 src='maskrcnn.png'>
 #
 # Credits: [He et al](https://arxiv.org/pdf/1703.06870.pdf)
 
@@ -402,7 +407,10 @@ def get_prediction_mask(img_path, threshold):
     img = transform(Image.open(img_path))
     pred = MRCNN([img])
     pred_score = list(pred[0]["scores"].detach().numpy())
-    pred_t = [pred_score.index(x) for x in pred_score if x > threshold][-1]
+    pred_ts = [pred_score.index(x) for x in pred_score if x > threshold]
+    if len(pred_ts)==0:
+        return [], [], []
+    pred_t = pred_ts[-1]
     masks = (pred[0]["masks"] > 0.5).squeeze().detach().cpu().numpy()
     pred_class = [
         COCO_INSTANCE_CATEGORY_NAMES[i] for i in list(pred[0]["labels"].numpy())
