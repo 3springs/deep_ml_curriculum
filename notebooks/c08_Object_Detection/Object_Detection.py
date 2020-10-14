@@ -288,9 +288,10 @@ def get_prediction(img, threshold=0.5):
     
     # Get the Prediction Score
     pred_score = list(pred[0]["scores"].cpu().detach().numpy())
-    pred_t = [pred_score.index(x) for x in pred_score if x > threshold][
-        -1
-    ]  
+    pred_ts = [pred_score.index(x) for x in pred_score if x > threshold]
+    if len(pred_ts)==0:
+        return [], [], []
+    pred_t = pred_ts[-1]  
     
     # Get list of index with score greater than threshold.
     pred_boxes = pred_boxes[: pred_t + 1]
@@ -566,5 +567,7 @@ images = os.listdir(DIR)
 for image in images:
     instance_segmentation_api(f'{DIR}/{image}', threshold=0.5)
 # -
+
+
 
 
