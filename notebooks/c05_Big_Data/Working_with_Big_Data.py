@@ -130,7 +130,7 @@ with ProgressBar():
 
 result
 
-
+df2
 
 #  <div class="alert alert-success">
 #   <h2>Exercise</h2>
@@ -176,7 +176,33 @@ result
 #
 #   </details>
 #
-#   </div>
+#
+# </div>
+
+# +
+# With pandas
+# pixels = df1.loc[:, ['pixel' in c for c in df1.columns]]
+pixels = df1.loc[:, 'pixel1':'pixel783']
+pixels
+df1['sum']=pixels.sum(axis=1)
+df1['sum']
+# task = df1[['label','sum']].groupby('label').mean()
+df1[['label','sum']].groupby('label').mean()
+
+gg = df1[['label','sum']].groupby('label')
+list(gg)[0]
+# df1.loc[:, 'pixel1':'pixel783'].csum
+# print(result)
+
+# # With dask
+pixels = df2.loc[:, ['pixel' in c for c in df2.columns]]
+pixels
+# df2['sum']=pixels.sum(axis=1)
+# task = df2[['label','sum']].groupby('label').mean()
+# with ProgressBar():
+#     result=task.compute() 
+# print(result)
+# -
 
 # ## When to use Dask DataFrame?
 #
@@ -271,7 +297,7 @@ from matplotlib.pyplot import hist
 #     d = array.linalg.norm(y,axis=1)
 #     with ProgressBar():
 #         result = d.compute()
-#     hist(result,bins=100);
+#     plt.hist(result,bins=100);
 #   ```
 #
 #   </details>
@@ -347,6 +373,83 @@ x2 = task1(2)
 y = task2(x1,x2)
 y.compute()
 
+# # Xarray
+#
+# Xarray is pandas for N-dimensional data. It also has a [dask backend](http://xarray.pydata.org/en/stable/dask.html)
+
+# +
+# %matplotlib inline
+import numpy as np
+import pandas as pd
+import xarray as xr
+import matplotlib.pyplot as plt
+
+ds = xr.tutorial.open_dataset('rasm').load().chunk(dict(time=10))
+ds
+
+# +
+# You can use isel instead of iloc. You always need to specify the dimension
+ds.isel(time=10)['Tair'].plot.pcolormesh(
+        vmin=-30, vmax=30, cmap='Spectral_r',
+        add_colorbar=True, extend='both')
+
+ds.isel(time=10)
+plt.title('Seasonal Surface Air Temperature')
+# -
+
+# You can also resample by date
+res = ds.resample(time='A').mean().isel(x=200, y=200)['Tair']
+# The result is a dask array
+res
+
+# But you can use .compute
+res.compute()
+
+# You can see all the datetime methods
+print(ds.time.dt)
+dir(ds.time.dt)
+
+# These are seasons specified by the months inside
+# JJA = Jun, Jul, Aug.
+ds.time.dt.season
+
+# <div class="alert alert-success">
+#   <h2>Exercise</h2>
+#
+#   1. Look at the output of `ds.time.dt.season`
+#   2. Try grouping by season and getting the mean
+#   3. Plot each season (use the plotting code from above)
+#       
+#
+#   <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * You do a for loop over groups `for season, ds_season in ds.groupby(ds.time.dt.season):`
+#   * You need to remove the time dimension, with `.mean('time')`
+#   * Use  `mean['Tair'].plot.pcolormesh()` to plot
+#
+#   </details>
+#
+#   <br/>
+#   <br/>
+#   <details>
+#   <summary>
+#     <b>→ Solution</b>
+#   </summary>
+#
+#   ```python
+#     for season, ds_season in ds.groupby(ds.time.dt.season):    
+#         mean = ds_season.mean('time')
+#         mean['Tair'].plot.pcolormesh(
+#             vmin=-30, vmax=30)
+#         plt.title(season)
+#         plt.show()
+#   ```
+#
+#   </details>
+#
+#   </div>
+
 # # Introduction to Numba
 
 # ## What is Numba?
@@ -362,6 +465,17 @@ y.compute()
 # ### First Steps
 #
 # Let's write our first Numba function and compile it for the **CPU**.  The Numba compiler is typically enabled by applying a *decorator* to a Python function.  Decorators are functions that transform Python functions.  Here we will use the CPU compilation decorator:
+
+#
+# The length of the hypotenuse of a triangle is
+#  
+# $r = \sqrt{x^2 + y^2}.$
+#
+# However, the squares of very large or small values of x and y may exceed the range of machine precision when calculated on a computer, leading to an inaccurate result caused by arithmetic underflow and/or arithmetic overflow.
+#
+# $ hypot = |x| \sqrt{1 + \left(\tfrac{y}{x}\right)^2}$
+#
+#
 
 # +
 from numba import jit
@@ -397,10 +511,12 @@ def hypot(x, y):
 #
 # Let's try out our hypotenuse calculation:
 
+# %%time
 hypot(3.0, 4.0)
 
 # The first time we call `hypot`, the compiler is triggered and compiles a machine code implementation for float inputs.  Numba also saves the original Python implementation of the function in the `.py_func` attribute, so we can call the original Python code to make sure we get the same answer:
 
+# %%time
 hypot.py_func(3.0, 4.0)
 
 # ### Benchmarking
@@ -522,76 +638,6 @@ can_compile(("a", "b", "c"))
 # ```
 #     
 # </details>
-
-# # Xarray
-#
-# Xarray is pandas for N-dimensional data. It also has a [dask backend](http://xarray.pydata.org/en/stable/dask.html)
-
-# +
-# %matplotlib inline
-import numpy as np
-import pandas as pd
-import xarray as xr
-import matplotlib.pyplot as plt
-
-ds = xr.tutorial.open_dataset('rasm').load().chunk(dict(time=10))
-ds
-
-# +
-# You can use isel instead of iloc. You always need to specify the dimension
-ds.isel(time=10)['Tair'].plot.pcolormesh(
-        vmin=-30, vmax=30, cmap='Spectral_r',
-        add_colorbar=True, extend='both')
-
-ds.isel(time=10)
-# -
-
-# You can also resample by date
-res = ds.resample(time='A').mean().isel(x=200, y=200)['Tair']
-# The result is a dask array
-res
-
-# But you can use .compute
-res.compute()
-
-
-
-# <div class="alert alert-success">
-#   <h2>Exercise</h2>
-#
-#   1. Look at the output of `ds.time.dt.season`
-#   2. Try grouping by season and getting the mean
-#   3. Plot each season (use the plotting code from above)
-#       
-#
-#   <details>
-#   <summary><b>→ Hints</b></summary>
-#
-#   * You do a for loop over groups `for season, ds_season in ds.groupby(ds.time.dt.season):`
-#   * You need to remove the time dimension, with `.mean('time')`
-#   * Use  `mean['Tair'].plot.pcolormesh()` to plot
-#
-#   </details>
-#
-#   <br/>
-#   <br/>
-#   <details>
-#   <summary>
-#     <b>→ Solution</b>
-#   </summary>
-#
-#   ```python
-#     for season, ds_season in ds.groupby(ds.time.dt.season):    
-#         mean = ds_season.mean('time')
-#         mean['Tair'].plot.pcolormesh(
-#             vmin=-30, vmax=30)
-#         plt.title(season)
-#         plt.show()
-#   ```
-#
-#   </details>
-#
-#   </div>
 
 # # References
 # The following sources where used for creation of this notebook:
