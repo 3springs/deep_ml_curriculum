@@ -9,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: py37_pytorch
 #     language: python
-#     name: python3
+#     name: conda-env-py37_pytorch-py
 # ---
 
 # # GANs
@@ -82,6 +82,8 @@ from torchvision.utils import make_grid
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
+
+from deep_ml_curriculum.torchsummaryX import summary
 
 torch.manual_seed(2020)  # Set for testing purposes, please do not change!
 
@@ -169,12 +171,6 @@ class Generator(nn.Module):
 # **Hint:** `torch.randn` might be useful.
 # </div>
 
-def get_noise(n_samples, z_dim, device="cpu"):
-    #### COMPLETE CODE HERE ####
-    print("Implement Code here.")
-    #### END CODE HERE ####
-
-
 # You can click in the button below the reveal the solution for exercise 1
 #
 # <details>    
@@ -183,10 +179,12 @@ def get_noise(n_samples, z_dim, device="cpu"):
 # </summary>
 #     
 # ```python
-# def get_noise(n_samples, z_dim, device='cpu'):
+# def get_noise(n_samples, z_dim, device=device):
 #     return torch.randn((n_samples, z_dim)).to(device)
 #     
-# get_noise(4, 128).shape
+# noise = get_noise(4, 128)
+# gen = Generator(128)
+# gen(noise)
 # ```
 #
 # </details>
@@ -197,7 +195,8 @@ def get_noise(n_samples, z_dim, device="cpu"):
 
 def get_discriminator_block(input_dim, output_dim):
     return nn.Sequential(
-        nn.Linear(input_dim, output_dim), nn.LeakyReLU(negative_slope=0.2)
+        nn.Linear(input_dim, output_dim), 
+        nn.LeakyReLU(negative_slope=0.2)
     )
 
 
@@ -212,11 +211,11 @@ class Discriminator(nn.Module):
     def __init__(self, im_dim=784, hidden_dim=128):
         super(Discriminator, self).__init__()
         self.disc = nn.Sequential(
-            get_discriminator_block(im_dim, hidden_dim * 4),
-            get_discriminator_block(hidden_dim * 4, hidden_dim * 2),
-            get_discriminator_block(hidden_dim * 2, hidden_dim),
+            get_discriminator_block(im_dim, hidden_dim * 2),
+            get_discriminator_block(hidden_dim * 2, hidden_dim * 1),
+            get_discriminator_block(hidden_dim * 1, hidden_dim//2),
             # Here we want to have a 1-dimension tensor representing fake/real
-            nn.Linear(hidden_dim, 1),
+            nn.Linear(hidden_dim//2, 1),
         )
 
     def forward(self, image):
@@ -261,6 +260,17 @@ gen = Generator(z_dim).to(device)
 gen_opt = torch.optim.Adam(gen.parameters(), lr=lr)
 disc = Discriminator().to(device)
 disc_opt = torch.optim.Adam(disc.parameters(), lr=lr)
+
+# Notice that our generator has many more parameters. It's much easier to be a critic, so to keep it balanced, we give it a smaller "brain"
+
+noise = torch.randn((2, z_dim)).to(device)
+summary(gen, noise)
+1
+
+
+z = torch.randn((2, 1, 28  *28)).to(device)
+summary(disc, z)
+1
 
 # Before we start training our GAN, we will need to create some functions to calculate the discriminator's loss and the generator's loss. This is how the discriminator and generator will know how they are doing and improve themselves. Since the generator is needed when calculating the discriminator's loss, you will need to call `.detach()` on the generator result to ensure that only the discriminator is updated!
 
@@ -427,7 +437,7 @@ for epoch in tqdm(range(n_epochs), unit='epoch'):
 
 # # Applications:
 #
-# - Anomaly Detection: e.g. MagGan https://arxiv.org/abs/1901.04997
+# - Anomaly Detection: e.g. MadGan https://arxiv.org/abs/1901.04997
 # - Synthetic Data: Use the generator to help in the training, when you don't have enougth data. This is used a lot in medical data where you have few data points. In the end the discrimator
 # - Adversarial Examples: Are something we may have to harden our models again
 # - Privacy Preserving: Instead of handing over real patient data
