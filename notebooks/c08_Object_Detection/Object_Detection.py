@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -360,6 +361,13 @@ object_detection_api(filename, threshold=0.9)
 #     
 # 2. Loop through the images with a threshold=0.5
 #
+# <details>
+#   <summary><b>→ Hints</b></summary>
+#
+#   * The images are in a subdirectory, so passing img is not enougth
+#   * You can use `'./exercise1/' + img` to create the full path
+#
+#   </details>
 # </div>
 #
 #
@@ -523,7 +531,7 @@ instance_segmentation_api('./exercise2/mask1.jpg'.format(), threshold=0.5)
 # Download you own image to try and break Mask-RCNN. This way you can find the limits of this pre-trained model
 #     
 # - Find an image
-# - Upload it to the notebook folder using jupyter
+# - Upload it to the exercise folder using jupyter's upload button
 # - pass the image path into instance_segmentation_api 
 # </div>
 #
@@ -569,6 +577,7 @@ instance_segmentation_api('./exercise2/mask1.jpg'.format(), threshold=0.5)
 # for image in images:
 #     instance_segmentation_api(f'{DIR}/{image}', threshold=0.5)
 # -
+
 
 
 
