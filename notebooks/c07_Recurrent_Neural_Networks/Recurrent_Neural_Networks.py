@@ -761,19 +761,6 @@ print('final test acc', acc)
 
 # This beats the baseline, so the model is doing better than the naive answer of "the same again". But lets break it down by lithology
 
-# +
-import pandas as pd
-import sklearn.metrics
-import numpy as np
-
-def classification_report(*args, **kwargs):
-    out_df = pd.DataFrame(sklearn.metrics.classification_report(*args, **kwargs, output_dict=True)).T
-    # Order cols
-    out_df[["precision","recall","f1-score","support"]]  
-    # Round
-    out_df[["precision","recall","f1-score"]]= out_df[["precision","recall","f1-score"]].apply(lambda x: round(x,2))
-    out_df[["support"]]= out_df[["support"]].apply(lambda x: x.astype(np.int))
-    return out_df
 
 
 # +
@@ -782,6 +769,7 @@ def classification_report(*args, **kwargs):
 # df_report[df_report.support>0]
 # -
 
+from deep_ml_curriculum.classification_report import pd_classification_report
 df_report = classification_report(true, preds, labels=range(len(encoder.classes_)), target_names=encoder.classes_)
 df_report[df_report.support>0]
 
@@ -977,9 +965,6 @@ display(df_report[df_report.support>0])
 plot_well(df, model)
 confusion_matrix(true, preds)
 1
-# -
-
-
 # +
 # Params
 seq_length = 400  # CHANGE ME
@@ -1031,6 +1016,7 @@ plot_well(df, model)
 confusion_matrix(true, preds)
 1
 # -
+
 
 
 
