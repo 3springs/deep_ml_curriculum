@@ -321,7 +321,6 @@ idx = np.random.randint(0, len(ds_test))
 # show this row of the data
 show_prediction(idx)
 
-
 # <font color='blue' size='4rem'>Run the cell above a few times and compare the predicted and actual images.</font>
 
 # ## Latent space
@@ -332,16 +331,18 @@ show_prediction(idx)
 #
 # We can also traverse the latent space and see how the reconstructed image changes in meaningfull ways. This is a usefull property and means the model has learnt how to vary images.
 
+
+
 # +
 # Scatter plot
 
 def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
     # Get the first 1000 images
     n = min(1000, len(ds))
-    x = torch.stack([ds[i] for i in range(n)], 0)
-    print(x.shape)
+    idxs = np.random.choice(range(len(ds)), size=10, replace=False)
+    x = torch.stack([ds[i] for i in idxs])
+    ys = np.array([ds.y[i] for i in idxs])
     x = x.to(device).float().reshape((-1, 1, 28,28))
-    print(x.shape)
     
     res = model.encode(x)
     
@@ -354,8 +355,10 @@ def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
 
     classes = pd.Series(ds.y).unique()
     for i, cls in enumerate(classes):
-        idx = ds.y[:n] == cls
-        plt.scatter(res[idx, 0], res[idx, 1], label=cls)
+        print(i, cls)       
+        idx = ys == cls
+        print(idx, res.shape)
+        plt.scatter(res[idx, 0], res[idx, 1], label=cls, alpha=0.5, s=2)
     plt.title('the latent space')
     plt.xlabel('latent variable 1')
     plt.ylabel('latent variable 2')
@@ -365,6 +368,7 @@ def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
         xrange = xmax-xmin
         xmin -= xrange/2
         xmax += xrange/2
+    
     if y is None:
         ymin, ymax = plt.ylim()
         y = (ymin+ymax)/2
@@ -398,6 +402,7 @@ def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
 traverse(model=model, ds=ds_train)
 
 
+# %debug
 
 # Each color represents a number. Despite most numbers overlapping, we can still see some distictions, for instance between $1$ and other numbers. 
 
@@ -644,6 +649,8 @@ show_prediction(idx)
 traverse(model=model, ds=ds_train)
 
 # If we compare this plot with the similar plot for normal autoencoder, we can see that VAE did a better job at creating clusters. The points for each digits are closer together compared to previous model. However, there is still room for improvement. 
+#
+# We can also see that using KLD helped make sure the latent space was centered around 0.
 
 # ## Exercise 2: Deeper
 # Create a new VAE but this time use a deeper network. Note, everything else (loss function, dataloaders, training loops, etc.) will stay the same only the model will change. The example above was using these sizes: 784 --> 400 --> 2 --> 400 --> 784
@@ -987,15 +994,65 @@ for epoch in tqdm(range(1, epochs + 1)):
     test_vae(epoch, loss_bce_kld, model, test_loader)
     show_prediction(3, title=f"epoch={epoch}")
     
-traverse(model=model, ds=ds_train, y=3, xmin=-5, xmax=5)
+traverse(model=model, ds=ds_train, y=1)
+
+
+# -
+# # (extra) DataSet: Micro-CT DeepRockSR
+
+# +
+class Rocks(datasets.ImageFolder):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.y = np.array([self.classes[i] for i in self.targets])
+        
+    def __getitem__(self, idx):
+        x, y = super().__getitem__(idx)
+        return x[:1]
+    
+transform = transforms.Compose([
+    transforms.Resize((28, 28)),
+    transforms.ToTensor(),
+])
+        
+ds_train = Rocks(
+    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
+    is_valid_file=lambda f: ("train_LR_default_X4" in f) and not ("shuffle" in f),
+    transform=transform
+)
+ds_test = Rocks(
+    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
+    is_valid_file=lambda f: ("test_LR_default_X4" in f) and not ("shuffle" in f),
+    transform=transform
+)
+batch_size=32
+train_loader = torch.utils.data.DataLoader(ds_train, batch_size, shuffle=True)
+test_loader = torch.utils.data.DataLoader(ds_test, batch_size)
+ds_train[0].shape
 # -
 
 
 
+# +
+model = CVAE().to(device)
+from deep_ml_curriculum.torchsummaryX import summary
+x = torch.randn(1, 1, 28, 28).to(device)
+summary(model, x)
 
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
+# training loop
+epochs = 10
+show_prediction(3, title=f"epoch={0}", ds=ds_test)
+for epoch in tqdm(range(1, epochs + 1)):
+    train_vae(epoch, loss_bce_kld, model, train_loader)
+    test_vae(epoch, loss_bce_kld, model, test_loader)
+    show_prediction(3, title=f"epoch={epoch}", ds=ds_test)
+    
+traverse(model=model, ds=ds_test, y=1, xmin=-2, xmax=3)
+# -
 
-
+traverse(model=model, ds=ds_train)
 
 # # (extra) Dataset: Fossils
 
@@ -1076,64 +1133,7 @@ for epoch in tqdm(range(1, epochs + 1)):
     if epoch%10==0:
         show_prediction(3, title=f"epoch={epoch}", ds=ds_test)
     
-traverse(model=model, ds=ds_test, y=1, xmin=-2, xmax=3)
-# -
-
-traverse(model=model, ds=ds_train)
-
-
-# # (extra) DataSet: Micro-CT DeepRockSR
-
-# +
-class Rocks(datasets.ImageFolder):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.y = np.array([ds_test.classes[i] for i in self.targets])
-        
-    def __getitem__(self, idx):
-        x, y = super().__getitem__(idx)
-        return x[:1]
-    
-transform = transforms.Compose([
-    transforms.Resize((28, 28)),
-    transforms.ToTensor(),
-])
-        
-ds_train = Rocks(
-    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
-    is_valid_file=lambda f: ("train_LR_default_X4" in f) and not ("shuffle" in f),
-    transform=transform
-)
-ds_test = Rocks(
-    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
-    is_valid_file=lambda f: ("test_LR_default_X4" in f) and not ("shuffle" in f),
-    transform=transform
-)
-batch_size=32
-train_loader = torch.utils.data.DataLoader(ds_train, batch_size, shuffle=True)
-test_loader = torch.utils.data.DataLoader(ds_test, batch_size)
-ds_train[0].shape
-# -
-
-
-
-# +
-model = CVAE().to(device)
-from deep_ml_curriculum.torchsummaryX import summary
-x = torch.randn(1, 1, 28, 28).to(device)
-summary(model, x)
-
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
-# training loop
-epochs = 10
-show_prediction(3, title=f"epoch={0}", ds=ds_test)
-for epoch in tqdm(range(1, epochs + 1)):
-    train_vae(epoch, loss_bce_kld, model, train_loader)
-    test_vae(epoch, loss_bce_kld, model, test_loader)
-    show_prediction(3, title=f"epoch={epoch}", ds=ds_test)
-    
-traverse(model=model, ds=ds_test, y=1, xmin=-2, xmax=3)
+traverse(model=model, ds=ds_train, y=1, xmin=-2, xmax=3)
 # -
 
 traverse(model=model, ds=ds_train)
