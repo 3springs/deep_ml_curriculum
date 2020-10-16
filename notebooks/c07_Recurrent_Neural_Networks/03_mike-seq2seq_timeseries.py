@@ -79,6 +79,8 @@ def get_smartmeter_df(indir=Path('../../data/processed/smartmeter')):
     # Load csv files
     csv_files = sorted((indir/'halfhourly_dataset').glob('*.csv'))[:1]
     
+#     import pdb; pdb.set_trace() # you can use debugging in jupyter to interact with variables inside a function
+    
     # concatendate them
     df = pd.concat([pd.read_csv(f, parse_dates=[1], na_values=['Null']) for f in csv_files])
 
@@ -91,7 +93,7 @@ def get_smartmeter_df(indir=Path('../../data/processed/smartmeter')):
            'pressure', 'apparentTemperature', 'windSpeed', 
            'humidity']
     df_weather = df_weather[use_cols].set_index('time')
-    df_weather = df_weather.resample(freq).ffill()  # Resample to match energy data    
+    df_weather = df_weather.resample(freq).first().ffill()  # Resample to match energy data    
 
     # Join weather and energy data
     df = pd.concat([df, df_weather], 1).dropna()    
@@ -101,7 +103,10 @@ def get_smartmeter_df(indir=Path('../../data/processed/smartmeter')):
     holidays = set(df_hols['Bank holidays'].dt.round('D'))  
 
     time = df.index.to_series()
-    df['holiday'] = time.apply(lambda dt:dt.floor('D') in holidays).astype(int)
+    def is_holiday(dt):
+        return dt.floor('D') in holidays
+    df['holiday'] = time.apply(is_holiday).astype(int)
+
 
     # Add time features    
     df["month"] = time.dt.month
@@ -128,11 +133,27 @@ def get_smartmeter_df(indir=Path('../../data/processed/smartmeter')):
 # +
 df = get_smartmeter_df()
 
-df = df.resample(freq).mean().dropna() # Where empty we will backfill, this will respect causality, and mostly maintain the mean
+df = df.resample(freq).first().dropna() # Where empty we will backfill, this will respect causality, and mostly maintain the mean
 
 df = df.tail(int(max_rows)) # Just use last X rows
 df
 # -
+
+df.describe()
+
+#  <div class="alert alert-success">
+#   <h2>Exercise: Debug</h2>
+#
+#   Sometimes the best way to understand something is to interact with it. But if the code is inside a function it's difficult. Use the python debugger to play with the dataloading code.
+#     
+#    - insert the line `import pdb; pdb.set_trace()` in the function above
+#    - run the function definition
+#    - run the function again
+#    - you should be in a debugger, try pressing `?` then enter
+#    - try printing a variable
+#    - `q` to exit
+#
+#   </div>
 
 # Normalise
 from sklearn.preprocessing import StandardScaler
@@ -151,7 +172,7 @@ df_norm = df_norm.fillna(0)
 
 
 # +
-# split data
+# split data, with the test in the future
 n_split = -int(len(df)*0.2)
 df_train = df_norm[:n_split]
 df_test = df_norm[n_split:]
@@ -162,6 +183,8 @@ df_test['energy(kWh/hh)'].plot(label='test')
 plt.ylabel('energy(kWh/hh)')
 plt.legend()
 # -
+
+
 
 # ## Pytorch Dataset
 #
@@ -192,6 +215,7 @@ class SmartMeterSeq2SeqDataSet(torch.utils.data.Dataset):
     """
     
     def __init__(self, df, window_past=40, window_future=10, label_names=['energy(kWh/hh)']):
+        # Use numpy instead of pandas, for speed
         self.x = df.drop(columns=label_names).copy().values
         self.y = df[label_names].copy().values
         self.t = df[label_names].index.copy()
@@ -201,8 +225,7 @@ class SmartMeterSeq2SeqDataSet(torch.utils.data.Dataset):
         self.label_names = label_names
 
     def get_components(self, i):
-        """Get  rows."""
-        # Get past and future rows
+        """Get past and future rows."""
         x = self.x[i : i + (self.window_past + self.window_future)].copy()
         y = self.y[i : i + (self.window_past + self.window_future)].copy()
         
@@ -221,12 +244,20 @@ class SmartMeterSeq2SeqDataSet(torch.utils.data.Dataset):
             x_future[:, :8]=0
         return x_past, y_past, x_future, y_future
 
+
+    def __getitem__(self, i):
+        """This is how python implements square brackets"""
+        if i<0:
+            # Handle negative integers
+            i = len(self)+i
+        data = self.get_components(i)
+        # From dataframe to torch
+        return [d.astype(np.float32) for d in data]
+    
     
     def get_rows(self, i):
         """
-        A helper to put index and columns back on.
-        
-        We take them off originally for training speed
+        Output pandas dataframes for display purposes.
         """
         x_cols = list(self.columns)[1:] + ['tstp', 'is_past']
         x_past, y_past, x_future, y_future = self.get_components(i)
@@ -237,15 +268,6 @@ class SmartMeterSeq2SeqDataSet(torch.utils.data.Dataset):
         y_past = pd.DataFrame(y_past, columns=self.label_names, index=t_past)
         y_future = pd.DataFrame(y_future, columns=self.label_names, index=t_future)
         return x_past, y_past, x_future, y_future
-
-
-    def __getitem__(self, i):
-        if i<0:
-            # Handle negative integers
-            i = len(self)+i
-        data = self.get_components(i)
-        # From dataframe to torch
-        return [d.astype(np.float32) for d in data]
         
     def __len__(self):
         return len(self.x) - (self.window_past + self.window_future)
@@ -258,7 +280,9 @@ ds_test = SmartMeterSeq2SeqDataSet(df_test, window_past=window_past, window_futu
 print(ds_train)
 print(ds_test)
 
-
+ds_train[0]
+len(ds_train)
+ds_train[0][2]
 
 # +
 # We can get rows
@@ -268,6 +292,7 @@ x_past, y_past, x_future, y_future = ds_train.get_rows(10)
 y_past['energy(kWh/hh)'].plot(label='past')
 y_future['energy(kWh/hh)'].plot(ax=plt.gca(), label='future')
 plt.legend()
+plt.ylabel('energy(kWh/hh)')
 
 # Notice we've added on two new columns tsp (time since present) and is_past
 x_past.tail()
@@ -281,6 +306,7 @@ print(len(ds_train))
 ds_train[0][0].shape
 
 
+
 #  <div class="alert alert-success">
 #   <h2>Exercise: Dataset</h2>
 #
@@ -289,7 +315,15 @@ ds_train[0][0].shape
 #   - get the 2nd to last element of the dataset
 #   - get the shape of each of the 4 returned elements of ds_train[0]
 #   - get the type of each of the 4 returned elements of ds_train[0]
+#   <details>
+#   <summary>
+#     <b>→ Hints</b>
+#   </summary>
+#       
+#   - `type(x)`
+#   - `x.shape`
 #
+#   </details>
 #   <br/>
 #   <br/>
 #   <details>
@@ -298,14 +332,26 @@ ds_train[0][0].shape
 #   </summary>
 #
 #   ```python
-#   ds_train[-2]
+#   # x_past, y_past, x_future, y_future
+#   print(ds_train[-2])
 #   print([x.shape for x in ds_train[0]])
 #   print([type(x) for x in ds_train[0]])
 #   ```
+#   or 
 #
+#   ```python
+#   print(ds_train[-2])
+#   for x in ds_train[0]:
+#       print(x.shape)
+#       print(type(x))
+#   ```
+#
+#       
 #   </details>
 #
 #   </div>
+
+
 
 # ## LSTM: A minute of Theory
 #
@@ -329,7 +375,7 @@ ds_train[0][0].shape
 #
 # To understand more see these visualisations:
 #
-# - [distill.pub memorization in rnns](memorization-in-rnns)
+# - [distill.pub memorization in rnns](https://distill.pub/2019/memorization-in-rnns/)
 # - [Chris Olah Understanding LSTMs](https://colah.github.io/posts/2015-08-Understanding-LSTMs/)
 #
 # And see these chapters:
@@ -339,50 +385,6 @@ ds_train[0][0].shape
 #
 
 # ## Model
-
-# +
-
-class Seq2SeqNet(nn.Module):
-    def __init__(self, input_size, output_size, hidden_size=32, lstm_layers=2, lstm_dropout=0, _min_std = 0.05):
-        super().__init__()
-        self._min_std = _min_std
-
-        self.encoder = nn.LSTM(
-            input_size=input_size + output_size,
-            hidden_size=hidden_size,
-            batch_first=True,
-            num_layers=lstm_layers,
-            dropout=lstm_dropout,
-        )
-        self.mean = nn.Linear(hidden_size, output_size)
-        self.std = nn.Linear(hidden_size, output_size)
-
-    def forward(self, past_x, past_y, future_x, future_y=None):
-        past = torch.cat([past_x, past_y], -1)
-        
-        # Placeholder
-        B, S, _ = future_x.shape
-        future_y_fake = torch.zeros((B, S, 1)).to(device)
-
-        future = torch.cat([future_x, future_y_fake], -1)
-        x = torch.cat([past, future], 1).detach()
-        
-        outputs, _ = self.encoder(x)        
-        
-        # We only want the future
-        outputs = outputs[:, -S:]
-        
-        # outputs: [B, T, num_direction * H]
-        mean = self.mean(outputs)      
-        
-        log_sigma = self.std(outputs)
-        log_sigma = torch.clamp(log_sigma, np.log(self._min_std), -np.log(self._min_std))
-
-        sigma = torch.exp(log_sigma)
-        y_dist = torch.distributions.Normal(mean, sigma)
-        return y_dist
-
-
 
 # +
 
@@ -444,6 +446,8 @@ model = Seq2SeqNet(input_size, input_size, output_size,
 model
 # -
 
+
+
 # Init the optimiser
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
@@ -465,8 +469,7 @@ optimizer = optim.Adam(model.parameters(), lr=1e-3)
 #   <details>
 #   <summary><b>→ Hints</b></summary>
 #
-#   * One
-#   * Two
+#   * `x_past = torch.rand((batch_size, window_past, input_size)).to(device)`
 #
 #   </details>
 #
@@ -484,13 +487,29 @@ optimizer = optim.Adam(model.parameters(), lr=1e-3)
 #     future_y = torch.rand((batch_size, window_future, output_size)).to(device)
 #     output = model(past_x, past_y, future_x, future_y)  
 #     print(output)
+#     
+#     # We can also use torchsummaryX to summarise the model size
+#     from deep_ml_curriculum.torchsummaryX import summary
+#     summary(model, past_x, past_y, future_x, future_y)
 #   ```
 #
 #   </details>
 #
 #   </div>
 
+# +
 
+past_x = torch.rand((batch_size, window_past, input_size)).to(device)
+future_x = torch.rand((batch_size, window_future, input_size)).to(device)
+past_y = torch.rand((batch_size, window_past, output_size)).to(device)
+future_y = torch.rand((batch_size, window_future, output_size)).to(device)
+output = model(past_x, past_y, future_x, future_y)  
+print(output)
+
+from deep_ml_curriculum.torchsummaryX import summary
+summary(model, past_x, past_y, future_x, future_y )
+1
+# -
 
 # ## Concept: Likelihood
 #
@@ -527,7 +546,7 @@ plt.show()
 #  <div class="alert alert-success">
 #   <h2>Exercise Likelihood</h2>
 #
-#   If you have a normal distribution with mean 1 and std 3. What is the liklihood of 2?
+#   If you have a normal distribution with mean 1 and std 3. What is the likelihood of 2?
 #     
 #     
 #       
@@ -584,11 +603,16 @@ def train_epoch(ds, model, bs=128):
     )
 
     for batch in tqdm(load_train, leave=False, desc='train'):
-        # make it a pytorch gpu variable
+        # Send data to gpu
         x_past, y_past, x_future, y_future = [d.to(device) for d in batch]
 
+        # Discard previous gradients
         optimizer.zero_grad()
+        
+        # Run model
         y_dist = model(x_past, y_past, x_future, y_future)
+        
+        # Get loss, it's Negative Log Likelihood
         loss = -y_dist.log_prob(y_future).mean()
 
         # Backprop
@@ -610,9 +634,12 @@ def test_epoch(ds, model, bs=512):
                                                        pin_memory=False,
                                                        num_workers=num_workers)
     for batch in tqdm(load_test, leave=False, desc='test'):
+        # Send data to gpu
         x_past, y_past, x_future, y_future = [d.to(device) for d in batch]
         with torch.no_grad():
+            # Run model
             y_dist = model(x_past, y_past, x_future, y_future)
+            # Get loss, it's Negative Log Likelihood
             loss = -y_dist.log_prob(y_future).mean()
 
         test_loss.append(loss.item())
@@ -661,7 +688,7 @@ training_loop(ds_train, ds_test, model, epochs=8, bs=batch_size)
 #
 # But we also care about how far we were predicting into the future, so we have 3 dimensions: source time, target time, time ahead.
 #
-# It's hard to use pandas for data with more than 2 dimensions, so we will use xarray. Xarray has an interface similar to pandas but can have N dimensions.
+# It's hard to use pandas for data with virtual dimensions so we will use xarray. Xarray has an interface similar to pandas but can have N dimensions. It also allow coordinates which are virtual dimensions.
 
 # +
 import xarray as xr 
@@ -874,6 +901,26 @@ d.plot.scatter('t_ahead_hours', 'likelihood')
 #
 #   </div>
 
+# +
 
+# this is hard because we need to take the mean over t_ahead
+# then group by t_source
+d = ds_preds.mean('t_ahead').groupby('t_source').mean()
+# And even then it's clearer with smoothing
+d.plot.scatter('t_source', 'nll')
+plt.xticks(rotation=45)
+plt.title('NLL over time (lower is better)')
+1
+# -
+
+# Lets zoom in and see how fast the solution expires
+d = ds_preds.mean('t_ahead').groupby('t_source').mean().isel(t_source=slice(0, 24))
+d.plot.scatter('t_source', 'nll')
+plt.xticks(rotation=45)
+plt.title('NLL over time (lower is better)')
+1
+
+# A scatter plot is easy with xarray
+ds_preds.plot.scatter('y_true', 'y_pred', s=.01)
 
 
