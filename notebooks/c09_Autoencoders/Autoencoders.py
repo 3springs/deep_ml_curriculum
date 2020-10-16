@@ -88,8 +88,10 @@ from deep_ml_curriculum.torchsummaryX import summary
 # - `sample`: which returns a random sample of the data.
 
 # +
-path = Path("../../data/processed/MNIST/")
+# Dataset?
 
+# +
+path = Path("../../data/processed/MNIST/")
 
 class DigitsDataset(Dataset):
     def __init__(self, path, transform=None):
@@ -98,35 +100,25 @@ class DigitsDataset(Dataset):
         self.transform = transform
         data = pd.read_csv(path)
         if "label" in data.columns:
-            self.x = data.drop(columns=["label"]).values
+            self.x = data.drop(columns=["label"]).values.reshape((-1, 28, 28))
             self.y = data["label"].values
         else:
-            self.x = data.values
+            self.x = data.values.reshape((-1, 28, 28))
 
     def __len__(self):
+        """Python method for length"""
         return len(self.x)
 
     def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        output = self.x[idx] / 255
+        """Python method for square brackets"""
+        output = self.x[int(idx)] / 255
         if self.transform:
             output = self.transform(output)
         return output
 
     def show(self, idx):
-#         plt.figure(figsize=(2, 2))
-        plt.imshow(self.x[idx].reshape((28, 28)), "gray")
+        plt.imshow(self.x[idx], "gray")
 
-    def sample(self, n):
-        idx = np.random.randint(0, len(self), n)
-        return self[idx]
-
-
-class ToTensor(object):
-    def __call__(self, data):
-        return torch.FloatTensor(data)
 
 
 # -
@@ -135,9 +127,14 @@ class ToTensor(object):
 
 # Now that we have a `Dataset` class, we can create a training and test dataset.
 
-ds_train = DigitsDataset(path / "train.csv", transform=ToTensor())
-ds_test = DigitsDataset(path / "test.csv", transform=ToTensor())
-ds_train
+ds_train = DigitsDataset(path / "train.csv", transform=transforms.ToTensor())
+ds_test = DigitsDataset(path / "test.csv", transform=transforms.ToTensor())
+
+
+x= ds_train[0]
+x.shape, x.dtype
+
+
 
 for i in range(4):
     for j in range(4):
@@ -146,7 +143,7 @@ for i in range(4):
         plt.xticks([])
         plt.yticks([])
 plt.show()
-    
+
 
 # Both of these are the same
 ds_train.__getitem__(1).shape
@@ -168,6 +165,10 @@ test_loader
 #
 # Now we need to create the model. The architecture we are going to use here is made of two linear layers for the encoder and two linear layers for the decoder.
 
+# +
+# # nn.Module??
+# -
+
 class AE(nn.Module):
     def __init__(self):
         super(AE, self).__init__()
@@ -184,13 +185,14 @@ class AE(nn.Module):
             nn.Sigmoid()
         )
     def encode(self, x):
-        return self.encoder(x)
+        x = x.reshape((-1, 1, 28 * 28))
+        return self.encoder(x).reshape((-1, 2))
 
     def decode(self, z):
-        return self.decoder(z)
+        return self.decoder(z).reshape((-1, 28 * 28))
 
     def forward(self, x):
-        z = self.encode(x.view(-1, 784))
+        z = self.encode(x)
         return self.decode(z)
 
 
@@ -230,7 +232,7 @@ def train(epoch, loss_function, log_interval=50):
     train_loss = 0
     for batch_idx, data in enumerate(tqdm(train_loader, leave=False, desc='train')):
         # We make sure the data is in the right device (cpu or gpu)
-        data = data.to(device)
+        data = data.to(device).float()
         
         # We make sure that any saved gradient (derivative) is zeroed.
         optimizer.zero_grad()
@@ -264,7 +266,7 @@ def test(epoch, loss_function, log_interval=50):
     test_loss = 0
     with torch.no_grad():
         for i, data in enumerate(tqdm(test_loader, leave=False, desc='test')):
-            data = data.to(device)
+            data = data.to(device).float()
             recon_batch = model(data)
             test_loss += loss_function(recon_batch, data).item()
 
@@ -279,18 +281,22 @@ def cvt2image(tensor):
 def show_prediction(idx, title='', ds=ds_train):
     """Show a predict vs actual"""
     model.eval()
-    original = ds[[idx]]
+    original = ds[idx].float()
     result = model(original.to(device))
-    img = cvt2image(result[0])
+    img = cvt2image(result[0]).squeeze()
     
     plt.figure(figsize=(4, 2))
     plt.subplot(1, 2, 1)
     plt.imshow(img, "gray")
     plt.title("Predicted")
+    plt.xticks([])
+    plt.yticks([])
 
     plt.subplot(1, 2, 2)
-    ds.show(idx)
+    plt.imshow(original.squeeze(), 'gray')
     plt.title("Actual")
+    plt.xticks([])
+    plt.yticks([])
     
     plt.suptitle(title)
     plt.show()
@@ -302,10 +308,10 @@ show_prediction(10, '0')
 
 epochs = 10
 for epoch in tqdm(range(1, epochs + 1)):
-    show_prediction(10, title=f"epoch={epoch}")
+    show_prediction(3, title=f"epoch={epoch}")
     train(epoch, loss_bce)
     test(epoch, loss_bce)
-show_prediction(10, title=f"epoch={epoch}")
+show_prediction(3, title=f"epoch={epoch}")
 
 # ## Results
 # Now let's check out the model.
@@ -314,6 +320,7 @@ show_prediction(10, title=f"epoch={epoch}")
 idx = np.random.randint(0, len(ds_test))
 # show this row of the data
 show_prediction(idx)
+
 
 # <font color='blue' size='4rem'>Run the cell above a few times and compare the predicted and actual images.</font>
 
@@ -325,33 +332,48 @@ show_prediction(idx)
 #
 # We can also traverse the latent space and see how the reconstructed image changes in meaningfull ways. This is a usefull property and means the model has learnt how to vary images.
 
-
-
 # +
 # Scatter plot
 
-def traverse(ds=ds_train, model=model, y=3, xmin=-5, xmax=5):
-    res = model.encode(ds_train[:1000].to(device))
+def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
+    # Get the first 1000 images
+    n = min(1000, len(ds))
+    x = torch.stack([ds[i] for i in range(n)], 0)
+    print(x.shape)
+    x = x.to(device).float().reshape((-1, 1, 28,28))
+    print(x.shape)
+    
+    res = model.encode(x)
+    
+    # If we output a distribution, use the mean
     if isinstance(res, Normal):
         res = res.loc
+    
+    # to numpy
     res = res.detach().cpu().numpy()
-    res.shape
 
-    for i in range(10):
-        idx = ds.y[:1000] == i
-        plt.scatter(res[idx, 0], res[idx, 1], label=i)
+    classes = pd.Series(ds.y).unique()
+    for i, cls in enumerate(classes):
+        idx = ds.y[:n] == cls
+        plt.scatter(res[idx, 0], res[idx, 1], label=cls)
     plt.title('the latent space')
     plt.xlabel('latent variable 1')
     plt.ylabel('latent variable 2')
-
-    # change these numbers, to change where we travel
-    y=3
-    xmin=-5
-    xmax=5
+    
+    if xmin is None:
+        xmin, xmax = plt.xlim()
+        xrange = xmax-xmin
+        xmin -= xrange/2
+        xmax += xrange/2
+    if y is None:
+        ymin, ymax = plt.ylim()
+        y = (ymin+ymax)/2
 
     plt.hlines(y, xmin, xmax, color='r', lw=2, label='traversal')
     plt.legend()
     plt.show()
+    
+    
 
     # Do out traversal
     plt.figure(figsize=(12, 12))
@@ -359,7 +381,7 @@ def traverse(ds=ds_train, model=model, y=3, xmin=-5, xmax=5):
     xs = np.linspace(xmin, xmax, n_steps)
     for xi, x in enumerate(xs):
         # Decode image at x,y
-        z = torch.tensor([x, y])[None :].float().to(device)
+        z = torch.tensor([x, y]).float().to(device)[None, :]
         img = model.decode(z).cpu().detach().numpy()
         img = (img.reshape((28, 28)) * 255).astype(np.uint8)
         
@@ -369,11 +391,12 @@ def traverse(ds=ds_train, model=model, y=3, xmin=-5, xmax=5):
         plt.title(f'{x:2.1f}, {y:2.1f}')
         plt.xticks([])
         plt.yticks([])
-
-
 # -
 
-traverse(model=model, y=3, xmin=-5, xmax=5)
+
+
+traverse(model=model, ds=ds_train)
+
 
 
 # Each color represents a number. Despite most numbers overlapping, we can still see some distictions, for instance between $1$ and other numbers. 
@@ -417,6 +440,7 @@ class VAE(nn.Module):
 
     def encode(self, x):
         """Takes in image, output distribution"""
+        x = x.reshape((-1, 28*28))
         h = self.encoder(x)
         # first few features are mean
         mean = h[:, :2]
@@ -428,19 +452,28 @@ class VAE(nn.Module):
 
     def decode(self, z):
         """Takes in latent vector and produces image."""
-        return self.decoder(z)
+        return self.decoder(z).reshape((-1, 28 * 28))
 
     def forward(self, x):
         """Combine the above methods"""
         dist = self.encode(x.view(-1, 784))
         z = dist.rsample() # sample, with gradient
         return self.decode(z), dist
+
+
 # -
+# Normal's
+d = Normal(torch.tensor([0, 1]), torch.Tensor([2, 3]))
+# d.rsample()
+
+
+
 
 
 
 model = VAE().to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
+model
 
 # We can view the shape of our model and number of params
 x = torch.rand((1, 784)).to(device)
@@ -464,7 +497,7 @@ def loss_bce_kld(recon_x, x, dist):
     # KL-divergence between a diagonal multivariate normal,
     # and a standard normal distribution (with zero mean and unit variance)
     # In other words, we are punishing it if it's distribution moves away from a standard normal dist
-    KLD = -0.5 * torch.sum(1 + p.scale.log() - p.loc.pow(2) - p.scale)
+    KLD = -0.5 * torch.sum(1 + dist.scale.log() - dist.loc.pow(2) - dist.scale)
     return BCE + KLD
 
 
@@ -483,8 +516,6 @@ sns.kdeplot(qs, label='q')
 plt.title(f"KLD(p|q) = {kld:2.2f}\nKLD({p}|{q})")
 plt.legend()
 plt.show()
-
-
 # -
 
 # ## Exercise 1: KLD
@@ -509,16 +540,42 @@ plt.show()
 # # YOUR code here, plot locs vs klds
 # ```
 
+# +
+# Part 1
+p = Normal(0, 1)
+kld_close = torch.distributions.kl.kl_divergence(p, Normal(0, 1))
+kld_far = torch.distributions.kl.kl_divergence(p, Normal(10, 1))
+print(kld_close, kld_far)
+print('close is lower?', kld_close<kld_far)
+
+# Part 2: Plot the KLD as you vary the mean of q
+p = Normal(0, 1)
+means = np.arange(-10, 11)
+
+klds=[]
+for mean in means:
+    q = Normal(mean, 1)
+    kld = torch.distributions.kl.kl_divergence(p, q)
+    klds.append(kld)
+
+plt.plot(means, klds)
+plt.ylabel('KLD(p|q) loss [lower in better]')
+plt.xlabel('distance between distributions')
+plt.show()
+
+
+# -
+
 # ## Train
 
 # We also need to slightly adjust the training loop since the loss function now takes four inputs.
 
 # +
-def train(epoch, loss_function, log_interval=50):
+def train_vae(epoch, loss_function, model, train_loader, log_interval=50):
     model.train()
     train_loss = 0
     for batch_idx, data in enumerate(tqdm(train_loader, leave=False)):
-        data = data.to(device)
+        data = data.to(device).float()
         optimizer.zero_grad()
         recon_batch, dist = model(data)
         loss = loss_function(recon_batch, data, dist)
@@ -536,12 +593,12 @@ def train(epoch, loss_function, log_interval=50):
     print('#{} Train loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
 
-def test(epoch, loss_function, log_interval=50):
+def test_vae(epoch, loss_function, model, test_loader, log_interval=50):
     model.eval()
     test_loss = 0
     with torch.no_grad():
         for i, data in enumerate(test_loader):
-            data = data.to(device)
+            data = data.to(device).float()
             recon_batch, dist = model(data)
             test_loss += loss_function(recon_batch, data, dist).item()
 
@@ -555,12 +612,14 @@ def test(epoch, loss_function, log_interval=50):
 summary(model, torch.rand((1, 784)).to(device))
 1
 
+
+
 epochs = 10
-show_prediction(10, title=f"epoch={0}")
+show_prediction(3, title=f"epoch={0}")
 for epoch in tqdm(range(1, epochs + 1)):
-    train(epoch, loss_bce_kld)
-    test(epoch, loss_bce_kld)
-    show_prediction(10, title=f"epoch={epoch}")
+    train_vae(epoch, loss_bce_kld, model, train_loader)
+    test_vae(epoch, loss_bce_kld, model, test_loader)
+    show_prediction(3, title=f"epoch={epoch}")
 
 # ## Saving and Loading Model
 #
@@ -582,42 +641,7 @@ show_prediction(idx)
 
 # One property of a latent space is that you can travese it, and get meaningful varations of outputs.
 
-dist = model.encode(ds_train[:1000].to(device))
-res = dist.loc.cpu().detach().numpy()
-res.shape
-
-# +
-# Scatter plot
-for i in range(10):
-    idx = ds_train.y[:1000] == i
-    plt.scatter(res[idx, 0], res[idx, 1], label=i)
-plt.title('the latent space')
-plt.xlabel('latent variable 1')
-plt.ylabel('latent variable 2')
-
-# change these numbers, to change where we travel
-y=1
-xmin=-5
-xmax=5
-plt.hlines(y, xmin, xmax, color='r', lw=2, label='traversal')
-plt.legend()
-plt.show()
-
-# Do out traversal
-plt.figure(figsize=(12, 12))
-model.to(device)
-n_ims = 10
-xs = np.linspace(xmin, xmax, 10)
-for xi, x in enumerate(xs):
-    plt.subplot(1, 10, xi+1)
-    z = torch.tensor([x, y])[None :].float().to(device)
-    img = model.decode(z).cpu().detach().numpy()
-    img = (img.reshape((28, 28)) * 255).astype(np.uint8)
-    plt.imshow(img, cmap='gray')
-    plt.title(f'{x:2.1f}, {y:2.1f}')
-    plt.xticks([])
-    plt.yticks([])
-# -
+traverse(model=model, ds=ds_train)
 
 # If we compare this plot with the similar plot for normal autoencoder, we can see that VAE did a better job at creating clusters. The points for each digits are closer together compared to previous model. However, there is still room for improvement. 
 
@@ -630,7 +654,6 @@ for xi, x in enumerate(xs):
 # Create the model definition
 # YOUR CODE HERE
 
-# +
 # # Training logic
 # epochs = 10
 # show_prediction(10, title=f"epoch={0}")
@@ -639,7 +662,6 @@ for xi, x in enumerate(xs):
 #     test(epoch, loss_bce_kld)
 #     show_prediction(10, title=f"epoch={epoch}")
 
-# +
 # # Visualise the results
 # idx = np.random.randint(0, len(ds_test))
 # show_prediction(idx)
@@ -647,8 +669,6 @@ for xi, x in enumerate(xs):
 
 # traverse(model=model, y=3, xmin=-5, xmax=5)
 # -
-
-
 
 # ## Exercise 3: Wider
 # Create a new VAE but this time use a more than two parameters for the latent space. This will reduce the loss
@@ -660,7 +680,7 @@ for xi, x in enumerate(xs):
 # The model will reconstruct normal data well, and fail to reconstruct anomolies. This means we can use it for anomoly detection
 
 # +
-img = ds_train[11].to(device)
+img = ds_train[11].to(device).float()
 
 # First try to reconstruct a real image
 img_recon, _ = model(img)
@@ -689,9 +709,6 @@ plt.imshow(cvt2image(rand), cmap="gray")
 plt.subplot(1, 2, 2)
 plt.imshow(cvt2image(rand_recon), cmap="gray")
 # -
-
-
-
 # # Application: Denoising
 #
 # Since the model only keep the important information, noise ends up being discarded. This can not only let us compress data, but denoise it.
@@ -699,7 +716,7 @@ plt.imshow(cvt2image(rand_recon), cmap="gray")
 # In the example below we add some artifacts, and the autoencoder discards them during reconstruction.
 
 # +
-img = ds_train[11].to(device)
+img = ds_train[11].to(device).float()
 
 # First try to reconstruct a real image
 img_recon, _ = model(img)
@@ -893,7 +910,233 @@ plt.imshow(cvt2image(rand_recon), cmap="gray")
 #
 # </details>
 
+# # (extra) Conv
+#
+# Encoding and Decoding images is much easier with convolutions because they are aware that pixels are nearby. Lets try with convolutions and see if the loss is lower.
 
+
+
+# +
+# Let's create our model. Same as before the model has three main sections:
+class CVAE(nn.Module):
+    def __init__(self, n_latent=2):
+        super(CVAE, self).__init__()
+        # After each layer in the encoder we decrease the size of output and increase the number of channels. 
+        self.encoder = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=4, stride=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.Conv2d(64, 128, kernel_size=5, stride=2),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+
+        # It acts as opposite of encoder. At each layer we increase the size of output and decrease the number of channels.
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(128, 128, kernel_size=3, stride=2),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 1, kernel_size=2, stride=2),
+            nn.Sigmoid(),
+        )
+
+        self.fc11 = nn.Linear(128, n_latent)
+        self.fc12 = nn.Linear(128, n_latent)
+        self.fc2 = nn.Linear(n_latent, 128)
+
+    def encode(self, x):
+        x = x.reshape((-1, 1, 28, 28))
+        h = self.encoder(x)
+        mu, logvar = self.fc11(h), self.fc12(h)
+        return Normal(mu, torch.exp(logvar))
+
+    def decode(self, z):
+        z = self.fc2(z)
+        z = z.view(z.size(0), 128, 1, 1)
+        z = self.decoder(z)
+        z = z.reshape((-1, 28*28))
+        return z
+
+    def forward(self, x):
+        dist = self.encode(x)
+        z = dist.rsample()
+        z = self.decode(z)
+        return z, dist
+    
+model = CVAE().to(device)
+from deep_ml_curriculum.torchsummaryX import summary
+x = torch.randn(1, 1, 28, 28).to(device)
+summary(model, x)
+
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+# training loop
+epochs = 10
+show_prediction(3, title=f"epoch={0}")
+for epoch in tqdm(range(1, epochs + 1)):
+    train_vae(epoch, loss_bce_kld, model, train_loader)
+    test_vae(epoch, loss_bce_kld, model, test_loader)
+    show_prediction(3, title=f"epoch={epoch}")
+    
+traverse(model=model, ds=ds_train, y=3, xmin=-5, xmax=5)
+# -
+
+
+
+
+
+
+
+
+# # (extra) Dataset: Fossils
+
+
+
+
+# +
+
+
+class FossilDataset(Dataset):
+    def __init__(self, path, transform=None, split='train'):
+
+        self.root_dir = Path(path)
+        self.transform = transform
+        self.x = (np.load(path/f'X_{split}.npy') * 255).astype(np.uint8)[:, 0]
+        self.y = np.load(path/f'y_{split}.npy')
+
+    def __len__(self):
+        return len(self.x)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        output = self.x[idx]
+        if self.transform:
+            output = self.transform(output)
+        return output
+
+    def show(self, idx):
+        plt.imshow(self.x[idx], "gray")
+
+    def sample(self, n):
+        idx = np.random.randint(0, len(self), n)
+        return self[idx]
+
+path = Path("../../data/processed/fossil_image_classification/")
+transform = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.RandomVerticalFlip(),
+    transforms.RandomHorizontalFlip(),    
+    transforms.Resize((28, 28)),
+    transforms.RandomResizedCrop((28, 28)),
+    transforms.ToTensor(),
+])
+ds_train = FossilDataset(path, split='train', transform=transform)
+transform = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize((28, 28)),
+    transforms.ToTensor(),
+])
+ds_test = FossilDataset(path, split='val', transform=transform)
+print(len(ds_train))
+print(len(ds_test))
+
+batch_size=10
+train_loader = torch.utils.data.DataLoader(ds_train, batch_size, shuffle=True)
+test_loader = torch.utils.data.DataLoader(ds_test, batch_size)
+
+plt.imshow(ds_train[10][0], 'gray')
+ds_train[1].shape
+
+# +
+    
+model = CVAE().to(device)
+from deep_ml_curriculum.torchsummaryX import summary
+x = torch.randn(1, 1, 28, 28).to(device)
+summary(model, x)
+
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+# training loop
+epochs = 100
+show_prediction(3, title=f"epoch={0}", ds=ds_test)
+for epoch in tqdm(range(1, epochs + 1)):
+    train_vae(epoch, loss_bce_kld, model, train_loader)
+    test_vae(epoch, loss_bce_kld, model, test_loader)
+    if epoch%10==0:
+        show_prediction(3, title=f"epoch={epoch}", ds=ds_test)
+    
+traverse(model=model, ds=ds_test, y=1, xmin=-2, xmax=3)
+# -
+
+traverse(model=model, ds=ds_train)
+
+
+# # (extra) DataSet: Micro-CT DeepRockSR
+
+# +
+class Rocks(datasets.ImageFolder):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.y = np.array([ds_test.classes[i] for i in self.targets])
+        
+    def __getitem__(self, idx):
+        x, y = super().__getitem__(idx)
+        return x[:1]
+    
+transform = transforms.Compose([
+    transforms.Resize((28, 28)),
+    transforms.ToTensor(),
+])
+        
+ds_train = Rocks(
+    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
+    is_valid_file=lambda f: ("train_LR_default_X4" in f) and not ("shuffle" in f),
+    transform=transform
+)
+ds_test = Rocks(
+    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
+    is_valid_file=lambda f: ("test_LR_default_X4" in f) and not ("shuffle" in f),
+    transform=transform
+)
+batch_size=32
+train_loader = torch.utils.data.DataLoader(ds_train, batch_size, shuffle=True)
+test_loader = torch.utils.data.DataLoader(ds_test, batch_size)
+ds_train[0].shape
+# -
+
+
+
+# +
+model = CVAE().to(device)
+from deep_ml_curriculum.torchsummaryX import summary
+x = torch.randn(1, 1, 28, 28).to(device)
+summary(model, x)
+
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+# training loop
+epochs = 10
+show_prediction(3, title=f"epoch={0}", ds=ds_test)
+for epoch in tqdm(range(1, epochs + 1)):
+    train_vae(epoch, loss_bce_kld, model, train_loader)
+    test_vae(epoch, loss_bce_kld, model, test_loader)
+    show_prediction(3, title=f"epoch={epoch}", ds=ds_test)
+    
+traverse(model=model, ds=ds_test, y=1, xmin=-2, xmax=3)
+# -
+
+traverse(model=model, ds=ds_train)
 
 # # References
 # - [Pytorch examples for VAE](https://github.com/pytorch/examples/tree/master/vae)
@@ -905,3 +1148,5 @@ plt.imshow(cvt2image(rand_recon), cmap="gray")
 # - [Understanding Semantic Segmentation](https://towardsdatascience.com/understanding-semantic-segmentation-with-unet-6be4f42d4b47)
 # - [Understanding Variation Autoencoders](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)
 # - [Visualizing MNIST using a variational autoencoder](https://www.kaggle.com/rvislaywade/visualizing-mnist-using-a-variational-autoencoder)
+
+
