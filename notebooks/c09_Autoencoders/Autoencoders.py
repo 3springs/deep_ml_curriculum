@@ -339,7 +339,7 @@ show_prediction(idx)
 def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
     # Get the first 1000 images
     n = min(1000, len(ds))
-    idxs = np.random.choice(range(len(ds)), size=10, replace=False)
+    idxs = np.random.choice(range(len(ds)), size=n, replace=False)
     x = torch.stack([ds[i] for i in idxs])
     ys = np.array([ds.y[i] for i in idxs])
     x = x.to(device).float().reshape((-1, 1, 28,28))
@@ -355,10 +355,8 @@ def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
 
     classes = pd.Series(ds.y).unique()
     for i, cls in enumerate(classes):
-        print(i, cls)       
         idx = ys == cls
-        print(idx, res.shape)
-        plt.scatter(res[idx, 0], res[idx, 1], label=cls, alpha=0.5, s=2)
+        plt.scatter(res[idx, 0], res[idx, 1], label=cls, alpha=0.5)
     plt.title('the latent space')
     plt.xlabel('latent variable 1')
     plt.ylabel('latent variable 2')
@@ -385,7 +383,10 @@ def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
     xs = np.linspace(xmin, xmax, n_steps)
     for xi, x in enumerate(xs):
         # Decode image at x,y
-        z = torch.tensor([x, y]).float().to(device)[None, :]
+        z = torch.zeros((1, res.shape[1]))
+        z[:, 0] = x
+        z[:, 1] = y
+        z = z.float().to(device)
         img = model.decode(z).cpu().detach().numpy()
         img = (img.reshape((28, 28)) * 255).astype(np.uint8)
         
@@ -401,8 +402,6 @@ def traverse(ds=ds_train, model=model, y=None, xmin=None, xmax=None):
 
 traverse(model=model, ds=ds_train)
 
-
-# %debug
 
 # Each color represents a number. Despite most numbers overlapping, we can still see some distictions, for instance between $1$ and other numbers. 
 
@@ -920,12 +919,23 @@ plt.imshow(cvt2image(rand_recon), cmap="gray")
 # # (extra) Conv
 #
 # Encoding and Decoding images is much easier with convolutions because they are aware that pixels are nearby. Lets try with convolutions and see if the loss is lower.
+#
+# For animations of what convolution layers do see the animations from ["Vincent Dumoulin, Francesco Visin - A guide to convolution arithmetic for deep learning"](https://github.com/vdumoulin/conv_arithmetic).
+#
+# A convolution layer, with the input below, and the output above:
+#
+# <img src="https://raw.githubusercontent.com/vdumoulin/conv_arithmetic/master/gif/no_padding_strides.gif" />
+#
+# A transpose convolution layer:
+#
+# <img src="https://raw.githubusercontent.com/vdumoulin/conv_arithmetic/master/gif/no_padding_strides_transposed.gif" />
 
 
 
 # +
 # Let's create our model. Same as before the model has three main sections:
 class CVAE(nn.Module):
+    """Convolutional VAE"""
     def __init__(self, n_latent=2):
         super(CVAE, self).__init__()
         # After each layer in the encoder we decrease the size of output and increase the number of channels. 
@@ -995,151 +1005,12 @@ for epoch in tqdm(range(1, epochs + 1)):
     show_prediction(3, title=f"epoch={epoch}")
     
 traverse(model=model, ds=ds_train, y=1)
-
-
 # -
-# # (extra) DataSet: Micro-CT DeepRockSR
-
-# +
-class Rocks(datasets.ImageFolder):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.y = np.array([self.classes[i] for i in self.targets])
-        
-    def __getitem__(self, idx):
-        x, y = super().__getitem__(idx)
-        return x[:1]
-    
-transform = transforms.Compose([
-    transforms.Resize((28, 28)),
-    transforms.ToTensor(),
-])
-        
-ds_train = Rocks(
-    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
-    is_valid_file=lambda f: ("train_LR_default_X4" in f) and not ("shuffle" in f),
-    transform=transform
-)
-ds_test = Rocks(
-    "../../data/processed/deep-rock-sr/DeepRockSR-2D/",
-    is_valid_file=lambda f: ("test_LR_default_X4" in f) and not ("shuffle" in f),
-    transform=transform
-)
-batch_size=32
-train_loader = torch.utils.data.DataLoader(ds_train, batch_size, shuffle=True)
-test_loader = torch.utils.data.DataLoader(ds_test, batch_size)
-ds_train[0].shape
-# -
-
-
-
-# +
-model = CVAE().to(device)
-from deep_ml_curriculum.torchsummaryX import summary
-x = torch.randn(1, 1, 28, 28).to(device)
-summary(model, x)
-
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
-# training loop
-epochs = 10
-show_prediction(3, title=f"epoch={0}", ds=ds_test)
-for epoch in tqdm(range(1, epochs + 1)):
-    train_vae(epoch, loss_bce_kld, model, train_loader)
-    test_vae(epoch, loss_bce_kld, model, test_loader)
-    show_prediction(3, title=f"epoch={epoch}", ds=ds_test)
-    
-traverse(model=model, ds=ds_test, y=1, xmin=-2, xmax=3)
-# -
-
-traverse(model=model, ds=ds_train)
-
-# # (extra) Dataset: Fossils
-
-
-
-
-# +
-
-
-class FossilDataset(Dataset):
-    def __init__(self, path, transform=None, split='train'):
-
-        self.root_dir = Path(path)
-        self.transform = transform
-        self.x = (np.load(path/f'X_{split}.npy') * 255).astype(np.uint8)[:, 0]
-        self.y = np.load(path/f'y_{split}.npy')
-
-    def __len__(self):
-        return len(self.x)
-
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        output = self.x[idx]
-        if self.transform:
-            output = self.transform(output)
-        return output
-
-    def show(self, idx):
-        plt.imshow(self.x[idx], "gray")
-
-    def sample(self, n):
-        idx = np.random.randint(0, len(self), n)
-        return self[idx]
-
-path = Path("../../data/processed/fossil_image_classification/")
-transform = transforms.Compose([
-    transforms.ToPILImage(),
-    transforms.RandomVerticalFlip(),
-    transforms.RandomHorizontalFlip(),    
-    transforms.Resize((28, 28)),
-    transforms.RandomResizedCrop((28, 28)),
-    transforms.ToTensor(),
-])
-ds_train = FossilDataset(path, split='train', transform=transform)
-transform = transforms.Compose([
-    transforms.ToPILImage(),
-    transforms.Resize((28, 28)),
-    transforms.ToTensor(),
-])
-ds_test = FossilDataset(path, split='val', transform=transform)
-print(len(ds_train))
-print(len(ds_test))
-
-batch_size=10
-train_loader = torch.utils.data.DataLoader(ds_train, batch_size, shuffle=True)
-test_loader = torch.utils.data.DataLoader(ds_test, batch_size)
-
-plt.imshow(ds_train[10][0], 'gray')
-ds_train[1].shape
-
-# +
-    
-model = CVAE().to(device)
-from deep_ml_curriculum.torchsummaryX import summary
-x = torch.randn(1, 1, 28, 28).to(device)
-summary(model, x)
-
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
-# training loop
-epochs = 100
-show_prediction(3, title=f"epoch={0}", ds=ds_test)
-for epoch in tqdm(range(1, epochs + 1)):
-    train_vae(epoch, loss_bce_kld, model, train_loader)
-    test_vae(epoch, loss_bce_kld, model, test_loader)
-    if epoch%10==0:
-        show_prediction(3, title=f"epoch={epoch}", ds=ds_test)
-    
-traverse(model=model, ds=ds_train, y=1, xmin=-2, xmax=3)
-# -
-
 traverse(model=model, ds=ds_train)
 
 # # References
 # - [Pytorch examples for VAE](https://github.com/pytorch/examples/tree/master/vae)
+# - [Pytorch CelebVAE](https://github.com/AntixK/PyTorch-VAE)
 
 # # Further Reading
 # - [Autoencoders Explained](https://www.youtube.com/watch?v=7mRfwaGGAPg)
@@ -1148,5 +1019,11 @@ traverse(model=model, ds=ds_train)
 # - [Understanding Semantic Segmentation](https://towardsdatascience.com/understanding-semantic-segmentation-with-unet-6be4f42d4b47)
 # - [Understanding Variation Autoencoders](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)
 # - [Visualizing MNIST using a variational autoencoder](https://www.kaggle.com/rvislaywade/visualizing-mnist-using-a-variational-autoencoder)
+
+
+
+
+
+
 
 
