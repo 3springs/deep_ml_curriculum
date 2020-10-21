@@ -125,14 +125,14 @@ warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 # +
 interim_locations = Path("../../data/processed/geolink_norge_dataset/")
 # Load processed dataset
-geolink = pd.read_parquet(
+geolink_all = pd.read_parquet(
     interim_locations / "geolink_norge_well_logs_train.parquet"
 ).set_index(["Well", "DEPT"])
 # Add Depth as column
-geolink['DEPT'] = geolink.index.get_level_values(1)
+geolink_all['DEPT'] = geolink_all.index.get_level_values(1)
 
 # Work with one well
-geolink = geolink.xs("30_6-11")
+geolink = geolink_all.xs("30_6-11")
 geolink
 # -
 
@@ -328,7 +328,7 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 #
 #   Let's practice some of the key concepts we have learned so far. 
 #     
-#   0. Choose the data for well log '30_6-11'. 
+#   0. Choose the data for well log '30_6-14'. 
 #   1. Normalised and split the dataset provided (Use 85\% of the data for training and 15\% for testing)
 #   2. Transform the data using label encoding (This is done automatically by scikit-learn for some ML methods. However, it is good to get used to this concept).
 #   3. Train a KNN model using <code>n_neighbors</code>= 1,5,10,15
@@ -348,6 +348,9 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 #   </summary>
 #     
 #   ```python
+#     # View our well, it's similar to the last one
+#     from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
+#     plot_well("30_6-14", geolink, facies=geolink['LITHOLOGY_GEOLINK'].astype('category').values)
 #     # Exercise
 #
 #     # Write your code below:
@@ -355,25 +358,26 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 #     # 0. Select a different well
 #     interim_locations = Path("../../data/processed/geolink_norge_dataset/")
 #     # Load processed dataset
-#     geolink = pd.read_parquet(
-#         interim_locations / "geolink_norge_well_logs_train.parquet"
+#     geolink_all = pd.read_parquet(
+#        interim_locations / "geolink_norge_well_logs_train.parquet"
 #     ).set_index(["Well", "DEPT"])
 #     # Add Depth as column
-#     geolink['DEPT'] = geolink.index.get_level_values(1)
+#     geolink_all['DEPT'] = geolink_all.index.get_level_values(1)
 #     # Work with one well
-#     geolink = geolink.xs('30_6-11')
+#     geolink = geolink_all.xs('30_6-14')
 #
 #     # 1. Normalise dataset and Split well log dataset here
 #
 #     # We only take the data from CALI  onward for X.
-#     X = geolink.iloc[:, 1:]
+#     X = geolink.iloc[:, 1:-1]
 #     # LITHOLOGY_GEOLINK will be our class y.
 #     y = geolink["LITHOLOGY_GEOLINK"]
 #     # Normalize data
 #     normalized_X = (X - X.mean()) / X.std()
+#
 #     # Let's used the normalized data for both for training and testing
 #     X_train, X_test, y_train, y_test = train_test_split(
-#         normalized_X, y.to_numpy(), test_size=0.15, random_state=1
+#        normalized_X, y.to_numpy(), test_size=0.15, random_state=1
 #     )
 #
 #     # 2. Transform the data using label encoding
@@ -431,13 +435,15 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 #
 #     # Evaluation Time
 #     y_pred = cls_15nn.predict(X_test)
-#     print("Accuracy 15NN: {}".format(accuracy_score(y_test_true, y_pred)))     
+#     print("Accuracy 15NN: {}".format(accuracy_score(y_test_true, y_pred)))  
 #   ```
 #
 #   </details>
 #
 #   </div>
 #
+
+
 
 # +
 # Exercise
@@ -497,14 +503,14 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 # +
 interim_locations = Path("../../data/processed/geolink_norge_dataset/")
 # Load processed dataset
-geolink = pd.read_parquet(
+geolink_all = pd.read_parquet(
     interim_locations / "geolink_norge_well_logs_train.parquet"
 ).set_index(["Well", "DEPT"])
 # Add Depth as column
-geolink['DEPT'] = geolink.index.get_level_values(1)
+geolink_all['DEPT'] = geolink_all.index.get_level_values(1)
 
 # Work with one well
-geolink = geolink.xs("30_6-11")
+geolink = geolink_all.xs("30_6-11")
 # -
 
 print("Total rows in Geolink dataset for the selected well:", len(geolink))
@@ -557,8 +563,9 @@ print(sklearn.metrics.classification_report(y_true, y_pred))
 
 # +
 # Plot the results as well logs
-# NOTE: we are not seperating test and train here. 
-# See the RNN notebooks for a more detailed treatment, with better test train split
+
+# WARNING: we are NOT seperating test and train here. So we are displaying the whole well, which includes both
+# See the RNN-Depth notebooks for a more detailed treatment, with better test train split
 X_sample = geolink.iloc[:, 1:-1]
 y_true = geolink["LITHOLOGY_GEOLINK"]
 X_scaled = scaler.fit_transform(X_sample)
