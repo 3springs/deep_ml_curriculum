@@ -149,6 +149,17 @@ X = geolink.iloc[:, 1:-1]
 y = geolink["LITHOLOGY_GEOLINK"]
 X
 
+# NOTE: our dataset is imbalanced, this is always import when considering a problem.
+#     
+# 1. so our baseline accuracy is 46.5
+# 2. if we get poor performance may want to consider techniques to deal with unbalanced data. However we do not do this in the notebook
+
+# Check dataset label balance
+counts = y.value_counts()
+counts = counts[counts>0]/counts.sum()
+counts.plot.bar()
+counts
+
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=2020
 )
