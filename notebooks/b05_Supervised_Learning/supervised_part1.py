@@ -328,7 +328,7 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 #
 #   Let's practice some of the key concepts we have learned so far. 
 #     
-#   0. Choose the data for well log '30_6-14'. 
+#   0. Choose the data for well log '30_6-11'. 
 #   1. Normalised and split the dataset provided (Use 85\% of the data for training and 15\% for testing)
 #   2. Transform the data using label encoding (This is done automatically by scikit-learn for some ML methods. However, it is good to get used to this concept).
 #   3. Train a KNN model using <code>n_neighbors</code>= 1,5,10,15
@@ -361,7 +361,7 @@ print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 #     # Add Depth as column
 #     geolink['DEPT'] = geolink.index.get_level_values(1)
 #     # Work with one well
-#     geolink = geolink.xs('30_6-14')
+#     geolink = geolink.xs('30_6-11')
 #
 #     # 1. Normalise dataset and Split well log dataset here
 #
