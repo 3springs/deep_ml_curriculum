@@ -90,7 +90,7 @@ warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 #
 # - It's usually done by expert humans (Petrophysicists) with years to decades of experience, not an random human
 # - it takes into account context in the form of prior knowledge, geology, nearby wells, rock samples, and many more. Many of these are forms of information the machine doesn't have access to
-# - The data is unbalanced with important rocks like sandstone sometimes appearing as very this layers
+# - The data is unbalanced with important rocks like sandstone sometimes appearing as very thin layers
 #
 #
 # <table>
@@ -149,10 +149,11 @@ X = geolink.iloc[:, 1:-1]
 y = geolink["LITHOLOGY_GEOLINK"]
 X
 
-# NOTE: our dataset is imbalanced, this is always import when considering a problem.
+# NOTE: our dataset is imbalanced, this is always important when considering a problem. it has two implications:
 #     
-# 1. so our baseline accuracy is 46.5
-# 2. if we get poor performance may want to consider techniques to deal with unbalanced data. However we do not do this in the notebook
+# 1. Our baseline accuracy is 46.5. We can get this by always guessing the most common class
+# 2. if we get poor performance may want to consider techniques to deal with unbalanced data. However we do not need to do this in this notebook
+# 3. We also mostly care about standstone which is a common drilling target
 
 # Check dataset label balance
 counts = y.value_counts()
@@ -160,6 +161,8 @@ counts = counts[counts>0]/counts.sum()
 counts.plot.bar()
 counts
 
+# Note that, on this data, it might be better to split by depth. 
+# But we will keep it simple and standard to introduct the topic of test, train split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=2020
 )
@@ -202,6 +205,9 @@ le = preprocessing.LabelEncoder()
 # This will help the LabelEncoder to map the classes to a corresponding value between 0 and n_classes-1
 le.fit(classes)
 
+# We can look at the labels in this object
+le.classes_
+
 # The number of `neighbors` is a hyperparameter that must be set for this algorithm. We will arbitrarily select a value of 15 for this hyperparameter.
 #
 # > In machine learning, a hyperparameter is a parameter whose value is used to control the learning process. By contrast, the values of other parameters (typically node weights) are derived via training.
@@ -221,9 +227,11 @@ y_pred = knn_classifier.predict(X_test)
 y_true = le.transform(y_test.to_numpy())
 print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
 
-# We were able to predict the 11 different classes with >90% accuracy using new data. This is slightly better than random, however the accuracy is still very low. Let's train using the same algorithm and hyperparameters but this time we will normalise the data.
+# We were able to predict the 11 different classes with >90% accuracy using new data. This is slightly better than the baseline, however the accuracy can be improved. Let's train using the same algorithm and hyperparameters but this time we will normalise the data.
 
 # ## Normalised Data
+#
+# There are options to normalising the data, which fit the petrophysics data better, but here will just consider normalising over the whole well.
 #
 #
 # ### Why normalise the data?
@@ -549,6 +557,8 @@ print(sklearn.metrics.classification_report(y_true, y_pred))
 
 # +
 # Plot the results as well logs
+# NOTE: we are not seperating test and train here. 
+# See the RNN notebooks for a more detailed treatment, with better test train split
 X_sample = geolink.iloc[:, 1:-1]
 y_true = geolink["LITHOLOGY_GEOLINK"]
 X_scaled = scaler.fit_transform(X_sample)
