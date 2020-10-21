@@ -122,6 +122,10 @@ warnings.filterwarnings('ignore') # warnings.filterwarnings(action='once')
 #
 # ## Load Dataset
 
+
+
+
+
 # +
 interim_locations = Path("../../data/processed/geolink_norge_dataset/")
 # Load processed dataset
@@ -155,17 +159,46 @@ X
 # 2. if we get poor performance may want to consider techniques to deal with unbalanced data. However we do not need to do this in this notebook
 # 3. We also mostly care about standstone which is a common drilling target
 
-# Check dataset label balance
-counts = y.value_counts()
-counts = counts[counts>0]/counts.sum()
-counts.plot.bar()
-counts
+
+
+def train_test_split(*arrays, test_size=0.2):
+    """Split by depth"""
+    results = []
+    i_split = int(len(arrays[0])*(1-test_size))
+    for d in arrays:
+        if isinstance(d, (pd.DataFrame, pd.Series)):
+            train = d.iloc[:i_split]
+            test = d.iloc[i_split:]
+        else:
+            train = d[:i_split]
+            test = d[i_split:]
+        results.append(train)
+        results.append(test)
+    return results
+    
+
+
+# ## Data Split
 
 # Note that, on this data, it might be better to split by depth. 
 # But we will keep it simple and standard to introduct the topic of test, train split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=2020
+    X, y
 )
+X_train.shape, X_test.shape, y_train.shape, y_test.shape
+
+# View our well
+from deep_ml_curriculum.visualization.well_log import plot_facies, plot_well
+plot_well("30_6-11", X_train.reset_index(), facies=y_train.astype('category').values)
+
+# View our well test
+plot_well("30_6-11", X_test.reset_index(), facies=y_test.astype('category').values)
+
+# Check dataset label balance
+counts = y_test.value_counts()
+counts = counts[counts>0]/counts.sum()
+counts.plot.bar()
+counts
 
 # ## 3. K-Nearest Neighbors (KNN) <a name="knn"></a>
 # **Example of decision boundaries using KNN:**
@@ -261,8 +294,9 @@ normalized_df.max()
 
 # Let's used the normalized data for both for training and testing
 X_train, X_test, y_train, y_test = train_test_split(
-    normalized_df, y.to_numpy(), test_size=0.2, random_state=2020
+    normalized_df, y
 )
+X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
 # +
 # Label Encoder
@@ -532,7 +566,7 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X_sample)
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X_scaled, y_sample, test_size=0.3, random_state=2020
+    X_scaled, y_sample
 )
 
 clf = LinearSVC(
@@ -561,6 +595,8 @@ print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 
 print(sklearn.metrics.classification_report(y_true, y_pred))
 
+
+
 # +
 # Plot the results as well logs
 
@@ -579,7 +615,9 @@ plot_facies(pred, ax=ax[0], colorbar=False, xlabel='Pred')
 plot_facies(true, ax=ax[1], xlabel='True')
 ax[0].set_xticklabels([])
 ax[1].set_xticklabels([])
+ax[0].set_yticklabels([])
 ax[1].set_yticklabels([])
+# TODO add bars
 # -
 
 # The results could be better with a deeper network and more data. We will revit this again in the Recurrent Neural Networks notebook.
@@ -632,13 +670,15 @@ ax[1].set_yticklabels([])
 #
 # </div>
 
+
+
 # +
 # Split dataset geolink. test_size =0.25
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, random_state=2020
+    X, y
 )
 
-clf = tree.DecisionTreeClassifier()
+clf = tree.DecisionTreeClassifier(max_depth=4)
 fig, ax = plt.subplots(figsize=(15, 10))
 # X0 and y0 from iris_dataset
 tree.plot_tree(clf.fit(X_train, y_train), max_depth=3, fontsize=10)
@@ -648,7 +688,7 @@ plt.show()
 # Now let's train a decision tree (DT) with our geolink dataset. For the next example, we will set the hyperparater max_depth to 100. Notice how the accuracy in the model changes. 
 
 # +
-clf = tree.DecisionTreeClassifier(random_state=2020)
+clf = tree.DecisionTreeClassifier(random_state=2020, max_depth=4)
 clf = clf.fit(X_train, y_train)
 
 # Evaluation Time
@@ -710,3 +750,7 @@ print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
 # - [Seaborn Datasets](https://seaborn.pydata.org/generated/seaborn.load_dataset.html)
 # - [Scikit-learn Datasets](https://scikit-learn.org/stable/datasets/index.html)
 #
+
+
+
+
