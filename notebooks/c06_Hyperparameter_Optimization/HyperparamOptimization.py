@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: deep_ml_curriculum
 #     language: python
-#     name: python3
+#     name: deep_ml_curriculum
 # ---
 
 # # Hyperparameter Optimization
@@ -82,9 +82,10 @@ test_loader = torch.utils.data.DataLoader(
     batch_size=batch_size + 64,
     shuffle=True,
 )
-
-
 # -
+
+plt.imshow(train_loader.dataset[0][0][0], cmap='gray')
+
 
 # # GridSearchCV
 #
@@ -146,7 +147,6 @@ class MNISTCNN(nn.Module):
 def train(model, dataloader, criterion, optimizer, n_epochs=1, bs=64, device="cpu"):
     # Set model in train mode
     model.train().to(device)
-    running_loss = 0.0
     for epoch in tqdm(range(n_epochs), desc='train', unit='epoch'):
         for (x, y) in tqdm(dataloader, leave=False, desc='training'):
             y = y.to(device)
@@ -158,9 +158,6 @@ def train(model, dataloader, criterion, optimizer, n_epochs=1, bs=64, device="cp
             loss = criterion(outputs, y)  # Calculate loss
             loss.backward()  # Do backpropagation
             optimizer.step()  # Update weights
-            # print statistics
-            running_loss += loss.item()
-        running_loss = 0.0
 
     print("Finished Training")
     return model.eval()
@@ -259,9 +256,8 @@ def GridSearch(train_data, test_data, hyperparameters):
             best_parameters["learning_rate"] = learning_rate
 
         print('Accuracy Testing: {}'.format(accuracy))
+        print('best_parameters', best_parameters)
     return best_parameters
-
-
 # -
 
 # <div class="alert alert-success" style="font-size:100%">
@@ -321,6 +317,8 @@ def GridSearch(train_data, test_data, hyperparameters):
 # ```
 # </details>
 
+
+
 # # Randomized Grid Search
 #
 # As you can notice, GridSearch evaluates the model in combining every parameter. This of course, can be very inneficient. By contrast, Random Search sets up a grid of hyperparameter values and selects random combinations to train the model and evaluate. In random search you can control the number of hyperparameter combinations that attempted. It is possible that Random search does not find the best possible answer but in cases where the search space and computational time is limited it will work the best.
@@ -372,13 +370,14 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
             best_parameters["learning_rate"] = l_rate
 
         print('Accuracy Testing: {}'.format(accuracy))
+        print('best_parameters', best_parameters)
 
     return best_parameters
 
 # In the next exercise we will increase the parameter space search but will limit to a number of 10 random searches.
 
 # <div class="alert alert-success" style="font-size:100%">
-# <b>Exercise 1</b>: <br>
+# <b>Exercise 2</b>: <br>
 #     
 # **Warning:** Executing `RandomizedGridSearch` might take around 5 minutes on a GPU.
 #     
@@ -431,6 +430,11 @@ def RandomizedGridSearch(train_data, test_data, hyperparameters, num_combination
 # </details>
 
 
+
+# # More meta
+#
+# - You can you bayesian priors sample well, and reduce the search time https://scikit-optimize.github.io/stable/
+# - You can machine learn the machine learning, of popular example is [MAML](https://arxiv.org/abs/1703.03400)
 
 # # Auto:Test
 #
