@@ -281,6 +281,8 @@ torch.backends.cudnn.enabled = False
 torch.manual_seed(2020)
 # -
 
+# We generally want out input data to be between 0 and 1 or -1 and 1
+# Because most layers are build with the assumption of data that is distributed within this range
 x_train = landmassf3_train.data / 255.0
 y_train = landmassf3_train.targets
 x_test = landmassf3_test.data / 255.0
@@ -331,7 +333,8 @@ def test(model, x, y):
     total = 0
 
     for idx, image in enumerate(x):
-        pred = model(image.unsqueeze(0).unsqueeze(0).cuda()).argmax()
+        y_pred_outs = model(image.unsqueeze(0).unsqueeze(0).cuda())
+        pred = F.log_softmax(y_pred_outs).argmax()
         if int(pred) == int(y[idx]):
             correct += 1
         total += 1
@@ -424,7 +427,7 @@ summary(convnet, torch.rand((1, 1, 99, 99)).to(device))
 # <div class="alert alert-success" style="font-size:100%">
 # <b>Exercise 1</b>: <br>
 #
-# Modify the previous code to train `BetterCNN` using `Adam` optimizer for a total of 10 `epochs`. Use 1e-3 `learning_rate`.
+# Modify the previous code to train `BetterCNN` using `Adam` optimizer for a total of 3 `epochs`. Use 1e-3 `learning_rate`.
 # </div>
 
 # You can click in the button below the reveal the solution for exercise 1
@@ -434,31 +437,28 @@ summary(convnet, torch.rand((1, 1, 99, 99)).to(device))
 #     <font size="4" color="darkblue"><b>See the solution for Exercise 1</b></font>
 # </summary>
 #     
-# If we check the loss, we can notice that Adam is converging faster. However, the model is clearly underfitted. Let's train now the model for 10 epochs more:
+# If we check the loss, we can notice that Adam is converging faster. However, the model is clearly underfitted. Let's train now the model for 3 epochs:
 #     
 # ```python
-# learning_rate = 1e-3
 # convnet2 = BetterCNN().to(device)
-# optimizer = torch.optim.Adam(convnet2.parameters(), lr=learning_rate)
-# model = train(convnet2, x_train, y_train, criterion, optimizer, n_epochs=10)
-# test(model, x_test, y_test)
+# optimizer = torch.optim.Adam(convnet2.parameters(), lr=1e-3)
+# convnet2 = train(convnet2, x_train, y_train, criterion, optimizer, n_epochs=2)
+# test(convnet2, x_test, y_test)
 # ```
 #
 # </details>
 
-
-
 # Finally ! After changing the optimizer, creating a better CNN architecture and train for a couple of epochs we got an accuracy of over 99% on unseen data.
 
-# +
-# Now that we finished the training let's save our best model
-#PATH = "./landmass_net.pth"
-#torch.save(model.state_dict(), PATH)
-# -
+y_pred_outs = convnet2(
+    # Pass in first 20 images
+    x_test[:20].unsqueeze(1).float().to(device)
+)
+y_pred = F.log_softmax(y_pred_outs).argmax(-1)
+y_pred
 
-# Now let's load a new model to check that the performance of the saved model.
-#
-# Check more information about how to save models in Pytorch [here](https://pytorch.org/tutorials/beginner/saving_loading_models.html)
+# compare to the real answer
+y_test[:20]
 
 # # References and further reading
 #
