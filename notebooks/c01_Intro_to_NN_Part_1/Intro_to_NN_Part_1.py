@@ -226,6 +226,7 @@ def train(X_train, y_train, hidden_layers, activation, solver):
     return clf
 
 
+
 # +
 hidden_layers = 2
 activation = "relu"  # ReLU Activation function
@@ -240,7 +241,7 @@ clf.score(X_test, y_test)
 # We got an accuracy of 28.3%, which is not really great. Let's try again and train a model changing the number of hidden layers to 10.
 
 # +
-hidden_layers = 10
+hidden_layers = [32, 10]
 
 # Let's train the model using our custom hyperparameters
 clf = train(X_train, y_train, hidden_layers, activation, solver)
@@ -281,12 +282,14 @@ clf.score(X_test, y_test)
 #         for num_hidden_layers in hyperparameters['hidden_layers']:
 #             print(f'Train NN with solver:{solver}, activation:{activation} and Number of hidden layers:{num_hidden_layers}')
 #             # Let's train the model using our custom hyperparameters
-#             clf = train(X_train, y_train, num_hidden_layers, activation)
+#             clf = train(X_train, y_train, num_hidden_layers, activation, solver)
 #             # Let's evaluate the accuracy of the model using the test data
 #             print('Accuracy:',clf.score(X_test, y_test))
 # ```
 #
 # </details>
+
+
 
 # <a name="3"></a>
 # # 3. Introduction to Pytorch
