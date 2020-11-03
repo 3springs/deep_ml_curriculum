@@ -21,6 +21,8 @@ from torch import optim
 from torch import nn
 import torch.nn.functional as F
 
+import pandas as pd
+
 import numpy as np
 from tqdm.auto import tqdm
 # -
@@ -144,6 +146,11 @@ print(landmassf3_train)
 print(landmassf3_test)
 # -
 
+for i in range(4):
+    x, y = landmassf3_train[i]
+    print("Class:", landmassf3_train.classes[y])
+    display(x)
+
 # Let's have a look at the dataset
 print(landmassf3_train.data.shape)
 print(landmassf3_test.data.shape)
@@ -154,9 +161,10 @@ LandmassF3Patches
 #
 # Let's display the first one:
 
-x, y = landmassf3_train[4]
-print("Class:", landmassf3_train.classes[y])
-x
+for i in range(10):
+    x, y = landmassf3_train[i]
+    print("Class:", landmassf3_train.classes[y])
+    display(x)
 
 # Note that this is an unbalanced dataset, so we expect an accuracy of at least 52%, this is out baseline
 labels = pd.Series(landmassf3_train.train_labels).replace(dict(enumerate(landmassf3_train.classes)))
