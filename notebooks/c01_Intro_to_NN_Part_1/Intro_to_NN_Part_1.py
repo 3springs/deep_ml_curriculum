@@ -9,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.6.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: py37_pytorch
 #     language: python
-#     name: python3
+#     name: conda-env-py37_pytorch-py
 # ---
 
 from IPython.display import HTML
@@ -109,7 +109,10 @@ HTML(
 #     
 # There are visualisation of many of these optimisers here: https://github.com/3springs/viz_torch_optim
 #
-# Notice that they sometimes get caught in local minima. Also not that this is a 3d space, but most backprop is in a higher dimensional space that has less change to get stuck.
+# Notice that they sometimes get caught in local minima. Also note that this example shows a 2d space + error, but most machine learning is in a higher dimensional space that has less chance to get stuck. 
+#
+#
+# <img src="https://github.com/3springs/viz_torch_optim/raw/master/docs/videos/six_humped_camel_back_20171115_09-38-57.gif" />
 #
 # <img src="https://github.com/3springs/viz_torch_optim/raw/master/docs/videos/six_humped_camel_back_20171115_09-38-57_3d.gif"/>
 #     
@@ -139,7 +142,9 @@ HTML(
 #
 
 HTML(
-    '<iframe src="https://playground.tensorflow.org" width="1000" height="800"></iframe>'
+    '''
+    <a href="https://playground.tensorflow.org">"https://playground.tensorflow.org"</a>
+    <iframe src="https://playground.tensorflow.org" width="1000" height="800"></iframe>'''
 )
 
 # <a name="2"></a>
@@ -161,7 +166,7 @@ import matplotlib.pyplot as plt
 
 # Load the digits dataset
 digits = datasets.load_digits()
-idx = 200
+idx = 0
 # Let's first see one of the images
 plt.figure(1, figsize=(3, 3))
 print('Target: {}'.format(digits.target[idx]))
@@ -210,7 +215,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 # Now let's pick some hyperparameters before the training.
 
 # Learning rate is by default 0.001, we will use the default value
-def train(X_train, y_train, hidden_layers, activation):
+def train(X_train, y_train, hidden_layers, activation, solver):
     clf = MLPClassifier(
         hidden_layer_sizes=hidden_layers,
         activation=activation,
@@ -227,7 +232,7 @@ activation = "relu"  # ReLU Activation function
 solver = "sgd"  # Stochastic Gradient Descent optimizer
 
 # Let's train the model using our custom hyperparameters
-clf = train(X_train, y_train, hidden_layers, activation)
+clf = train(X_train, y_train, hidden_layers, activation, solver)
 # Let's evaluate the accuracy of the model using the test data
 clf.score(X_test, y_test)
 # -
@@ -238,7 +243,7 @@ clf.score(X_test, y_test)
 hidden_layers = 10
 
 # Let's train the model using our custom hyperparameters
-clf = train(X_train, y_train, hidden_layers, activation)
+clf = train(X_train, y_train, hidden_layers, activation, solver)
 # Let's evaluate the accuracy of the model using the test data
 clf.score(X_test, y_test)
 # -
