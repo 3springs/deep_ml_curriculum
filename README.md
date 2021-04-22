@@ -83,7 +83,7 @@ Teaches DS&ML using some Oil and Gas specific datasets and examples. Some of the
 The data is stored on a public (read only) s3 bucket
 
 ```
-git clone git@github.com:3springs/deep_ml_curriculum.git
+git clone https://github.com/3springs/deep_ml_curriculum.git
 cd <project root>
 # install packages in conda
 conda env update --file requirements/environment.min.yml
